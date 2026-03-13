@@ -3,6 +3,16 @@ name: Frontier Valley Overworld
 theme: desert-dawn
 width: 12
 height: 8
+fogRevealRadius: 2
+layout:
+  - [sand, sand, scrub, scrub, road, road, road, scrub, rock, rock, mesa, mesa]
+  - [sand, scrub, scrub, road, road, road, scrub, scrub, rock, mesa, mesa, mesa]
+  - [sand, scrub, vault, road, road, scrub, scrub, rock, rock, mesa, mesa, ridge]
+  - [sand, scrub, road, road, road, road, scrub, scrub, rock, ridge, ridge, ridge]
+  - [sand, sand, road, scrub, scrub, scrub, scrub, rock, ridge, ridge, ridge, ridge]
+  - [sand, road, road, scrub, cave, scrub, scrub, rock, ridge, ridge, ridge, ridge]
+  - [sand, sand, road, scrub, scrub, scrub, scrub, rock, ridge, ridge, ridge, ridge]
+  - [sand, sand, scrub, scrub, scrub, scrub, scrub, rock, ridge, ridge, ridge, ridge]
 pointsOfInterest:
   - vault_47
   - dusty_tavern

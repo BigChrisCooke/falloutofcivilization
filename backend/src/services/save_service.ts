@@ -1,8 +1,15 @@
 import type Database from "better-sqlite3";
+import { toTileKey } from "../../../game/src/index.js";
 
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { SaveRepo } from "../repos/save_repo.js";
 import { getGameContent } from "./content_service.js";
+import {
+  getOverworldMap,
+  getRegionLocations,
+  getStartingLocation,
+  revealExploration
+} from "./exploration_state.js";
 import type {
   FactionStandingRow,
   MapDiscoveryRow,
@@ -33,6 +40,17 @@ export class SaveService {
       throw new Error("No starting region content is available.");
     }
 
+    const regionLocations = getRegionLocations(content, region.id);
+    const overworldMap = getOverworldMap(content, region);
+    const startingLocation = getStartingLocation(content, region, regionLocations);
+    const explorationState = revealExploration(
+      overworldMap,
+      regionLocations,
+      startingLocation.position,
+      [startingLocation.id],
+      [toTileKey(startingLocation.position)]
+    );
+
     const now = Date.now();
     const save: SaveGameRow = {
       id: crypto.randomUUID(),
@@ -59,12 +77,15 @@ export class SaveService {
       current_location_id: null,
       current_map_id: region.mapId,
       current_panel: null,
+      player_x: startingLocation.position.x,
+      player_y: startingLocation.position.y,
       updated_at: now
     };
 
     const mapDiscovery: MapDiscoveryRow = {
       save_id: save.id,
-      discovered_locations_json: JSON.stringify([region.startingLocationId]),
+      discovered_locations_json: JSON.stringify(explorationState.discoveredLocationIds),
+      discovered_tiles_json: JSON.stringify(explorationState.discoveredTileKeys),
       updated_at: now
     };
 

@@ -2,7 +2,7 @@ import path from "node:path";
 
 export interface AppConfig {
   port: number;
-  frontendOrigin: string;
+  clientOrigin: string;
   sqlitePath: string;
   sessionTtlDays: number;
   cookieName: string;
@@ -19,8 +19,8 @@ function readNumber(value: string | undefined, fallback: number): number {
 
 export function getConfig(): AppConfig {
   return {
-    port: readNumber(process.env.BACKEND_PORT, 3001),
-    frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:4321",
+    port: readNumber(process.env.BACKEND_PORT, 6201),
+    clientOrigin: process.env.CLIENT_ORIGIN ?? "http://localhost:6200",
     sqlitePath: path.resolve(process.cwd(), process.env.SQLITE_PATH ?? "./data/app.db"),
     sessionTtlDays: readNumber(process.env.SESSION_TTL_DAYS, 14),
     cookieName: "foc_session"

@@ -5,16 +5,19 @@
   "type": "module",
   "workspaces": [
     "backend",
-    "frontend",
+    "client",
     "game"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "dev": "concurrently -n game,backend,frontend -c yellow,cyan,magenta \"npm run dev -w game\" \"npm run dev -w backend\" \"npm run dev -w frontend\"",
-    "build": "npm run build -w game && npm run build -w backend && npm run build -w frontend",
-    "test": "npm run test -w game && npm run test -w backend",
+    "dev": "concurrently -n game,backend,client -c yellow,cyan,magenta \"npm run dev -w game\" \"npm run dev -w backend\" \"npm run dev -w client\"",
+    "dev:game": "npm run dev -w game",
+    "dev:backend": "npm run dev -w backend",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w game && npm run build -w backend && npm run build -w client",
+    "test": "npm run test -w game && npm run test -w backend && npm run test -w client",
     "db:migrate": "npm run db:migrate -w backend",
     "content:validate": "npm run validate -w game"
   },

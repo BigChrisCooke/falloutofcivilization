@@ -9,6 +9,7 @@ Implementation tracking is split into phase documents under `docs/todo/initial/p
 - Read `docs/todo/initial/phases/_INITIAL.md` first.
 - Use `docs/todo/initial/phases/PHASE-1.md` for the platform and playable-stub buildout.
 - Use `docs/todo/initial/phases/PHASE-2.md` for AI automation, skills, agent alignment, and handoff hardening.
+- Use `docs/todo/initial/phases/PHASE-3.md` for aligning the runnable base with the original game vision.
 - Update `docs/todo/initial/phases/_PROGRESS.md` as work advances.
 
 ## Phase 1 Goal
@@ -21,7 +22,7 @@ After login, a player can create or load a save, enter a basic in-game shell, vi
 
 ## Architecture Rules
 
-- `frontend/` is responsible for rendering UI and calling backend APIs.
+- `client/` is responsible for rendering UI and calling backend APIs.
 - `backend/` is responsible for auth, persistence, API orchestration, and save handling.
 - `game/` is the source of truth for game rules, content schemas, and shared deterministic helpers.
 - Quests, factions, dialogue, items, locations, and progression data must be data-driven and must not be hardcoded in UI components.
@@ -30,9 +31,9 @@ After login, a player can create or load a save, enter a basic in-game shell, vi
 
 ### 1. Repository and workspace structure
 
-- Set up the directory structure for `frontend/`, `backend/`, `game/`, and any required shared workspace packages.
+- Set up the directory structure for `client/`, `backend/`, `game/`, and any required shared workspace packages.
 - Add skeleton code so each major workspace has a clear entry point and can build and run.
-- Make sure the backend, frontend, and game package all run in local development.
+- Make sure the backend, client, and game package all run in local development.
 
 ### 2. Backend foundation
 
@@ -46,7 +47,7 @@ After login, a player can create or load a save, enter a basic in-game shell, vi
 
 ### 3. Frontend foundation
 
-- Replace the placeholder marketing-only frontend with a basic logged-in application shell.
+- Replace the placeholder marketing-only surface with a basic logged-in application shell.
 - Ensure the logged-in experience is mobile-optimized.
 - Add a basic top bar with settings access.
 - Add a basic bottom navigation bar with buttons that open dialogs or panels.
@@ -182,7 +183,7 @@ This phase is complete when:
 - A logged-in player can create or load a save and enter the basic in-game shell.
 - The player can see a mobile-optimized stub overworld screen, open a vault or home panel, and transition into one placeholder location screen.
 - User data and minimal game state are persisted in SQLite.
-- Backend, frontend, and shared game code all build cleanly.
+- Backend, client, and shared game code all build cleanly.
 - Auth tests pass.
 - Coverage runs successfully.
 - Content validation passes.

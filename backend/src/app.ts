@@ -22,7 +22,7 @@ export function createApp(db: Database.Database, config: AppConfig) {
 
   app.use(
     cors({
-      origin: config.frontendOrigin,
+      origin: config.clientOrigin,
       credentials: true
     })
   );

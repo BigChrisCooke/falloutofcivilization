@@ -15,7 +15,7 @@ describe("auth flow", () => {
     runMigrations(db);
     config = {
       port: 3001,
-      frontendOrigin: "http://localhost:4321",
+      clientOrigin: "http://localhost:4321",
       sqlitePath: ":memory:",
       sessionTtlDays: 14,
       cookieName: "foc_session"

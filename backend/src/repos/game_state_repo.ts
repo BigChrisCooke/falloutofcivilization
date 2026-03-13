@@ -19,7 +19,7 @@ export class GameStateRepo {
     const transaction = this.db.transaction(() => {
       this.db
         .prepare(
-          "INSERT INTO world_state (save_id, current_screen, current_region_id, current_location_id, current_map_id, current_panel, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+          "INSERT INTO world_state (save_id, current_screen, current_region_id, current_location_id, current_map_id, current_panel, player_x, player_y, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .run(
           worldState.save_id,
@@ -28,12 +28,21 @@ export class GameStateRepo {
           worldState.current_location_id,
           worldState.current_map_id,
           worldState.current_panel,
+          worldState.player_x,
+          worldState.player_y,
           worldState.updated_at
         );
 
       this.db
-        .prepare("INSERT INTO map_discovery (save_id, discovered_locations_json, updated_at) VALUES (?, ?, ?)")
-        .run(mapDiscovery.save_id, mapDiscovery.discovered_locations_json, mapDiscovery.updated_at);
+        .prepare(
+          "INSERT INTO map_discovery (save_id, discovered_locations_json, discovered_tiles_json, updated_at) VALUES (?, ?, ?, ?)"
+        )
+        .run(
+          mapDiscovery.save_id,
+          mapDiscovery.discovered_locations_json,
+          mapDiscovery.discovered_tiles_json,
+          mapDiscovery.updated_at
+        );
 
       this.db
         .prepare("INSERT INTO quest_state (save_id, active_quests_json, completed_quests_json, updated_at) VALUES (?, ?, ?, ?)")
@@ -71,7 +80,7 @@ export class GameStateRepo {
   public updateWorldState(worldState: WorldStateRow): void {
     this.db
       .prepare(
-        "UPDATE world_state SET current_screen = ?, current_region_id = ?, current_location_id = ?, current_map_id = ?, current_panel = ?, updated_at = ? WHERE save_id = ?"
+        "UPDATE world_state SET current_screen = ?, current_region_id = ?, current_location_id = ?, current_map_id = ?, current_panel = ?, player_x = ?, player_y = ?, updated_at = ? WHERE save_id = ?"
       )
       .run(
         worldState.current_screen,
@@ -79,8 +88,32 @@ export class GameStateRepo {
         worldState.current_location_id,
         worldState.current_map_id,
         worldState.current_panel,
+        worldState.player_x,
+        worldState.player_y,
         worldState.updated_at,
         worldState.save_id
       );
+  }
+
+  public updateMapDiscovery(mapDiscovery: MapDiscoveryRow): void {
+    this.db
+      .prepare(
+        "UPDATE map_discovery SET discovered_locations_json = ?, discovered_tiles_json = ?, updated_at = ? WHERE save_id = ?"
+      )
+      .run(
+        mapDiscovery.discovered_locations_json,
+        mapDiscovery.discovered_tiles_json,
+        mapDiscovery.updated_at,
+        mapDiscovery.save_id
+      );
+  }
+
+  public updateExplorationState(worldState: WorldStateRow, mapDiscovery: MapDiscoveryRow): void {
+    const transaction = this.db.transaction(() => {
+      this.updateWorldState(worldState);
+      this.updateMapDiscovery(mapDiscovery);
+    });
+
+    transaction();
   }
 }

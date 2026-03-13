@@ -61,10 +61,32 @@ export function loadGameContent(contentRoot = getDefaultContentRoot()): GameCont
   const regionIds = new Set(regions.map((region) => region.id));
   const interiorMapIds = new Set(interiorMaps.map((map) => map.id));
   const overworldMapIds = new Set(overworldMaps.map((map) => map.id));
+  const locationIds = new Set(locations.map((location) => location.id));
+  const overworldMapsById = new Map(overworldMaps.map((map) => [map.id, map]));
 
   for (const region of regions) {
     if (!overworldMapIds.has(region.mapId)) {
       throw new Error(`Region ${region.id} references missing overworld map ${region.mapId}`);
+    }
+
+    if (!locationIds.has(region.startingLocationId)) {
+      throw new Error(`Region ${region.id} references missing starting location ${region.startingLocationId}`);
+    }
+  }
+
+  for (const overworldMap of overworldMaps) {
+    if (overworldMap.layout.length !== overworldMap.height) {
+      throw new Error(
+        `Overworld map ${overworldMap.id} has height ${overworldMap.height} but ${overworldMap.layout.length} layout rows`
+      );
+    }
+
+    for (const row of overworldMap.layout) {
+      if (row.length !== overworldMap.width) {
+        throw new Error(
+          `Overworld map ${overworldMap.id} has width ${overworldMap.width} but found a row with ${row.length} tiles`
+        );
+      }
     }
   }
 
@@ -75,6 +97,46 @@ export function loadGameContent(contentRoot = getDefaultContentRoot()): GameCont
 
     if (location.interiorMapId && !interiorMapIds.has(location.interiorMapId)) {
       throw new Error(`Location ${location.id} references missing interior map ${location.interiorMapId}`);
+    }
+
+    const region = regions.find((candidate) => candidate.id === location.regionId);
+    const overworldMap = region ? overworldMapsById.get(region.mapId) : null;
+
+    if (!region || !overworldMap) {
+      continue;
+    }
+
+    if (
+      location.position.x < 0 ||
+      location.position.y < 0 ||
+      location.position.x >= overworldMap.width ||
+      location.position.y >= overworldMap.height
+    ) {
+      throw new Error(
+        `Location ${location.id} position (${location.position.x}, ${location.position.y}) is outside overworld map ${overworldMap.id}`
+      );
+    }
+  }
+
+  for (const region of regions) {
+    const startingLocation = locations.find((location) => location.id === region.startingLocationId);
+
+    if (!startingLocation) {
+      continue;
+    }
+
+    if (startingLocation.regionId !== region.id) {
+      throw new Error(
+        `Region ${region.id} starting location ${startingLocation.id} belongs to region ${startingLocation.regionId}`
+      );
+    }
+  }
+
+  for (const overworldMap of overworldMaps) {
+    for (const pointOfInterestId of overworldMap.pointsOfInterest) {
+      if (!locationIds.has(pointOfInterestId)) {
+        throw new Error(`Overworld map ${overworldMap.id} references missing point of interest ${pointOfInterestId}`);
+      }
     }
   }
 

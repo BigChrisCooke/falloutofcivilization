@@ -12,6 +12,15 @@ const enterLocationSchema = z.object({
   locationId: z.string().min(1)
 });
 
+const travelSchema = z.object({
+  x: z.number().int(),
+  y: z.number().int()
+});
+
+const interiorExitSchema = z.object({
+  exitId: z.string().min(1)
+});
+
 export function createGameRouter(gameService: GameService): Router {
   const router = Router();
 
@@ -68,6 +77,60 @@ export function createGameRouter(gameService: GameService): Router {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to enter location.";
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/travel", (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = travelSchema.parse(request.body);
+      gameService.travel(request.currentSaveId, payload.x, payload.y);
+      response.json({
+        state: gameService.getState(request.currentSaveId)
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to travel.";
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/interior/move", (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = travelSchema.parse(request.body);
+      gameService.moveInterior(request.currentSaveId, payload.x, payload.y);
+      response.json({
+        state: gameService.getState(request.currentSaveId)
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to move inside the current area.";
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/interior/exit", (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = interiorExitSchema.parse(request.body);
+      gameService.exitInterior(request.currentSaveId, payload.exitId);
+      response.json({
+        state: gameService.getState(request.currentSaveId)
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to leave the current area.";
       response.status(400).json({ error: message });
     }
   });

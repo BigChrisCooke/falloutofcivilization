@@ -14,3 +14,4 @@ export {
   type OverworldMapDefinition,
   type RegionDefinition
 } from "./schemas/content.js";
+export { getHexesInRadius, hexDistance, toTileKey, type HexPoint } from "./rules/hex.js";

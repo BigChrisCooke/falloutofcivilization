@@ -38,12 +38,15 @@ export interface WorldStateRow {
   current_location_id: string | null;
   current_map_id: string | null;
   current_panel: string | null;
+  player_x: number | null;
+  player_y: number | null;
   updated_at: number;
 }
 
 export interface MapDiscoveryRow {
   save_id: string;
   discovered_locations_json: string;
+  discovered_tiles_json: string | null;
   updated_at: number;
 }
 

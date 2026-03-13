@@ -16,7 +16,7 @@ After login, a player can create or load a save, enter a basic in-game shell, vi
 
 ### 1. Workspace and repository foundation
 
-- Set up the real workspace structure for `frontend/`, `backend/`, `game/`, and any required shared packages.
+- Set up the real workspace structure for `client/`, `backend/`, `game/`, and any required shared packages.
 - Add skeleton code and entry points so each major package builds and runs.
 - Make sure local development starts cleanly.
 
@@ -37,7 +37,7 @@ After login, a player can create or load a save, enter a basic in-game shell, vi
 
 ### 3. Frontend foundation
 
-- Replace the placeholder frontend with the real game-facing app shell.
+- Replace the placeholder client shell with the real game-facing app shell.
 - Create registration and login screens.
 - Add protected route handling.
 - Restore session state on refresh.

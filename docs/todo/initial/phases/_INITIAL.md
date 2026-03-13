@@ -24,7 +24,7 @@ Every phase should optimize for:
 
 ## Constant Rules
 
-- `frontend/` renders UI and calls backend APIs.
+- `client/` renders UI and calls backend APIs.
 - `backend/` handles auth, persistence, API orchestration, and save handling.
 - `game/` is the source of truth for rules, schemas, and authored content.
 - Authored content must be data-driven, not hardcoded into UI flow.

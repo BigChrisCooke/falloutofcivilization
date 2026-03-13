@@ -7,4 +7,6 @@ coverage/
 *.db-shm
 *.db-wal
 backend/data/
-frontend/.env
+client/.env
+backend-smoke*.log
+client-smoke*.log

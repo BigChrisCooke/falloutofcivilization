@@ -1,6 +1,6 @@
 # Stack
 
-This project is a TypeScript monorepo for a browser-based, single-player RPG with a real API backend, Astro frontend, shared game rules, authored content files, SQLite persistence, and automated tests.
+This project is a TypeScript monorepo for a browser-based, single-player RPG with a real API backend, Vite React client, shared game rules, authored content files, SQLite persistence, and automated tests.
 
 ## Phase 1 Target
 
@@ -19,10 +19,10 @@ After login, a player can create or load a save, enter a basic in-game shell, vi
 - `npm` workspaces
 - Shared base config in `tsconfig.base.json`
 
-### Frontend
+### Client
 
-- Astro for the frontend app shell, pages, and content-first routing
-- React inside Astro for interactive UI and game-specific panels
+- Vite for the client dev/build pipeline
+- React for interactive UI and game-specific panels
 - PixiJS for rendering the isometric / hex-based game map and tactical scenes
 - CSS variables plus scoped CSS for styling
 - Mobile-first layout
@@ -76,24 +76,21 @@ After login, a player can create or load a save, enter a basic in-game shell, vi
 ### Testing
 
 - Vitest for unit and backend/system tests
-- Playwright for frontend smoke tests
+- Playwright for client smoke tests
 - Content validation tests for YAML files
 - Deterministic scenario tests for combat, dialogue, quest flow, and map transitions
 
-## Why Astro
+## Why Vite
 
-Astro is the frontend shell, not the game rules engine.
+Vite is the client runtime and build tool for the playable game app.
 
 It is responsible for:
 
-- landing pages
-- login and registration pages
-- app shell
-- loading screens
-- settings, codex, quest log, and account UI
-- mounting React/Pixi game views where needed
+- the game client dev server and production build
+- mounting the React/Pixi app directly
+- keeping the playable UI separate from any future marketing site
 
-For Phase 1, the frontend must also provide:
+For Phase 1, the client must also provide:
 
 - registration and login screens
 - protected app routing
@@ -102,15 +99,15 @@ For Phase 1, the frontend must also provide:
 - a top bar with settings access
 - a bottom navigation bar that opens basic dialogs or panels
 
-React and PixiJS handle the heavy interactivity inside Astro pages.
+React and PixiJS handle the heavy interactivity directly inside the client app.
 
 ## Architecture Boundaries
 
-### `frontend/`
+### `client/`
 
 Responsible for:
 
-- Astro pages and routing
+- Vite app entrypoint and bundling
 - React UI components
 - PixiJS map rendering
 - API calls to the backend
@@ -130,7 +127,7 @@ Responsible for:
 - API orchestration
 - applying player actions
 - validating and loading game content
-- returning game state to the frontend
+- returning game state to the client
 
 ### `game/`
 
@@ -160,7 +157,7 @@ The repo should support these commands:
 Before Phase 1 is considered complete:
 
 - backend build passes
-- frontend build passes
+- client build passes
 - tests pass
 - coverage runs successfully
 - content validation passes

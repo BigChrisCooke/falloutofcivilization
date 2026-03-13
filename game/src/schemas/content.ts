@@ -31,6 +31,8 @@ export const overworldMapSchema = z.object({
   theme: z.string().min(1),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
+  fogRevealRadius: z.number().int().positive().default(2),
+  layout: z.array(z.array(z.string().min(1))).min(1),
   pointsOfInterest: z.array(z.string()).default([])
 });
 

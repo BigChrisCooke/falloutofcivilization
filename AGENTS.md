@@ -1,228 +1,171 @@
 # Fallout Of Civilization
 
-Single-player browser RPG prototype. TypeScript monorepo with an Astro frontend shell, Express API backend, shared `game/` rules and content package, SQLite persistence, and automated tests.
+Single-player browser RPG prototype. TypeScript monorepo with a Vite React client, Express API backend, shared `game/` rules and content package, SQLite persistence, and automated tests.
 
-## Phase 1 Target
+## Current Phase
 
-Phase 1 is a platform-plus-vertical-slice milestone.
+The current base is a Phase 1 vertical slice:
 
-The first playable output is:
-
-After login, a player can create or load a save, enter a basic in-game shell, view a stub overworld or region screen, open a vault or home panel, and transition into one placeholder location screen backed by persisted game state.
+- registration, login, logout, and session restore
+- save creation and save loading
+- a mobile-friendly logged-in shell
+- a stub overworld screen
+- a vault or home panel
+- one placeholder interior flow
+- SQLite persistence
+- authored content validation
 
 ## Architecture Rules
 
-- `frontend/` is responsible for rendering UI and calling backend APIs.
-- `backend/` is responsible for auth, persistence, API orchestration, and save handling.
-- `game/` is the source of truth for game rules, content schemas, and shared deterministic helpers.
-- Quests, factions, dialogue, items, locations, maps, and progression data must be data-driven.
+- `client/` renders UI and calls backend APIs.
+- `backend/` owns auth, persistence, sessions, save handling, and API orchestration.
+- `game/` is the source of truth for authored content, schemas, and deterministic helpers.
 - Do not hardcode authoritative game content or branching rules in UI components.
+- Keep runtime save state separate from authored content files.
 
-## Expected Repository Structure
+## Actual Repository Structure
 
 ```text
 ./
-├── frontend/                # Astro app shell + React/Pixi client UI
+├── client/
+│   ├── src/components/     # React UI components
+│   ├── src/lib/            # Client API calls, geometry, and scene helpers
+│   ├── src/main.tsx        # Vite React app entry point
+│   └── src/styles/         # Global styling
+├── backend/
 │   └── src/
-│       ├── app/             # Bootstrapping, routes, providers
-│       ├── components/      # Shared UI components
-│       ├── features/        # Auth, shell, world, vault, location flows
-│       ├── pages/           # Astro pages / route entry points
-│       ├── lib/             # API client, helpers
-│       └── styles/          # Tokens and global styles
-├── backend/                 # Express API server
+│       ├── controllers/    # Express route handlers
+│       ├── db/             # SQLite connection and migrations
+│       ├── middleware/     # Session/auth middleware
+│       ├── repos/          # SQLite access helpers
+│       ├── services/       # Domain logic
+│       ├── shared/         # Config and shared backend types
+│       └── __tests__/      # Vitest auth tests
+├── game/
+│   ├── content/            # YAML authored game content
 │   └── src/
-│       ├── controllers/     # Route handlers
-│       ├── services/        # Domain logic
-│       ├── repos/           # SQLite data access
-│       ├── validators/      # Zod request validation
-│       ├── middleware/      # Auth/session/error handling
-│       ├── db/              # Connection, migrations, test DB setup
-│       ├── shared/          # Shared backend helpers/types
-│       └── __tests__/       # Vitest backend tests
-├── game/                    # Shared game content, schemas, deterministic rules
-│   ├── content/
-│   │   ├── world/
-│   │   ├── locations/
-│   │   └── maps/
-│   ├── schemas/
-│   └── rules/
-├── docs/                    # Planning docs, ADRs, content notes
-├── tools/                   # Local scripts and utilities
-├── .claude/skills/          # Claude Code command/skill docs
-├── package.json             # Workspace config
-└── tsconfig.base.json       # Shared TypeScript config
+│       ├── content/        # Content loaders
+│       ├── schemas/        # Zod schemas
+│       └── __tests__/      # Content validation tests
+├── docs/todo/initial/      # Goal, stack, phases, and progress docs
+├── .claude/skills/         # Claude workflow guides
+├── package.json            # Workspace commands
+└── tsconfig.base.json      # Shared TypeScript config
 ```
 
 ## Stack
 
-### Language and tooling
+### Client
 
-- TypeScript across all workspaces
-- Node.js 22 LTS
-- `npm` workspaces
-- ES modules where supported by the toolchain
-- Shared base TypeScript config in `tsconfig.base.json`
-
-### Frontend
-
-- Astro for app shell and routing
-- React for interactive UI
-- PixiJS for overworld or tactical map rendering when needed
-- Mobile-first layout
+- Vite
+- React 19
+- PixiJS
+- mobile-first CSS
 
 ### Backend
 
-- Express API server
-- Zod for request validation
-- Session-based auth with HTTP-only cookies
-- `argon2` for password hashing
+- Express
+- SQLite via `better-sqlite3`
+- cookie-based sessions
+- `argon2` password hashing
+- Zod validation
 
-### Persistence
+### Shared game layer
 
-- SQLite for local development
-- SQL migrations committed in-repo
-- Repository layer for data access
-- Auth data and runtime save data stored separately from authored content
+- TypeScript package under `game/`
+- YAML content files under `game/content/`
+- Zod schemas for content validation
 
-## Persistence Goals
+## Source Of Truth Rules
 
-Minimum Phase 1 persistence must cover:
+If Chris wants to change:
 
-- `users`
-- authenticated sessions
-- `save_games`
-- `player_characters`
-- `world_state`
-- `map_discovery`
-- `quest_state`
-- `faction_standing`
+- UI layout or app shell behavior: start in `client/`
+- login, logout, sessions, or persistence: start in `backend/`
+- a new location, map, or authored world content: start in `game/content/`
+- content formats or validation rules: start in `game/src/schemas/`
+- content loading behavior: start in `game/src/content/`
+- database shape: start in `backend/src/db/migrations/`
 
-## Content Rules
+Do not:
 
-- Establish `game/content/` as the source of truth for authored content.
-- Use stable IDs for locations, maps, quests, factions, companions, and items.
-- Overworld locations must link to enterable interior or special-location maps by stable ID.
-- Keep authored content separate from runtime save data.
-- Content files define the map and metadata; save data defines what changed during play.
+- add new authored locations directly in React components
+- store runtime player state in `game/content/`
+- treat `client/` as the source of truth for maps, quests, or progression
 
-### Phase 1 content set
+## Current Content Structure
 
-Phase 1 should include placeholder content for:
+Authored content currently lives under:
 
-- one starting vault
-- one outdoor region
-- one tavern or building interior
-- one cave or hostile interior
-- one special landmark interior
+- `game/content/world/`
+- `game/content/locations/`
+- `game/content/maps/overworld/`
+- `game/content/maps/interiors/`
 
-### Content file expectations
+Location files reference interior maps by stable ID. That link must stay data-driven.
 
-Each location definition should include at least:
+## Commands
 
-- unique ID
-- display name
-- type
-- overworld position or region reference
-- linked interior map ID if enterable
-- faction tags
-- quest tags
-- encounter flags
-
-Each interior map definition should include at least:
-
-- unique ID
-- theme
-- tile or hex layout data
-- spawn points
-- exits
-- interactables
-- NPC placements
-- loot or container placements
-- quest hooks or trigger IDs
-
-## Authentication Rules
-
-- Registration, login, logout, and session restore on refresh are required in Phase 1.
-- Passwords must be hashed before storage.
-- Protected routes must require an authenticated session.
-- The logged-in frontend shell must be reachable only through valid session state.
-
-## Frontend Rules
-
-For Phase 1, the frontend must provide:
-
-- registration and login screens
-- a protected logged-in shell
-- a mobile-optimized layout
-- a top bar with settings access
-- a bottom navigation bar that opens basic dialogs or panels
-- a stub overworld or region screen
-- a vault or home panel
-- one placeholder location or interior screen
-
-The frontend must not own authoritative quest logic, faction rules, map definitions, or progression rules.
-
-## Testing and Validation
-
-- Use Vitest for backend unit tests.
-- Add unit tests for registration and login.
-- Coverage must run successfully.
-- Content validation must fail fast with useful errors.
-- Content files must be validated during development startup or via a test or validation command.
-
-## Standard Commands
-
-The repo should support these commands:
+Run these from the repo root:
 
 - `npm run dev`
 - `npm run build`
 - `npm run test`
 - `npm run db:migrate`
+- `npm run content:validate`
+
+Default local ports:
+
+- client: `6200`
+- backend: `6201`
 
 ## Quality Gates
 
-Before committing or opening a PR, agents must ensure relevant checks pass:
+Before commit or PR:
 
-1. `npm run build` for affected workspaces
-2. `npm run test`
-3. content validation
-4. `npm run db:migrate` still works for local setup changes
+1. Run `npm run build`
+2. Run `npm run test`
+3. Run `npm run content:validate`
+4. Run `npm run db:migrate` if database setup or migration behavior changed
 
-Do not commit if required checks fail.
+Do not commit if the relevant checks fail.
 
-## README and Environment Expectations
+## Chris-Safe Workflow
 
-- Keep `README.md` aligned with the actual setup flow.
-- Provide `.env.example`.
-- Document local SQLite path.
-- Document development ports.
-- Document first-time setup, migration, run, and test steps.
+The repo should be usable by someone who is not a programmer.
+
+That means:
+
+- commands must be obvious
+- source-of-truth files must be discoverable
+- authored content must be editable without touching core auth or persistence code
+- validation should fail fast with useful errors
+- AI guidance should prefer safe, local edits over architecture drift
 
 ## Claude Code Workflow
 
-This repo should maintain lightweight Claude Code support under `.claude/skills/`.
+This repo uses lightweight guidance files under `.claude/skills/`.
 
-Expected command-oriented docs or skills:
+Expected support:
 
-- `/test` for running the standard validation and test flow
-- `/build` for running the build and verification flow
-- `/commit` for pre-commit checks and commit guidance
+- `/test`
+- `/build`
+- `/commit`
+- `content-authoring`
 
-If these do not exist yet, create or update them as part of repository workflow work rather than assuming they are already available.
+These files should always match the real repo commands and structure.
 
-## Non-Goals For Phase 1
+## Current Non-Goals
 
-- full tactical combat
-- full procedural world expansion
-- full quest content implementation
-- final art assets
+- full combat
+- procedural world generation
+- full quest implementation
 - production deployment
-- bot framework implementation
+- a large skill framework for its own sake
 
 ## Gotchas
 
-- Do not hardcode authored content in the frontend.
-- Do not mix runtime save state into content files under `game/content/`.
-- Do not couple location transitions through UI-specific conditionals when a content link by ID should exist.
-- Keep backend logic deterministic where possible so it remains testable.
+- `SQLITE_PATH` is relative to the `backend/` workspace when backend scripts run.
+- Root `.env` should be the source of environment configuration.
+- Content files define authored world data; SQLite stores runtime save state.
+- The safe way to add a new enterable location is: add content, validate content, then wire any UI affordance if needed.

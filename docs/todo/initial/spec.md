@@ -1,6 +1,6 @@
 # Courier RPG AI Starter
 
-Starter document for another AI agent to scaffold and extend a new game project using a structure similar to this repo, with the frontend moved to `/frontend`.
+Starter document for another AI agent to scaffold and extend a new game project using a structure similar to this repo, with the playable client under `/client`.
 
 ## Project Summary
 
@@ -30,7 +30,7 @@ If this moves beyond a private prototype, replace copyrighted names, factions, l
 
 ```text
 ./
-├── frontend/                    # React frontend (Vite)
+├── client/                    # React client (Vite)
 │   └── src/
 │       ├── api/                 # HTTP client, query helpers, DTO mapping
 │       ├── app/                 # Router, providers, bootstrapping
@@ -69,7 +69,7 @@ If this moves beyond a private prototype, replace copyrighted names, factions, l
 │   └── rules/                   # Deterministic rules helpers shared by backend
 ├── bots/                        # Simulation and regression bots
 ├── packages/
-│   ├── shared-types/            # Shared contracts used by frontend/backend/game
+│   ├── shared-types/            # Shared contracts used by client/backend/game
 │   └── map-tools/               # Hex helpers, generation tools, debug utilities
 ├── docs/                        # Design docs, ADRs, content guides
 ├── package.json                 # Workspace config
@@ -97,7 +97,7 @@ Put all persistent game rules in `game/` and keep the backend responsible for:
 
 ### Frontend
 
-The frontend should render state and send intents. It should not own core rules. Keep rule evaluation on the backend or in shared deterministic helpers under `game/rules/`.
+The client should render state and send intents. It should not own core rules. Keep rule evaluation on the backend or in shared deterministic helpers under `game/rules/`.
 
 Recommended feature slices:
 
@@ -194,7 +194,7 @@ Every quest should support:
 
 ### Engineering Rules
 
-- Use TypeScript across frontend, backend, bots, and shared packages.
+- Use TypeScript across client, backend, bots, and shared packages.
 - Use strict mode. No `any` in new code.
 - Use ES modules with explicit `.js` import extensions where the toolchain requires them.
 - Keep backend logic deterministic and easy to test.
@@ -224,7 +224,7 @@ Every quest should support:
 
 ### Separation Rules
 
-- `frontend/` renders and orchestrates UX.
+- `client/` renders and orchestrates UX.
 - `backend/` executes intents and persists state.
 - `game/` owns content, balance, and deterministic rule helpers.
 - `bots/` simulates playthroughs, battle cases, and progression edge cases.
@@ -242,10 +242,10 @@ Every quest should support:
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start backend and frontend together |
+| `npm run dev` | Start backend and client together |
 | `npm run dev:backend` | Run API/server only |
-| `npm run dev:frontend` | Run React frontend only |
-| `npm run build` | Build backend, frontend, and shared packages |
+| `npm run dev:client` | Run React client only |
+| `npm run build` | Build backend, client, and shared packages |
 | `npm run test` | Run core automated tests |
 | `npm run test:backend` | Run backend/system tests |
 | `npm run test:content` | Validate all content files against schemas |
@@ -345,7 +345,7 @@ Use when defining JSON or TS content formats, schema validation, import pipeline
 
 ### 10. `ui-style`
 
-Use when building the frontend look and feel, HUD, inventory panels, tactical overlays, dialogue presentation, quest logs, and responsive interaction patterns.
+Use when building the client look and feel, HUD, inventory panels, tactical overlays, dialogue presentation, quest logs, and responsive interaction patterns.
 
 ### 11. `save-and-state`
 
@@ -416,4 +416,4 @@ Add:
 
 ## Short Prompt To Hand To Another AI
 
-> Build this as a TypeScript monorepo with `frontend/`, `backend/`, `game/`, `bots/`, and `packages/`. Keep all content and balance data-driven under `game/`. The game is an isometric, turn-based hex RPG where the Courier explores a fog-of-war world from a starting vault, enters interior maps for detailed locations, builds faction standing through dialogue and quest choices, and progresses mainly through character skills and perks. Support companion quests, faction quests, and dangerous retrieval quests from the start. Do not hardcode quests, factions, or dialogue in UI code. Make systems deterministic and testable.
+> Build this as a TypeScript monorepo with `client/`, `backend/`, `game/`, `bots/`, and `packages/`. Keep all content and balance data-driven under `game/`. The game is an isometric, turn-based hex RPG where the Courier explores a fog-of-war world from a starting vault, enters interior maps for detailed locations, builds faction standing through dialogue and quest choices, and progresses mainly through character skills and perks. Support companion quests, faction quests, and dangerous retrieval quests from the start. Do not hardcode quests, factions, or dialogue in UI code. Make systems deterministic and testable.
