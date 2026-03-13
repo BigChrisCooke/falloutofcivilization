@@ -3,8 +3,8 @@ import { Container, Graphics } from "pixi.js";
 import { OVERWORLD_ISO_METRICS } from "../iso.js";
 import { createCourierToken, createLocationMarker, drawHexSurface, TERRAIN_VISUALS } from "../scene_visuals.js";
 
-import { flattenPolygon, getHexLocalPolygon } from "./hex_geometry.js";
-import type { OverworldSceneModel } from "./types.js";
+import { flattenPolygon } from "./hex_geometry.js";
+import type { OverworldLocationNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
 
 export interface OverworldLayerContainers {
   terrain: Container;
@@ -14,8 +14,13 @@ export interface OverworldLayerContainers {
   actors: Container;
 }
 
-function clearLayer(container: Container): void {
-  container.removeChildren().forEach((child) => child.destroy());
+export interface OverworldRetainedNodes {
+  terrainByKey: Map<string, Graphics>;
+  fogByKey: Map<string, Graphics>;
+  feedbackByKey: Map<string, Graphics>;
+  markerById: Map<string, Container>;
+  mist: Graphics | null;
+  courier: Container | null;
 }
 
 export function createOverworldLayerContainers(): OverworldLayerContainers {
@@ -34,111 +39,253 @@ export function createOverworldLayerContainers(): OverworldLayerContainers {
   return { terrain, fog, feedback, props, actors };
 }
 
-export function renderTerrainLayer(container: Container, scene: OverworldSceneModel): void {
-  clearLayer(container);
+export function createOverworldRetainedNodes(): OverworldRetainedNodes {
+  return {
+    terrainByKey: new Map(),
+    fogByKey: new Map(),
+    feedbackByKey: new Map(),
+    markerById: new Map(),
+    mist: null,
+    courier: null
+  };
+}
+
+function syncTerrainNode(graphic: Graphics, tile: OverworldTileNode): void {
+  const tileVisual = TERRAIN_VISUALS[tile.terrain] ?? TERRAIN_VISUALS.sand;
+
+  drawHexSurface(graphic, OVERWORLD_ISO_METRICS, tileVisual, tile.discovered);
+  graphic.position.set(tile.projected.x, tile.projected.y);
+  graphic.zIndex = tile.zIndex;
+}
+
+function syncTerrainLayer(
+  layers: OverworldLayerContainers,
+  retainedNodes: OverworldRetainedNodes,
+  previousScene: OverworldSceneModel | null,
+  scene: OverworldSceneModel
+): void {
+  const previousTiles = new Map(previousScene?.tiles.map((tile) => [tile.key, tile]) ?? []);
+  const nextKeys = new Set(scene.tiles.map((tile) => tile.key));
+
+  for (const [key, graphic] of retainedNodes.terrainByKey) {
+    if (nextKeys.has(key)) {
+      continue;
+    }
+
+    layers.terrain.removeChild(graphic);
+    graphic.destroy();
+    retainedNodes.terrainByKey.delete(key);
+  }
 
   for (const tile of scene.tiles) {
-    const graphic = new Graphics();
-    const tileVisual = TERRAIN_VISUALS[tile.terrain] ?? TERRAIN_VISUALS.sand;
+    let graphic = retainedNodes.terrainByKey.get(tile.key);
 
-    drawHexSurface(graphic, OVERWORLD_ISO_METRICS, tileVisual, tile.discovered);
+    if (!graphic) {
+      graphic = new Graphics();
+      retainedNodes.terrainByKey.set(tile.key, graphic);
+      layers.terrain.addChild(graphic);
+      syncTerrainNode(graphic, tile);
+      continue;
+    }
+
+    const previousTile = previousTiles.get(tile.key);
+
+    if (
+      !previousTile ||
+      previousTile.terrain !== tile.terrain ||
+      previousTile.discovered !== tile.discovered ||
+      previousTile.projected.x !== tile.projected.x ||
+      previousTile.projected.y !== tile.projected.y
+    ) {
+      syncTerrainNode(graphic, tile);
+    }
+
     graphic.position.set(tile.projected.x, tile.projected.y);
     graphic.zIndex = tile.zIndex;
-    container.addChild(graphic);
   }
 }
 
-export function renderFogLayer(container: Container, scene: OverworldSceneModel): void {
-  clearLayer(container);
+function syncFogLayer(
+  layers: OverworldLayerContainers,
+  retainedNodes: OverworldRetainedNodes,
+  scene: OverworldSceneModel
+): void {
+  const nextFogKeys = new Set(scene.tiles.filter((tile) => !tile.discovered).map((tile) => tile.key));
+
+  for (const [key, graphic] of retainedNodes.fogByKey) {
+    if (nextFogKeys.has(key)) {
+      continue;
+    }
+
+    layers.fog.removeChild(graphic);
+    graphic.destroy();
+    retainedNodes.fogByKey.delete(key);
+  }
 
   for (const tile of scene.tiles) {
     if (tile.discovered) {
       continue;
     }
 
-    const shroud = new Graphics()
+    let shroud = retainedNodes.fogByKey.get(tile.key);
+
+    if (!shroud) {
+      shroud = new Graphics();
+      retainedNodes.fogByKey.set(tile.key, shroud);
+      layers.fog.addChild(shroud);
+    }
+
+    shroud
+      .clear()
       .poly(flattenPolygon(tile.polygon))
       .fill({ color: 0x090706, alpha: 0.18 })
       .stroke({ color: 0x211916, width: 1, alpha: 0.2 });
-
     shroud.zIndex = tile.zIndex + 1;
-    container.addChild(shroud);
   }
 
-  const mist = new Graphics()
+  if (!retainedNodes.mist) {
+    retainedNodes.mist = new Graphics();
+    layers.fog.addChild(retainedNodes.mist);
+  }
+
+  retainedNodes.mist
+    .clear()
     .ellipse(scene.boardSize.width * 0.5, scene.boardSize.height * 0.5, scene.boardSize.width * 0.64, scene.boardSize.height * 0.38)
     .fill({ color: 0x0a0706, alpha: 0.16 });
-
-  mist.zIndex = -1;
-  container.addChild(mist);
+  retainedNodes.mist.zIndex = -1;
 }
 
-export function renderFeedbackLayer(container: Container, scene: OverworldSceneModel): void {
-  clearLayer(container);
-
-  for (const tile of scene.tiles) {
-    const fillAlpha = tile.isCurrent ? 0.18 : scene.hoverTileKey === tile.key ? 0.2 : tile.isReachable ? 0.11 : 0;
-    const strokeWidth = tile.isCurrent || scene.hoverTileKey === tile.key || tile.isReachable ? 2 : 0;
-    const strokeAlpha = tile.isCurrent ? 0.58 : scene.hoverTileKey === tile.key ? 0.42 : 0.28;
-
-    if (fillAlpha === 0 && strokeWidth === 0) {
-      continue;
-    }
-
-    const overlay = new Graphics()
-      .poly(flattenPolygon(tile.polygon))
-      .fill({
-        color: tile.isCurrent ? 0xf6d18f : 0xf0bf5d,
-        alpha: fillAlpha
-      })
-      .stroke({
-        color: tile.isCurrent ? 0xfff0cf : 0xf0bf5d,
-        width: strokeWidth,
-        alpha: strokeAlpha
-      });
-
-    overlay.zIndex = tile.zIndex + 2;
-    container.addChild(overlay);
-  }
-}
-
-export function renderPropLayer(container: Container, scene: OverworldSceneModel): void {
-  clearLayer(container);
-
-  for (const location of scene.locations) {
-    const marker = createLocationMarker(location.type);
-
-    marker.position.set(location.markerPosition.x, location.markerPosition.y);
-    marker.zIndex = location.zIndex;
-    container.addChild(marker);
-  }
-}
-
-export function renderActorLayer(container: Container, scene: OverworldSceneModel): Container {
-  clearLayer(container);
-
-  const courier = createCourierToken();
-
-  courier.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
-  courier.zIndex = scene.courier.zIndex;
-  container.addChild(courier);
-
-  return courier;
-}
-
-export function renderOverworldStaticLayers(
-  layers: OverworldLayerContainers,
-  scene: OverworldSceneModel
-): { courier: Container } {
-  renderTerrainLayer(layers.terrain, scene);
-  renderFogLayer(layers.fog, scene);
-  renderPropLayer(layers.props, scene);
+function getFeedbackState(tile: OverworldTileNode, scene: OverworldSceneModel) {
+  const fillAlpha = tile.isCurrent ? 0.18 : scene.hoverTileKey === tile.key ? 0.2 : tile.isReachable ? 0.11 : 0;
+  const strokeWidth = tile.isCurrent || scene.hoverTileKey === tile.key || tile.isReachable ? 2 : 0;
+  const strokeAlpha = tile.isCurrent ? 0.58 : scene.hoverTileKey === tile.key ? 0.42 : 0.28;
 
   return {
-    courier: renderActorLayer(layers.actors, scene)
+    fillAlpha,
+    strokeWidth,
+    strokeAlpha
   };
 }
 
-export function getHexOverlayPoints(): number[] {
-  return flattenPolygon(getHexLocalPolygon(OVERWORLD_ISO_METRICS));
+function syncFeedbackLayer(
+  layers: OverworldLayerContainers,
+  retainedNodes: OverworldRetainedNodes,
+  scene: OverworldSceneModel
+): void {
+  const activeKeys = new Set<string>();
+
+  for (const tile of scene.tiles) {
+    const feedback = getFeedbackState(tile, scene);
+
+    if (feedback.fillAlpha === 0 && feedback.strokeWidth === 0) {
+      continue;
+    }
+
+    activeKeys.add(tile.key);
+    let overlay = retainedNodes.feedbackByKey.get(tile.key);
+
+    if (!overlay) {
+      overlay = new Graphics();
+      retainedNodes.feedbackByKey.set(tile.key, overlay);
+      layers.feedback.addChild(overlay);
+    }
+
+    overlay
+      .clear()
+      .poly(flattenPolygon(tile.polygon))
+      .fill({
+        color: tile.isCurrent ? 0xf6d18f : 0xf0bf5d,
+        alpha: feedback.fillAlpha
+      })
+      .stroke({
+        color: tile.isCurrent ? 0xfff0cf : 0xf0bf5d,
+        width: feedback.strokeWidth,
+        alpha: feedback.strokeAlpha
+      });
+    overlay.zIndex = tile.zIndex + 2;
+  }
+
+  for (const [key, overlay] of retainedNodes.feedbackByKey) {
+    if (activeKeys.has(key)) {
+      continue;
+    }
+
+    layers.feedback.removeChild(overlay);
+    overlay.destroy();
+    retainedNodes.feedbackByKey.delete(key);
+  }
+}
+
+function syncMarkerNode(marker: Container, location: OverworldLocationNode): void {
+  marker.position.set(location.markerPosition.x, location.markerPosition.y);
+  marker.zIndex = location.zIndex;
+}
+
+function syncPropLayer(
+  layers: OverworldLayerContainers,
+  retainedNodes: OverworldRetainedNodes,
+  previousScene: OverworldSceneModel | null,
+  scene: OverworldSceneModel
+): void {
+  const previousLocations = new Map(previousScene?.locations.map((location) => [location.id, location]) ?? []);
+  const nextIds = new Set(scene.locations.map((location) => location.id));
+
+  for (const [id, marker] of retainedNodes.markerById) {
+    if (nextIds.has(id)) {
+      continue;
+    }
+
+    layers.props.removeChild(marker);
+    marker.destroy({ children: true });
+    retainedNodes.markerById.delete(id);
+  }
+
+  for (const location of scene.locations) {
+    const previousLocation = previousLocations.get(location.id);
+    let marker = retainedNodes.markerById.get(location.id);
+
+    if (!marker || previousLocation?.type !== location.type) {
+      if (marker) {
+        layers.props.removeChild(marker);
+        marker.destroy({ children: true });
+      }
+
+      marker = createLocationMarker(location.type);
+      retainedNodes.markerById.set(location.id, marker);
+      layers.props.addChild(marker);
+    }
+
+    syncMarkerNode(marker, location);
+  }
+}
+
+function syncActorLayer(
+  layers: OverworldLayerContainers,
+  retainedNodes: OverworldRetainedNodes,
+  scene: OverworldSceneModel
+): void {
+  if (!retainedNodes.courier) {
+    retainedNodes.courier = createCourierToken();
+    layers.actors.addChild(retainedNodes.courier);
+  }
+
+  retainedNodes.courier.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
+  retainedNodes.courier.zIndex = scene.courier.zIndex;
+}
+
+export function syncOverworldScene(
+  layers: OverworldLayerContainers,
+  retainedNodes: OverworldRetainedNodes | null,
+  previousScene: OverworldSceneModel | null,
+  scene: OverworldSceneModel
+): OverworldRetainedNodes {
+  const nextRetainedNodes = retainedNodes ?? createOverworldRetainedNodes();
+
+  syncTerrainLayer(layers, nextRetainedNodes, previousScene, scene);
+  syncFogLayer(layers, nextRetainedNodes, scene);
+  syncPropLayer(layers, nextRetainedNodes, previousScene, scene);
+  syncFeedbackLayer(layers, nextRetainedNodes, scene);
+  syncActorLayer(layers, nextRetainedNodes, scene);
+
+  return nextRetainedNodes;
 }

@@ -223,15 +223,15 @@ h2 {
 .scene-surface {
   position: relative;
   width: 100%;
-  min-height: 23rem;
+  height: clamp(23rem, 58vh, 30rem);
 }
 
 .overworld-surface {
-  min-height: 27rem;
+  height: clamp(27rem, 64vh, 35rem);
 }
 
 .interior-surface {
-  min-height: 22rem;
+  height: clamp(22rem, 54vh, 29rem);
 }
 
 .scene-surface canvas {
@@ -327,14 +327,14 @@ h2 {
   }
 
   .scene-surface {
-    min-height: 28rem;
+    height: clamp(28rem, 60vh, 38rem);
   }
 
   .overworld-surface {
-    min-height: 34rem;
+    height: clamp(34rem, 68vh, 44rem);
   }
 
   .interior-surface {
-    min-height: 27rem;
+    height: clamp(27rem, 58vh, 35rem);
   }
 }
