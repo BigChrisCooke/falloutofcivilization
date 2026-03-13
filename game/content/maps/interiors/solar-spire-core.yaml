@@ -1,0 +1,33 @@
+id: solar_spire_core
+name: Solar Spire Core
+theme: prewar-reactor
+layout:
+  - [metal, metal, metal, metal, metal]
+  - [metal, console, floor, relay, metal]
+  - [metal, floor, floor, floor, metal]
+  - [metal, metal, exit, metal, metal]
+spawnPoints:
+  - id: spire_entry
+    x: 2
+    y: 3
+exits:
+  - id: to_frontier_valley
+    target: solar_spire
+    x: 2
+    y: 3
+interactables:
+  - id: console
+    type: console
+    label: Power Console
+  - id: relay
+    type: machinery
+    label: Relay Core
+npcs:
+  - id: caretaker_drone
+    name: Caretaker Drone
+    disposition: wary
+loot:
+  - id: fusion_cell
+    label: Stabilized Fusion Cell
+questHooks:
+  - wake_the_spire

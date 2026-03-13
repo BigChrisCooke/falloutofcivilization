@@ -1,0 +1,33 @@
+id: dusty_tavern_interior
+name: Dusty Spur Tavern Interior
+theme: tavern
+layout:
+  - [wall, wall, wall, wall, wall, wall]
+  - [wall, bar, floor, floor, table, wall]
+  - [wall, floor, floor, stage, floor, wall]
+  - [wall, wall, exit, wall, wall, wall]
+spawnPoints:
+  - id: front_door
+    x: 2
+    y: 3
+exits:
+  - id: to_frontier_valley
+    target: dusty_tavern
+    x: 2
+    y: 3
+interactables:
+  - id: bar
+    type: vendor
+    label: Bar Counter
+  - id: stage
+    type: ambience
+    label: Makeshift Stage
+npcs:
+  - id: mina
+    name: Mina
+    disposition: friendly
+loot:
+  - id: rumor_note
+    label: Crumpled Rumor Note
+questHooks:
+  - rumor_board

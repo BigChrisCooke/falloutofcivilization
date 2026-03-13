@@ -1,0 +1,255 @@
+:root {
+  color-scheme: dark;
+  --bg: #140f0d;
+  --bg-soft: #221916;
+  --panel: rgba(44, 30, 23, 0.92);
+  --panel-strong: rgba(61, 40, 28, 0.98);
+  --line: rgba(242, 180, 112, 0.22);
+  --text: #f6e7d5;
+  --muted: #c7b19a;
+  --accent: #ef9b42;
+  --accent-strong: #f7bf67;
+  --danger: #ff8a80;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(239, 155, 66, 0.18), transparent 30%),
+    linear-gradient(180deg, #0e0908 0%, #1f1511 55%, #140f0d 100%);
+  color: var(--text);
+}
+
+body {
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.shell {
+  max-width: 32rem;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 1rem 1rem 6rem;
+}
+
+.loading-state,
+.auth-shell {
+  display: grid;
+  place-items: center;
+}
+
+.auth-card,
+.panel,
+.dialog-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.auth-card {
+  width: 100%;
+  padding: 1.5rem;
+}
+
+.auth-form,
+.save-create,
+.save-list,
+.location-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+label,
+.detail-grid {
+  display: grid;
+  gap: 0.35rem;
+}
+
+input {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: rgba(20, 15, 13, 0.8);
+  color: var(--text);
+}
+
+.primary-button,
+.ghost-button,
+.icon-button,
+.nav-button,
+.list-button,
+.location-card {
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.primary-button,
+.ghost-button,
+.icon-button,
+.nav-button,
+.list-button {
+  padding: 0.85rem 1rem;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #23150d;
+  font-weight: 700;
+}
+
+.ghost-button {
+  background: transparent;
+}
+
+.topbar,
+.hero-meta,
+.bottom-bar {
+  display: flex;
+  align-items: center;
+}
+
+.topbar,
+.hero-meta {
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.25rem 0 1rem;
+  background: linear-gradient(180deg, rgba(20, 15, 13, 0.96), rgba(20, 15, 13, 0));
+}
+
+.panel {
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.hero-panel {
+  background: linear-gradient(135deg, rgba(81, 49, 32, 0.96), rgba(36, 24, 19, 0.96));
+}
+
+.eyebrow {
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--accent-strong);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1,
+h2 {
+  margin-bottom: 0.35rem;
+}
+
+.subtle {
+  color: var(--muted);
+}
+
+.banner {
+  margin-bottom: 1rem;
+}
+
+.error-text {
+  color: var(--danger);
+}
+
+.location-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  text-align: left;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.tile {
+  padding: 0.55rem 0.25rem;
+  border-radius: 0.7rem;
+  background: rgba(239, 155, 66, 0.1);
+  border: 1px solid var(--line);
+  text-align: center;
+  font-size: 0.7rem;
+}
+
+.detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.list-button {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bottom-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  width: min(32rem, 100%);
+  padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+  gap: 0.75rem;
+  transform: translateX(-50%);
+  background: rgba(20, 15, 13, 0.94);
+  border-top: 1px solid var(--line);
+}
+
+.nav-button {
+  flex: 1;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.dialog-card {
+  width: min(28rem, 100%);
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 760px) {
+  .shell {
+    max-width: 48rem;
+  }
+
+  .bottom-bar {
+    width: min(48rem, 100%);
+  }
+}

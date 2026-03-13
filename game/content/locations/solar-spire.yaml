@@ -1,0 +1,15 @@
+id: solar_spire
+name: Solar Spire
+type: landmark
+regionId: frontier_valley
+position:
+  x: 9
+  y: 1
+interiorMapId: solar_spire_core
+factionTags:
+  - old-world
+questTags:
+  - mystery
+encounterFlags:
+  - unique
+description: A leaning pre-war power tower humming with unstable charge.

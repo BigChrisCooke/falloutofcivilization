@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+coverage/
+.env
+*.db
+*.db-shm
+*.db-wal
+backend/data/
+frontend/.env

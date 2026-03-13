@@ -1,0 +1,6 @@
+id: frontier_valley
+name: Frontier Valley
+biome: dry-wasteland
+mapId: frontier_valley_overworld
+summary: The first scrubland region outside the vault, with roads, wreckage, and a few reachable landmarks.
+startingLocationId: vault_47

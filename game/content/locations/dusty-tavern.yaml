@@ -1,0 +1,15 @@
+id: dusty_tavern
+name: Dusty Spur Tavern
+type: tavern
+regionId: frontier_valley
+position:
+  x: 5
+  y: 3
+interiorMapId: dusty_tavern_interior
+factionTags:
+  - traders
+questTags:
+  - rumors
+encounterFlags:
+  - social-hub
+description: A low-roof roadside tavern where travelers swap gossip and bad deals.

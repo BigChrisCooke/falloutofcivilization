@@ -1,0 +1,86 @@
+import type Database from "better-sqlite3";
+
+import type {
+  FactionStandingRow,
+  MapDiscoveryRow,
+  QuestStateRow,
+  WorldStateRow
+} from "../shared/types.js";
+
+export class GameStateRepo {
+  public constructor(private readonly db: Database.Database) {}
+
+  public createInitialState(
+    worldState: WorldStateRow,
+    mapDiscovery: MapDiscoveryRow,
+    questState: QuestStateRow,
+    factionStanding: FactionStandingRow
+  ): void {
+    const transaction = this.db.transaction(() => {
+      this.db
+        .prepare(
+          "INSERT INTO world_state (save_id, current_screen, current_region_id, current_location_id, current_map_id, current_panel, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        )
+        .run(
+          worldState.save_id,
+          worldState.current_screen,
+          worldState.current_region_id,
+          worldState.current_location_id,
+          worldState.current_map_id,
+          worldState.current_panel,
+          worldState.updated_at
+        );
+
+      this.db
+        .prepare("INSERT INTO map_discovery (save_id, discovered_locations_json, updated_at) VALUES (?, ?, ?)")
+        .run(mapDiscovery.save_id, mapDiscovery.discovered_locations_json, mapDiscovery.updated_at);
+
+      this.db
+        .prepare("INSERT INTO quest_state (save_id, active_quests_json, completed_quests_json, updated_at) VALUES (?, ?, ?, ?)")
+        .run(
+          questState.save_id,
+          questState.active_quests_json,
+          questState.completed_quests_json,
+          questState.updated_at
+        );
+
+      this.db
+        .prepare("INSERT INTO faction_standing (save_id, standings_json, updated_at) VALUES (?, ?, ?)")
+        .run(factionStanding.save_id, factionStanding.standings_json, factionStanding.updated_at);
+    });
+
+    transaction();
+  }
+
+  public getWorldState(saveId: string): WorldStateRow | undefined {
+    return this.db.prepare("SELECT * FROM world_state WHERE save_id = ?").get(saveId) as WorldStateRow | undefined;
+  }
+
+  public getMapDiscovery(saveId: string): MapDiscoveryRow | undefined {
+    return this.db.prepare("SELECT * FROM map_discovery WHERE save_id = ?").get(saveId) as MapDiscoveryRow | undefined;
+  }
+
+  public getQuestState(saveId: string): QuestStateRow | undefined {
+    return this.db.prepare("SELECT * FROM quest_state WHERE save_id = ?").get(saveId) as QuestStateRow | undefined;
+  }
+
+  public getFactionStanding(saveId: string): FactionStandingRow | undefined {
+    return this.db.prepare("SELECT * FROM faction_standing WHERE save_id = ?").get(saveId) as FactionStandingRow | undefined;
+  }
+
+  public updateWorldState(worldState: WorldStateRow): void {
+    this.db
+      .prepare(
+        "UPDATE world_state SET current_screen = ?, current_region_id = ?, current_location_id = ?, current_map_id = ?, current_panel = ?, updated_at = ? WHERE save_id = ?"
+      )
+      .run(
+        worldState.current_screen,
+        worldState.current_region_id,
+        worldState.current_location_id,
+        worldState.current_map_id,
+        worldState.current_panel,
+        worldState.updated_at,
+        worldState.save_id
+      );
+  }
+}

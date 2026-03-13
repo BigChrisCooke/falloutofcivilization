@@ -1,0 +1,15 @@
+id: bitter_cave
+name: Bitter Hollow Cave
+type: cave
+regionId: frontier_valley
+position:
+  x: 7
+  y: 6
+interiorMapId: bitter_cave_interior
+factionTags:
+  - raiders
+questTags:
+  - danger
+encounterFlags:
+  - hostile
+description: A cave network with signs of scavengers, traps, and something worth looting.

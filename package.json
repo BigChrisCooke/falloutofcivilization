@@ -1,0 +1,25 @@
+{
+  "name": "falloutofcivilization",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "game"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -n game,backend,frontend -c yellow,cyan,magenta \"npm run dev -w game\" \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w game && npm run build -w backend && npm run build -w frontend",
+    "test": "npm run test -w game && npm run test -w backend",
+    "db:migrate": "npm run db:migrate -w backend",
+    "content:validate": "npm run validate -w game"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.8.2"
+  }
+}

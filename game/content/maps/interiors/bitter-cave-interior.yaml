@@ -1,0 +1,30 @@
+id: bitter_cave_interior
+name: Bitter Hollow Cave Interior
+theme: cave
+layout:
+  - [rock, rock, rock, rock, rock]
+  - [rock, floor, trap, floor, rock]
+  - [rock, floor, cache, floor, rock]
+  - [rock, rock, exit, rock, rock]
+spawnPoints:
+  - id: cave_entry
+    x: 2
+    y: 3
+exits:
+  - id: to_frontier_valley
+    target: bitter_cave
+    x: 2
+    y: 3
+interactables:
+  - id: cache
+    type: container
+    label: Hidden Cache
+npcs:
+  - id: cave_raider
+    name: Cave Raider
+    disposition: hostile
+loot:
+  - id: scrap_bundle
+    label: Scrap Bundle
+questHooks:
+  - danger_in_the_hollow

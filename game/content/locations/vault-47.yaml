@@ -1,0 +1,15 @@
+id: vault_47
+name: Vault 47
+type: vault
+regionId: frontier_valley
+position:
+  x: 2
+  y: 2
+interiorMapId: vault_47_home
+factionTags:
+  - vault-dwellers
+questTags:
+  - intro
+encounterFlags:
+  - safe-zone
+description: A battered but functioning shelter that serves as the player's first home base.

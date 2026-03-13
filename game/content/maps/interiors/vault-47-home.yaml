@@ -1,0 +1,33 @@
+id: vault_47_home
+name: Vault 47 Home
+theme: vault
+layout:
+  - [wall, wall, wall, wall, wall]
+  - [wall, floor, floor, stash, wall]
+  - [wall, medbay, floor, terminal, wall]
+  - [wall, wall, exit, wall, wall]
+spawnPoints:
+  - id: player_spawn
+    x: 2
+    y: 2
+exits:
+  - id: to_frontier_valley
+    target: frontier_valley
+    x: 2
+    y: 3
+interactables:
+  - id: stash
+    type: stash
+    label: Home Stash
+  - id: terminal
+    type: terminal
+    label: Vault Terminal
+npcs:
+  - id: overseer_hale
+    name: Overseer Hale
+    disposition: neutral
+loot:
+  - id: stimpak_cache
+    label: Emergency Kit
+questHooks:
+  - intro_return_home

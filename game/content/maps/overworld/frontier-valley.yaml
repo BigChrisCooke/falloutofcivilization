@@ -1,0 +1,10 @@
+id: frontier_valley_overworld
+name: Frontier Valley Overworld
+theme: desert-dawn
+width: 12
+height: 8
+pointsOfInterest:
+  - vault_47
+  - dusty_tavern
+  - bitter_cave
+  - solar_spire
