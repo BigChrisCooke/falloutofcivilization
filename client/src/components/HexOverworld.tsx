@@ -13,7 +13,13 @@ import {
   updatePointerGesture,
   type MapPointerGesture
 } from "../lib/map/overworld_input.js";
-import { createOverworldLayerContainers, renderFeedbackLayer, renderOverworldStaticLayers } from "../lib/map/overworld_layers.js";
+import {
+  createOverworldLayerContainers,
+  renderFeedbackLayer,
+  renderFogLayer,
+  renderOverworldStaticLayers,
+  renderPropLayer
+} from "../lib/map/overworld_layers.js";
 import { getCenteredWorldPosition, toWorldPoint } from "../lib/map/hex_geometry.js";
 
 interface HexOverworldProps {
@@ -24,20 +30,26 @@ interface HexOverworldProps {
 
 export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldProps) {
   const sceneHostRef = useRef<HTMLDivElement | null>(null);
+  const appRef = useRef<Application | null>(null);
+  const worldRef = useRef<Container | null>(null);
+  const layersRef = useRef<ReturnType<typeof createOverworldLayerContainers> | null>(null);
+  const sceneModelRef = useRef<ReturnType<typeof buildOverworldSceneModel> | null>(null);
+  const courierRef = useRef<Container | null>(null);
+  const lastMapIdRef = useRef<string | null>(null);
+  const lastFogSignatureRef = useRef<string>("");
+  const lastLocationSignatureRef = useRef<string>("");
+  const pointerGestureRef = useRef<MapPointerGesture>(createPointerGesture());
+  const detachCanvasEventsRef = useRef<(() => void) | null>(null);
   const onTravelEvent = useEffectEvent(onTravel);
   const onEnterLocationEvent = useEffectEvent(onEnterLocation);
 
   useEffect(() => {
     const host = sceneHostRef.current;
-    const scene = buildOverworldSceneModel(state);
-
-    if (!host || !scene) {
+    if (!host) {
       return undefined;
     }
 
     let cancelled = false;
-    let app: Application | null = null;
-    let detachCanvasEvents: (() => void) | null = null;
 
     async function mountScene() {
       const nextApp = new Application();
@@ -56,43 +68,45 @@ export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldP
         return;
       }
 
-      app = nextApp;
+      appRef.current = nextApp;
       host.replaceChildren(nextApp.canvas);
       nextApp.stage.sortableChildren = true;
       nextApp.canvas.style.touchAction = "none";
 
       const stageBackdrop = new Graphics()
-        .rect(-scene.boardSize.width, -scene.boardSize.height, scene.boardSize.width * 3, scene.boardSize.height * 3)
+        .rect(-2400, -2400, 7200, 7200)
         .fill({ color: 0xffffff, alpha: 0.001 });
       const world = new Container();
       const layers = createOverworldLayerContainers();
-      let pointerGesture: MapPointerGesture = createPointerGesture();
-      let sceneModel = scene;
-      let courier = renderOverworldStaticLayers(layers, sceneModel).courier;
 
       world.sortableChildren = true;
       stageBackdrop.eventMode = "none";
       world.addChild(layers.terrain, layers.fog, layers.feedback, layers.props, layers.actors);
       nextApp.stage.eventMode = "static";
-      nextApp.stage.hitArea = new Rectangle(
-        -scene.boardSize.width,
-        -scene.boardSize.height,
-        scene.boardSize.width * 3,
-        scene.boardSize.height * 3
-      );
+      nextApp.stage.hitArea = new Rectangle(-2400, -2400, 7200, 7200);
       nextApp.stage.addChild(stageBackdrop, world);
+      worldRef.current = world;
+      layersRef.current = layers;
 
       const renderFeedback = () => {
-        renderFeedbackLayer(layers.feedback, sceneModel);
-      };
+        const nextScene = sceneModelRef.current;
 
-      const setHoverTile = (hoverTileKey: string | null) => {
-        if (sceneModel.hoverTileKey === hoverTileKey) {
+        if (!nextScene) {
           return;
         }
 
-        sceneModel = {
-          ...sceneModel,
+        renderFeedbackLayer(layers.feedback, nextScene);
+      };
+
+      const setHoverTile = (hoverTileKey: string | null) => {
+        const currentScene = sceneModelRef.current;
+
+        if (!currentScene || currentScene.hoverTileKey === hoverTileKey) {
+          return;
+        }
+
+        sceneModelRef.current = {
+          ...currentScene,
           hoverTileKey
         };
         renderFeedback();
@@ -104,7 +118,7 @@ export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldP
             width: nextApp.screen.width,
             height: nextApp.screen.height
           },
-          sceneModel.courier.anchor
+          sceneModelRef.current?.courier.anchor ?? { x: 0, y: 0 }
         );
 
         world.position.set(centered.x, centered.y);
@@ -122,30 +136,30 @@ export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldP
       };
 
       nextApp.stage.on("pointerdown", (event) => {
-        pointerGesture = startPointerGesture(
+        pointerGestureRef.current = startPointerGesture(
           { x: event.global.x, y: event.global.y },
           { x: world.x, y: world.y }
         );
       });
 
       nextApp.stage.on("pointermove", (event) => {
-        if (!pointerGesture.active) {
+        if (!pointerGestureRef.current.active) {
           refreshHover(event.global.x, event.global.y);
           return;
         }
 
-        pointerGesture = updatePointerGesture(pointerGesture, {
+        pointerGestureRef.current = updatePointerGesture(pointerGestureRef.current, {
           x: event.global.x,
           y: event.global.y
         });
 
-        if (!pointerGesture.moved) {
+        if (!pointerGestureRef.current.moved) {
           refreshHover(event.global.x, event.global.y);
           return;
         }
 
         clearHover();
-        const draggedWorldPosition = getDraggedWorldPosition(pointerGesture, {
+        const draggedWorldPosition = getDraggedWorldPosition(pointerGestureRef.current, {
           x: event.global.x,
           y: event.global.y
         });
@@ -154,8 +168,14 @@ export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldP
       });
 
       const completeClick = (screenX: number, screenY: number) => {
+        const nextScene = sceneModelRef.current;
+
+        if (!nextScene) {
+          return;
+        }
+
         const worldPoint = toWorldPoint({ x: screenX, y: screenY }, { x: world.x, y: world.y });
-        const target = resolveInteractionTarget(sceneModel, worldPoint);
+        const target = resolveInteractionTarget(nextScene, worldPoint);
 
         if (target.kind === "tile") {
           onTravelEvent(target.point.x, target.point.y);
@@ -169,10 +189,10 @@ export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldP
 
       const stopPointer = (screenX?: number, screenY?: number) => {
         const gesture = screenX !== undefined && screenY !== undefined
-          ? updatePointerGesture(pointerGesture, { x: screenX, y: screenY })
-          : pointerGesture;
+          ? updatePointerGesture(pointerGestureRef.current, { x: screenX, y: screenY })
+          : pointerGestureRef.current;
 
-        pointerGesture = clearPointerGesture();
+        pointerGestureRef.current = clearPointerGesture();
 
         if (!gesture.active || gesture.moved || screenX === undefined || screenY === undefined) {
           return;
@@ -195,17 +215,46 @@ export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldP
       };
 
       nextApp.canvas.addEventListener("pointerleave", handlePointerLeave);
-      detachCanvasEvents = () => {
+      detachCanvasEventsRef.current = () => {
         nextApp.canvas.removeEventListener("pointerleave", handlePointerLeave);
       };
 
-      renderFeedback();
-      recenterWorld();
+      const initialScene = buildOverworldSceneModel(state);
+
+      if (initialScene) {
+        sceneModelRef.current = initialScene;
+        lastMapIdRef.current = initialScene.mapId;
+        lastFogSignatureRef.current = initialScene.tiles.filter((tile) => !tile.discovered).map((tile) => tile.key).join("|");
+        lastLocationSignatureRef.current = initialScene.locations
+          .map((location) => `${location.id}:${location.markerPosition.x},${location.markerPosition.y}`)
+          .join("|");
+        const courier = renderOverworldStaticLayers(layers, initialScene).courier;
+
+        courierRef.current = courier;
+        renderFeedbackLayer(layers.feedback, initialScene);
+
+        const centered = getCenteredWorldPosition(
+          {
+            width: nextApp.screen.width,
+            height: nextApp.screen.height
+          },
+          initialScene.courier.anchor
+        );
+
+        world.position.set(centered.x, centered.y);
+      }
 
       let tick = 0;
       nextApp.ticker.add(() => {
         tick += 0.06;
-        courier.y = sceneModel.courier.anchor.y + Math.sin(tick) * 4;
+        const courier = courierRef.current;
+        const nextScene = sceneModelRef.current;
+
+        if (!courier || !nextScene) {
+          return;
+        }
+
+        courier.y = nextScene.courier.anchor.y + Math.sin(tick) * 4;
       });
     }
 
@@ -214,14 +263,78 @@ export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldP
     return () => {
       cancelled = true;
 
-      if (app) {
-        detachCanvasEvents?.();
-        app.destroy(true, { children: true });
+      if (appRef.current) {
+        detachCanvasEventsRef.current?.();
+        appRef.current.destroy(true, { children: true });
       }
 
+      appRef.current = null;
+      worldRef.current = null;
+      layersRef.current = null;
+      sceneModelRef.current = null;
+      courierRef.current = null;
+      lastMapIdRef.current = null;
+      lastFogSignatureRef.current = "";
+      lastLocationSignatureRef.current = "";
+      detachCanvasEventsRef.current = null;
       host.replaceChildren();
     };
-  }, [state, onEnterLocationEvent, onTravelEvent]);
+  }, [onEnterLocationEvent, onTravelEvent]);
+
+  useEffect(() => {
+    const scene = buildOverworldSceneModel(state);
+    const world = worldRef.current;
+    const layers = layersRef.current;
+    const app = appRef.current;
+
+    if (!scene || !world || !layers || !app) {
+      return;
+    }
+
+    sceneModelRef.current = scene;
+    const shouldRecenter = lastMapIdRef.current !== scene.mapId;
+    const fogSignature = scene.tiles.filter((tile) => !tile.discovered).map((tile) => tile.key).join("|");
+    const locationSignature = scene.locations
+      .map((location) => `${location.id}:${location.markerPosition.x},${location.markerPosition.y}`)
+      .join("|");
+
+    if (shouldRecenter || !courierRef.current) {
+      const courier = renderOverworldStaticLayers(layers, scene).courier;
+
+      courierRef.current = courier;
+      lastFogSignatureRef.current = fogSignature;
+      lastLocationSignatureRef.current = locationSignature;
+    } else {
+      if (lastFogSignatureRef.current !== fogSignature) {
+        renderFogLayer(layers.fog, scene);
+        lastFogSignatureRef.current = fogSignature;
+      }
+
+      if (lastLocationSignatureRef.current !== locationSignature) {
+        renderPropLayer(layers.props, scene);
+        lastLocationSignatureRef.current = locationSignature;
+      }
+
+      courierRef.current.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
+      courierRef.current.zIndex = scene.courier.zIndex;
+    }
+
+    renderFeedbackLayer(layers.feedback, scene);
+
+    if (shouldRecenter) {
+      const centered = getCenteredWorldPosition(
+        {
+          width: app.screen.width,
+          height: app.screen.height
+        },
+        scene.courier.anchor
+      );
+
+      world.position.set(centered.x, centered.y);
+    }
+
+    lastMapIdRef.current = scene.mapId;
+  }, [state]);
 
   const currentTileLocations = state.locations.filter(
     (location) => location.atPlayerPosition && location.discovered && location.interiorMapId

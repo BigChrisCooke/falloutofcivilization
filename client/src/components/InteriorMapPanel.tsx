@@ -24,20 +24,24 @@ interface InteriorMapPanelProps {
 
 export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMapPanelProps) {
   const sceneHostRef = useRef<HTMLDivElement | null>(null);
+  const appRef = useRef<Application | null>(null);
+  const worldRef = useRef<Container | null>(null);
+  const layersRef = useRef<ReturnType<typeof createInteriorLayerContainers> | null>(null);
+  const sceneModelRef = useRef<ReturnType<typeof buildInteriorSceneModel> | null>(null);
+  const courierRef = useRef<Container | null>(null);
+  const lastMapIdRef = useRef<string | null>(null);
+  const pointerGestureRef = useRef<MapPointerGesture>(createPointerGesture());
+  const detachCanvasEventsRef = useRef<(() => void) | null>(null);
   const onMoveEvent = useEffectEvent(onMove);
   const onExitEvent = useEffectEvent(onExit);
 
   useEffect(() => {
     const host = sceneHostRef.current;
-    const scene = buildInteriorSceneModel(state);
-
-    if (!host || !scene) {
+    if (!host) {
       return undefined;
     }
 
     let cancelled = false;
-    let app: Application | null = null;
-    let detachCanvasEvents: (() => void) | null = null;
 
     async function mountScene() {
       const nextApp = new Application();
@@ -56,43 +60,45 @@ export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMap
         return;
       }
 
-      app = nextApp;
+      appRef.current = nextApp;
       host.replaceChildren(nextApp.canvas);
       nextApp.stage.sortableChildren = true;
       nextApp.canvas.style.touchAction = "none";
 
       const stageBackdrop = new Graphics()
-        .rect(-scene.boardSize.width, -scene.boardSize.height, scene.boardSize.width * 3, scene.boardSize.height * 3)
+        .rect(-2400, -2400, 7200, 7200)
         .fill({ color: 0xffffff, alpha: 0.001 });
       const world = new Container();
       const layers = createInteriorLayerContainers();
-      let pointerGesture: MapPointerGesture = createPointerGesture();
-      let sceneModel = scene;
-      let courier = renderInteriorStaticLayers(layers, sceneModel).courier;
 
       world.sortableChildren = true;
       stageBackdrop.eventMode = "none";
       world.addChild(layers.terrain, layers.feedback, layers.props, layers.actors);
       nextApp.stage.eventMode = "static";
-      nextApp.stage.hitArea = new Rectangle(
-        -scene.boardSize.width,
-        -scene.boardSize.height,
-        scene.boardSize.width * 3,
-        scene.boardSize.height * 3
-      );
+      nextApp.stage.hitArea = new Rectangle(-2400, -2400, 7200, 7200);
       nextApp.stage.addChild(stageBackdrop, world);
+      worldRef.current = world;
+      layersRef.current = layers;
 
       const renderFeedback = () => {
-        renderInteriorFeedbackLayer(layers.feedback, sceneModel);
-      };
+        const nextScene = sceneModelRef.current;
 
-      const setHoverTile = (hoverTileKey: string | null) => {
-        if (sceneModel.hoverTileKey === hoverTileKey) {
+        if (!nextScene) {
           return;
         }
 
-        sceneModel = {
-          ...sceneModel,
+        renderInteriorFeedbackLayer(layers.feedback, nextScene);
+      };
+
+      const setHoverTile = (hoverTileKey: string | null) => {
+        const currentScene = sceneModelRef.current;
+
+        if (!currentScene || currentScene.hoverTileKey === hoverTileKey) {
+          return;
+        }
+
+        sceneModelRef.current = {
+          ...currentScene,
           hoverTileKey
         };
         renderFeedback();
@@ -104,7 +110,7 @@ export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMap
             width: nextApp.screen.width,
             height: nextApp.screen.height
           },
-          sceneModel.courier.anchor
+          sceneModelRef.current?.courier.anchor ?? { x: 0, y: 0 }
         );
 
         world.position.set(centered.x, centered.y);
@@ -120,30 +126,30 @@ export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMap
       };
 
       nextApp.stage.on("pointerdown", (event) => {
-        pointerGesture = startPointerGesture(
+        pointerGestureRef.current = startPointerGesture(
           { x: event.global.x, y: event.global.y },
           { x: world.x, y: world.y }
         );
       });
 
       nextApp.stage.on("pointermove", (event) => {
-        if (!pointerGesture.active) {
+        if (!pointerGestureRef.current.active) {
           refreshHover(event.global.x, event.global.y);
           return;
         }
 
-        pointerGesture = updatePointerGesture(pointerGesture, {
+        pointerGestureRef.current = updatePointerGesture(pointerGestureRef.current, {
           x: event.global.x,
           y: event.global.y
         });
 
-        if (!pointerGesture.moved) {
+        if (!pointerGestureRef.current.moved) {
           refreshHover(event.global.x, event.global.y);
           return;
         }
 
         clearHover();
-        const draggedWorldPosition = getDraggedWorldPosition(pointerGesture, {
+        const draggedWorldPosition = getDraggedWorldPosition(pointerGestureRef.current, {
           x: event.global.x,
           y: event.global.y
         });
@@ -152,8 +158,14 @@ export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMap
       });
 
       const completeClick = (screenX: number, screenY: number) => {
+        const nextScene = sceneModelRef.current;
+
+        if (!nextScene) {
+          return;
+        }
+
         const worldPoint = toWorldPoint({ x: screenX, y: screenY }, { x: world.x, y: world.y });
-        const target = resolveInteriorInteractionTarget(sceneModel, worldPoint);
+        const target = resolveInteriorInteractionTarget(nextScene, worldPoint);
 
         if (target.kind === "tile") {
           onMoveEvent(target.point.x, target.point.y);
@@ -167,10 +179,10 @@ export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMap
 
       const stopPointer = (screenX?: number, screenY?: number) => {
         const gesture = screenX !== undefined && screenY !== undefined
-          ? updatePointerGesture(pointerGesture, { x: screenX, y: screenY })
-          : pointerGesture;
+          ? updatePointerGesture(pointerGestureRef.current, { x: screenX, y: screenY })
+          : pointerGestureRef.current;
 
-        pointerGesture = clearPointerGesture();
+        pointerGestureRef.current = clearPointerGesture();
 
         if (!gesture.active || gesture.moved || screenX === undefined || screenY === undefined) {
           return;
@@ -194,16 +206,42 @@ export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMap
       };
 
       nextApp.canvas.addEventListener("pointerleave", handlePointerLeave);
-      detachCanvasEvents = () => {
+      detachCanvasEventsRef.current = () => {
         nextApp.canvas.removeEventListener("pointerleave", handlePointerLeave);
       };
 
-      renderFeedback();
-      recenterWorld();
+      const initialScene = buildInteriorSceneModel(state);
+
+      if (initialScene) {
+        sceneModelRef.current = initialScene;
+        lastMapIdRef.current = initialScene.mapId;
+        const courier = renderInteriorStaticLayers(layers, initialScene).courier;
+
+        courierRef.current = courier;
+        renderInteriorFeedbackLayer(layers.feedback, initialScene);
+
+        const centered = getCenteredWorldPosition(
+          {
+            width: nextApp.screen.width,
+            height: nextApp.screen.height
+          },
+          initialScene.courier.anchor
+        );
+
+        world.position.set(centered.x, centered.y);
+      }
+
       let tick = 0;
       nextApp.ticker.add(() => {
         tick += 0.06;
-        courier.y = sceneModel.courier.anchor.y + Math.sin(tick) * 3;
+        const courier = courierRef.current;
+        const nextScene = sceneModelRef.current;
+
+        if (!courier || !nextScene) {
+          return;
+        }
+
+        courier.y = nextScene.courier.anchor.y + Math.sin(tick) * 3;
       });
     }
 
@@ -212,14 +250,60 @@ export function InteriorMapPanel({ state, variant, onMove, onExit }: InteriorMap
     return () => {
       cancelled = true;
 
-      if (app) {
-        detachCanvasEvents?.();
-        app.destroy(true, { children: true });
+      if (appRef.current) {
+        detachCanvasEventsRef.current?.();
+        appRef.current.destroy(true, { children: true });
       }
 
+      appRef.current = null;
+      worldRef.current = null;
+      layersRef.current = null;
+      sceneModelRef.current = null;
+      courierRef.current = null;
+      lastMapIdRef.current = null;
+      detachCanvasEventsRef.current = null;
       host.replaceChildren();
     };
-  }, [state, variant, onExitEvent, onMoveEvent]);
+  }, [onExitEvent, onMoveEvent]);
+
+  useEffect(() => {
+    const scene = buildInteriorSceneModel(state);
+    const world = worldRef.current;
+    const layers = layersRef.current;
+    const app = appRef.current;
+
+    if (!scene || !world || !layers || !app) {
+      return;
+    }
+
+    sceneModelRef.current = scene;
+    const shouldRecenter = lastMapIdRef.current !== scene.mapId;
+
+    if (shouldRecenter || !courierRef.current) {
+      const courier = renderInteriorStaticLayers(layers, scene).courier;
+
+      courierRef.current = courier;
+    } else {
+      courierRef.current.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
+      courierRef.current.zIndex = scene.courier.zIndex;
+    }
+
+    renderInteriorFeedbackLayer(layers.feedback, scene);
+
+    if (shouldRecenter) {
+      const centered = getCenteredWorldPosition(
+        {
+          width: app.screen.width,
+          height: app.screen.height
+        },
+        scene.courier.anchor
+      );
+
+      world.position.set(centered.x, centered.y);
+    }
+
+    lastMapIdRef.current = scene.mapId;
+  }, [state]);
 
   const map = state.currentInteriorMap;
 
