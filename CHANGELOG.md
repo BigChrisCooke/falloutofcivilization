@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+[FEATURE] Companion token renders in interior actors layer with fixed assigned color (amber for Dex)
+[FEATURE] Companion follows player to nearest unoccupied tile behind them, snapping to closest available in tight spaces
+[IMPROVEMENT] Recruited companion NPC suppressed from props layer to avoid duplicate rendering
 
 ## [0.3.0] - 2026-03-20
 

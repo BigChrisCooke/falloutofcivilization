@@ -181,6 +181,7 @@ export interface GameState {
   companions: Array<{
     companionId: string;
     name: string;
+    tokenColor: string | null;
     loyalty: number;
     storyStage: number;
     storyStageTitle: string | null;

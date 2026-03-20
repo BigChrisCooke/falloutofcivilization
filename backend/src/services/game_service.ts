@@ -143,6 +143,7 @@ export class GameService {
         return {
           companionId: row.companion_id,
           name: companionDef?.name ?? row.companion_id,
+          tokenColor: companionDef?.tokenColor ?? null,
           loyalty: row.loyalty,
           storyStage: row.story_stage,
           storyStageTitle: currentStage?.title ?? null,

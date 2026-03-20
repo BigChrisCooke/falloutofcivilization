@@ -1,6 +1,7 @@
 id: dex
 name: Dex
 bio: "A former caravan guard stranded at the Dusty Spur after his last outfit was ambushed on the north road. Quiet, dependable, and looking for someone worth following into the wasteland."
+tokenColor: "#D97706"
 recruitLocationId: dusty_tavern
 recruitDialogueId: recruit_greeting
 storyStages:

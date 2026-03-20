@@ -78,6 +78,15 @@ export interface InteriorActorNode {
   zIndex: number;
 }
 
+export interface CompanionActorNode {
+  id: string;
+  companionId: string;
+  tokenColor: string;
+  point: GridPoint;
+  anchor: ProjectedPoint;
+  zIndex: number;
+}
+
 export interface OverworldQuestMarkerNode {
   id: string;
   questId: string;
@@ -118,6 +127,7 @@ export interface InteriorSceneModel {
   tiles: InteriorTileNode[];
   markers: InteriorMarkerNode[];
   courier: InteriorActorNode;
+  companion: CompanionActorNode | null;
 }
 
 export type MapInteractionTarget =
