@@ -147,8 +147,8 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                   <div className="companion-header">
                     <span className="companion-portrait">&#9632;</span>
                     <div>
-                      <h4 className="companion-name">{companion.companionId}</h4>
-                      <span className="subtle">Stage {companion.storyStage + 1}</span>
+                      <h4 className="companion-name">{companion.name}</h4>
+                      <span className="subtle">{companion.storyStageTitle ?? `Stage ${companion.storyStage + 1}`}</span>
                     </div>
                   </div>
                   <div className="companion-loyalty">

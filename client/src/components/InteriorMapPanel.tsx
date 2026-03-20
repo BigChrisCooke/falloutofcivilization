@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { GameState } from "../lib/api.js";
-import { collectItem } from "../lib/api.js";
+import { collectItem, getCompanionStoryDialogue } from "../lib/api.js";
 import { interiorRuntimeAdapter } from "../lib/map/interior_adapter.js";
 import { buildInteriorSceneModel } from "../lib/map/interior_scene_model.js";
 import { useRetainedMapRuntime } from "../lib/map/map_runtime.js";
@@ -29,9 +29,36 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
   const [showPlayerPanel, setShowPlayerPanel] = useState(false);
   const [oldTimerChoices, setOldTimerChoices] = useState<string[]>([]);
+  const [companionStoryBubble, setCompanionStoryBubble] = useState<{ companionName: string; stageTitle: string; text: string } | null>(null);
+  const [storyBubbleDismissed, setStoryBubbleDismissed] = useState(false);
 
   const collectedLoot = useMemo(() => new Set(state.collectedItemIds), [state.collectedItemIds]);
   const collectedActions = useMemo(() => new Set(state.collectedActionIds), [state.collectedActionIds]);
+
+  // Check for companion story dialogue on interior entry
+  useEffect(() => {
+    if (state.companions.length === 0 || storyBubbleDismissed) return;
+    const companion = state.companions[0];
+    if (!companion) return;
+
+    getCompanionStoryDialogue(companion.companionId)
+      .then(({ storyDialogue }) => {
+        if (storyDialogue?.dialogue) {
+          const rootNode = storyDialogue.dialogue.nodes.find(
+            (n) => n.id === storyDialogue.dialogue.rootNodeId
+          );
+          if (rootNode) {
+            setCompanionStoryBubble({
+              companionName: companion.name,
+              stageTitle: storyDialogue.stageTitle,
+              text: rootNode.text
+            });
+          }
+        }
+      })
+      .catch(() => { /* silently fail */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map?.id, state.companions.length]);
 
   // Auto-trigger Old Timer dialogue on first entry when SPECIAL not set
   useEffect(() => {
@@ -226,6 +253,30 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Companion Story Bubble */}
+        {companionStoryBubble && !storyBubbleDismissed && !activeNpcId && !showCharacterCreation && (
+          <div className="interaction-panel companion-story-panel">
+            <div className="interaction-panel-header">
+              <span className="eyebrow">{companionStoryBubble.companionName} &middot; {companionStoryBubble.stageTitle}</span>
+              <button
+                className="ghost-button interaction-close"
+                type="button"
+                onClick={() => setStoryBubbleDismissed(true)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="companion-story-text">{companionStoryBubble.text}</p>
+            <button
+              className="ghost-button interaction-option"
+              type="button"
+              onClick={() => setStoryBubbleDismissed(true)}
+            >
+              Dismiss
+            </button>
           </div>
         )}
 

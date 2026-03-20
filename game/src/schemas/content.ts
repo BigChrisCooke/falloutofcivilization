@@ -218,6 +218,7 @@ export const companionSchema = z.object({
   recruitLocationId: z.string().min(1),
   recruitDialogueId: z.string().min(1),
   storyStages: z.array(companionStoryStageSchema).min(1),
+  storyDialogues: z.record(z.string(), dialogueTreeSchema).default({}),
   reactions: z.object({
     positive: z.array(companionReactionLineSchema).min(1),
     negative: z.array(companionReactionLineSchema).min(1),

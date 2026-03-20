@@ -45,6 +45,10 @@ const recruitCompanionSchema = z.object({
   companionId: z.string().min(1)
 });
 
+const companionDialogueSchema = z.object({
+  companionId: z.string().min(1)
+});
+
 const specialSchema = z.object({
   str: z.number().int().min(1).max(10),
   per: z.number().int().min(1).max(10),
@@ -243,6 +247,22 @@ export function createGameRouter(gameService: GameService, dialogueService: Dial
       });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to recruit companion.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/companion/story", (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = companionDialogueSchema.parse(request.body);
+      const result = gameService.getCompanionStoryDialogue(request.currentSaveId, payload.companionId);
+      response.json({ storyDialogue: result });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to load companion story.");
       response.status(400).json({ error: message });
     }
   });

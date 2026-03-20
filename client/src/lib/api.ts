@@ -178,8 +178,10 @@ export interface GameState {
   collectedActionIds: string[];
   companions: Array<{
     companionId: string;
+    name: string;
     loyalty: number;
     storyStage: number;
+    storyStageTitle: string | null;
     recruitedAt: number;
   }>;
   factionStanding: Record<string, number>;
@@ -340,6 +342,13 @@ export function collectItem(
 export function saveCurrentGame(saveId: string): Promise<{ save: SaveGame; message: string }> {
   return request(`/api/saves/${saveId}/save`, {
     method: "POST"
+  });
+}
+
+export function getCompanionStoryDialogue(companionId: string): Promise<{ storyDialogue: { dialogue: { rootNodeId: string; nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }> }; stageTitle: string } | null }> {
+  return request("/api/game/companion/story", {
+    method: "POST",
+    body: JSON.stringify({ companionId })
   });
 }
 
