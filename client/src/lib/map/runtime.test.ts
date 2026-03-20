@@ -58,6 +58,7 @@ function createOverworldState(player = { x: 1, y: 1 }): GameState {
     inventory: [],
     collectedItemIds: [],
     collectedActionIds: [],
+    companions: [],
     factionStanding: {
       settlers: 1
     },
@@ -145,6 +146,7 @@ function createInteriorState(player = { x: 2, y: 2 }): GameState {
     inventory: [],
     collectedItemIds: [],
     collectedActionIds: [],
+    companions: [],
     factionStanding: {
       settlers: 1
     },

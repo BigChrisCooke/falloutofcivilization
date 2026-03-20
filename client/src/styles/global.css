@@ -1072,3 +1072,72 @@ h2 {
 .pipboy-inventory .inventory-item.is-stolen {
   color: #ff6464;
 }
+
+/* Companion entries */
+.companion-entry {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(100, 255, 140, 0.08);
+}
+
+.companion-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.companion-portrait {
+  font-size: 1.5rem;
+  color: rgba(100, 255, 140, 0.5);
+}
+
+.companion-name {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(100, 255, 140, 0.9);
+}
+
+.companion-loyalty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.loyalty-label {
+  color: rgba(100, 255, 140, 0.5);
+  min-width: 3.5rem;
+}
+
+.loyalty-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(100, 255, 140, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.loyalty-bar-fill {
+  height: 100%;
+  background: #64ff8c;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.loyalty-bar-fill.loyalty-low {
+  background: #ff6464;
+}
+
+.loyalty-value {
+  color: rgba(100, 255, 140, 0.6);
+  min-width: 3rem;
+  text-align: right;
+  font-size: 0.75rem;
+}
+
+/* Companion HUD indicator */
+.companion-hud-indicator {
+  color: rgba(100, 255, 140, 0.7);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}

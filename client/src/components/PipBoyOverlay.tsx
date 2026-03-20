@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { GameState } from "../lib/api.js";
 import { getSpecialDescription } from "../lib/item_descriptions.js";
 
-type PipBoyTab = "stats" | "quests" | "inventory" | "map" | "factions";
+type PipBoyTab = "stats" | "quests" | "companions" | "inventory" | "map" | "factions";
 
 interface PipBoyOverlayProps {
   state: GameState;
@@ -40,9 +40,11 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
   const quests = state.questState;
   const factions = Object.entries(state.factionStanding);
 
+  const hasCompanions = state.companions.length > 0;
   const tabs: { key: PipBoyTab; label: string }[] = [
     { key: "stats", label: "Stats" },
     { key: "quests", label: "Quests" },
+    ...(hasCompanions ? [{ key: "companions" as const, label: "Companions" }] : []),
     { key: "inventory", label: "Items" },
     { key: "map", label: "Map" },
     { key: "factions", label: "Factions" }
@@ -135,6 +137,32 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                   ))}
                 </>
               )}
+            </div>
+          )}
+
+          {tab === "companions" && (
+            <div className="pipboy-companions">
+              {state.companions.map((companion) => (
+                <div key={companion.companionId} className="companion-entry">
+                  <div className="companion-header">
+                    <span className="companion-portrait">&#9632;</span>
+                    <div>
+                      <h4 className="companion-name">{companion.companionId}</h4>
+                      <span className="subtle">Stage {companion.storyStage + 1}</span>
+                    </div>
+                  </div>
+                  <div className="companion-loyalty">
+                    <span className="loyalty-label">Loyalty</span>
+                    <div className="loyalty-bar-track">
+                      <div
+                        className={`loyalty-bar-fill${companion.loyalty < 20 ? " loyalty-low" : ""}`}
+                        style={{ width: `${companion.loyalty}%` }}
+                      />
+                    </div>
+                    <span className="loyalty-value">{companion.loyalty}/100</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

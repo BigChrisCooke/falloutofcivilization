@@ -176,6 +176,12 @@ export interface GameState {
   }>;
   collectedItemIds: string[];
   collectedActionIds: string[];
+  companions: Array<{
+    companionId: string;
+    loyalty: number;
+    storyStage: number;
+    recruitedAt: number;
+  }>;
   factionStanding: Record<string, number>;
   locations: LocationSummary[];
 }
@@ -334,6 +340,13 @@ export function collectItem(
 export function saveCurrentGame(saveId: string): Promise<{ save: SaveGame; message: string }> {
   return request(`/api/saves/${saveId}/save`, {
     method: "POST"
+  });
+}
+
+export function recruitCompanion(companionId: string): Promise<{ state: GameState }> {
+  return request("/api/game/companion/recruit", {
+    method: "POST",
+    body: JSON.stringify({ companionId })
   });
 }
 

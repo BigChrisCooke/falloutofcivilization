@@ -321,6 +321,11 @@ export function AppRoot() {
               <span>{gameState.playerCharacter.name}</span>
               <span>Level {gameState.playerCharacter.level}</span>
               <span>{gameState.worldState.current_screen}</span>
+              {gameState.companions.length > 0 && gameState.companions[0] && (
+                <span className="companion-hud-indicator" title={`Companion: ${gameState.companions[0].companionId} (Loyalty: ${gameState.companions[0].loyalty})`}>
+                  &#9632; {gameState.companions[0].companionId}
+                </span>
+              )}
             </div>
           </section>
 
