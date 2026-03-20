@@ -8,6 +8,7 @@ import type {
   QuestDefinition
 } from "../../../game/src/index.js";
 
+import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
 import { SaveRepo } from "../repos/save_repo.js";
@@ -85,6 +86,8 @@ export interface DialogueSelectResult {
   questCompleted: QuestCompletionResult | null;
   karmaDelta: number;
   factionDelta: { factionId: string; delta: number } | null;
+  companionRecruited: string | null;
+  companionReaction: { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null;
   stateUpdated: boolean;
   alreadySelected: boolean;
 }
@@ -103,11 +106,13 @@ export class DialogueService {
   private readonly saveRepo: SaveRepo;
   private readonly gameStateRepo: GameStateRepo;
   private readonly inventoryRepo: InventoryRepo;
+  private readonly companionRepo: CompanionRepo;
 
   public constructor(db: Database.Database) {
     this.saveRepo = new SaveRepo(db);
     this.gameStateRepo = new GameStateRepo(db);
     this.inventoryRepo = new InventoryRepo(db);
+    this.companionRepo = new CompanionRepo(db);
   }
 
   /** Reset all NPC dialogue positions back to root, keeping selected-option history. */
@@ -191,6 +196,8 @@ export class DialogueService {
       questCompleted: null,
       karmaDelta: 0,
       factionDelta: null,
+      companionRecruited: null,
+      companionReaction: null,
       stateUpdated: false,
       alreadySelected: wasAlreadySelected
     };
@@ -212,6 +219,11 @@ export class DialogueService {
         result.karmaDelta = option.karmaDelta;
         this.adjustKarma(saveId, option.karmaDelta);
         result.stateUpdated = true;
+
+        // Generous actions (karma +2 or higher) boost companion loyalty
+        if (option.karmaDelta >= 2) {
+          result.companionReaction = this.applyCompanionLoyaltyDelta(saveId, 1, "positive");
+        }
       }
 
       if (option.factionDelta) {
@@ -238,6 +250,21 @@ export class DialogueService {
           });
         }
         result.stateUpdated = true;
+      }
+
+      if (option.companionRecruit) {
+        const content = getGameContent();
+        const companionDef = content.companions.find((c) => c.id === option.companionRecruit);
+        if (companionDef) {
+          const existing = this.companionRepo.find(saveId, option.companionRecruit);
+          if (!existing || existing.departed) {
+            if (!existing) {
+              this.companionRepo.recruit(saveId, option.companionRecruit);
+              result.companionRecruited = option.companionRecruit;
+              result.stateUpdated = true;
+            }
+          }
+        }
       }
 
       // Mark option as selected
@@ -338,9 +365,14 @@ export class DialogueService {
     if (dialogue.conditionalRoots && dialogue.conditionalRoots.length > 0) {
       const questState = this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+      const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+      const karma = playerCharacter?.karma ?? 0;
 
       for (const condition of dialogue.conditionalRoots) {
-        if (completed.includes(condition.questCompleted)) {
+        if (condition.questCompleted && completed.includes(condition.questCompleted)) {
+          return condition.nodeId;
+        }
+        if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
           return condition.nodeId;
         }
       }
@@ -673,5 +705,36 @@ export class DialogueService {
       standings_json: JSON.stringify(standings),
       updated_at: Date.now()
     });
+  }
+
+  private applyCompanionLoyaltyDelta(saveId: string, delta: number, reactionType: "positive" | "negative"): { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null {
+    const companions = this.companionRepo.getAll(saveId);
+    const companion = companions[0];
+    if (!companion) return null;
+
+    const content = getGameContent();
+    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    if (!companionDef) return null;
+
+    const newLoyalty = Math.max(0, Math.min(100, companion.loyalty + delta));
+    this.companionRepo.updateLoyalty(saveId, companion.companion_id, newLoyalty);
+
+    let reaction: string;
+    let departed = false;
+
+    if (newLoyalty === 0) {
+      reaction = companionDef.reactions.farewell;
+      this.companionRepo.remove(saveId, companion.companion_id);
+      departed = true;
+    } else if (newLoyalty < 20) {
+      reaction = companionDef.reactions.warning;
+    } else {
+      const lines = reactionType === "positive"
+        ? companionDef.reactions.positive
+        : companionDef.reactions.negative;
+      reaction = lines[Math.floor(Math.random() * lines.length)]?.text ?? "...";
+    }
+
+    return { companionId: companion.companion_id, loyaltyDelta: delta, newLoyalty, reaction, departed };
   }
 }

@@ -12,6 +12,7 @@ interface DialoguePanelProps {
   onStateRefresh: (state: GameState) => void;
   onBeginCharCreation?: () => void;
   onOptionSelected?: (optionId: string) => void;
+  onCompanionReaction?: (reaction: { companionId: string; reaction: string; departed: boolean }) => void;
 }
 
 export function DialoguePanel({
@@ -22,7 +23,8 @@ export function DialoguePanel({
   onClose,
   onStateRefresh,
   onBeginCharCreation,
-  onOptionSelected
+  onOptionSelected,
+  onCompanionReaction
 }: DialoguePanelProps) {
   const [node, setNode] = useState<DialogueNode | null>(null);
   const [lastResponse, setLastResponse] = useState<string | null>(null);
@@ -111,6 +113,14 @@ export function DialoguePanel({
         setQuestNotification(`Quest complete: ${qc.questName}${rewardText}`);
         setQuestFlash(true);
         setTimeout(() => setQuestFlash(false), 600);
+      }
+
+      if (result.companionReaction) {
+        onCompanionReaction?.({
+          companionId: result.companionReaction.companionId,
+          reaction: result.companionReaction.reaction,
+          departed: result.companionReaction.departed
+        });
       }
 
       if (result.response) {

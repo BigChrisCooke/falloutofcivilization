@@ -154,7 +154,7 @@ storyDialogues:
   story_resolution:
     rootNodeId: resolution_start
     conditionalRoots:
-      - questCompleted: karma_check_high
+      - karmaMin: 50
         nodeId: resolution_high_karma
     nodes:
       - id: resolution_start

@@ -36,6 +36,7 @@ export const dialogueOptionSchema = z.object({
   }).optional(),
   karmaDelta: z.number().int().optional(),
   grantItems: z.array(grantItemSchema).optional(),
+  companionRecruit: z.string().min(1).optional(),
   returnToRoot: z.boolean().optional()
 });
 
@@ -48,7 +49,8 @@ export const dialogueNodeSchema = z.object({
 export const dialogueTreeSchema = z.object({
   rootNodeId: z.string().min(1),
   conditionalRoots: z.array(z.object({
-    questCompleted: z.string().min(1),
+    questCompleted: z.string().min(1).optional(),
+    karmaMin: z.number().int().optional(),
     nodeId: z.string().min(1)
   })).optional(),
   nodes: z.array(dialogueNodeSchema).min(1)

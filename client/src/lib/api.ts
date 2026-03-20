@@ -57,6 +57,8 @@ export interface DialogueSelectResult {
   questCompleted: QuestCompletionResult | null;
   karmaDelta: number;
   factionDelta: { factionId: string; delta: number } | null;
+  companionRecruited: string | null;
+  companionReaction: { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null;
   stateUpdated: boolean;
 }
 

@@ -729,6 +729,7 @@ npcs:
             - id: accept_int
               label: "I'm in. Let's find out who set up your crew."
               next: accepted
+              companionRecruit: dex
             - id: decline_int
               label: "Interesting, but I've got my own problems."
               next: declined
@@ -738,6 +739,7 @@ npcs:
             - id: accept_direct
               label: "Welcome aboard, Dex."
               next: accepted
+              companionRecruit: dex
             - id: decline_direct
               label: "I'll think about it."
               next: declined
@@ -747,6 +749,7 @@ npcs:
             - id: accept
               label: "Alright, Dex. You're with me."
               next: accepted
+              companionRecruit: dex
             - id: decline
               label: "I work alone."
               next: declined
@@ -760,6 +763,7 @@ npcs:
             - id: accept_cha
               label: "That's good enough for me. Let's go."
               next: accepted
+              companionRecruit: dex
             - id: decline_cha
               label: "I believe you. But not right now."
               next: declined

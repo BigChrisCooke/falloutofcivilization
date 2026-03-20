@@ -31,6 +31,7 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
   const [oldTimerChoices, setOldTimerChoices] = useState<string[]>([]);
   const [companionStoryBubble, setCompanionStoryBubble] = useState<{ companionName: string; stageTitle: string; text: string } | null>(null);
   const [storyBubbleDismissed, setStoryBubbleDismissed] = useState(false);
+  const [companionReactionBubble, setCompanionReactionBubble] = useState<{ companionName: string; text: string; departed: boolean } | null>(null);
 
   const collectedLoot = useMemo(() => new Set(state.collectedItemIds), [state.collectedItemIds]);
   const collectedActions = useMemo(() => new Set(state.collectedActionIds), [state.collectedActionIds]);
@@ -77,8 +78,17 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
 
   async function handleCollectItem(itemId: string, label: string, ownedBy?: string, quantity?: number, description?: string, actionId?: string) {
     try {
-      const { state: newState } = await collectItem(itemId, label, ownedBy, quantity, description, actionId);
+      const { result, state: newState } = await collectItem(itemId, label, ownedBy, quantity, description, actionId);
       onStateRefresh(newState);
+
+      if (result.companionReaction) {
+        const companion = newState.companions.find((c) => c.companionId === result.companionReaction!.companionId);
+        setCompanionReactionBubble({
+          companionName: companion?.name ?? result.companionReaction.companionId,
+          text: result.companionReaction.reaction,
+          departed: result.companionReaction.departed
+        });
+      }
     } catch {
       // Collection failed
     }
@@ -177,6 +187,14 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
                 setOldTimerChoices((prev) => [...prev.filter((c) => c.substring(0, 2) !== optionId.substring(0, 2)), optionId]);
               }
             } : undefined}
+            onCompanionReaction={(reaction) => {
+              const companion = state.companions.find((c) => c.companionId === reaction.companionId);
+              setCompanionReactionBubble({
+                companionName: companion?.name ?? reaction.companionId,
+                text: reaction.reaction,
+                departed: reaction.departed
+              });
+            }}
           />
         )}
 
@@ -274,6 +292,30 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
               className="ghost-button interaction-option"
               type="button"
               onClick={() => setStoryBubbleDismissed(true)}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Companion Reaction Bubble */}
+        {companionReactionBubble && (
+          <div className="interaction-panel companion-story-panel">
+            <div className="interaction-panel-header">
+              <span className="eyebrow">{companionReactionBubble.companionName}{companionReactionBubble.departed ? " (departing)" : ""}</span>
+              <button
+                className="ghost-button interaction-close"
+                type="button"
+                onClick={() => setCompanionReactionBubble(null)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="companion-story-text">{companionReactionBubble.text}</p>
+            <button
+              className="ghost-button interaction-option"
+              type="button"
+              onClick={() => setCompanionReactionBubble(null)}
             >
               Dismiss
             </button>

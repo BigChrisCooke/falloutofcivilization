@@ -218,7 +218,7 @@ export class GameService {
     };
   }
 
-  public getCompanionStoryDialogue(saveId: string, companionId: string): { dialogue: unknown; stageTitle: string } | null {
+  public getCompanionStoryDialogue(saveId: string, companionId: string): { dialogue: { rootNodeId: string; nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }> }; stageTitle: string } | null {
     const content = getGameContent();
     const companion = this.companionRepo.find(saveId, companionId);
     if (!companion || companion.departed) return null;
@@ -232,8 +232,28 @@ export class GameService {
     const dialogueTree = companionDef.storyDialogues[currentStage.dialogueTreeId];
     if (!dialogueTree) return null;
 
+    // Resolve effective root node via conditionalRoots (e.g. karma-based branching)
+    let effectiveRootNodeId = dialogueTree.rootNodeId;
+    if (dialogueTree.conditionalRoots && dialogueTree.conditionalRoots.length > 0) {
+      const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+      const karma = playerCharacter?.karma ?? 0;
+      const questState = this.gameStateRepo.getQuestState(saveId);
+      const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+
+      for (const condition of dialogueTree.conditionalRoots) {
+        if (condition.questCompleted && completed.includes(condition.questCompleted)) {
+          effectiveRootNodeId = condition.nodeId;
+          break;
+        }
+        if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
+          effectiveRootNodeId = condition.nodeId;
+          break;
+        }
+      }
+    }
+
     return {
-      dialogue: dialogueTree,
+      dialogue: { ...dialogueTree, rootNodeId: effectiveRootNodeId },
       stageTitle: currentStage.title
     };
   }
