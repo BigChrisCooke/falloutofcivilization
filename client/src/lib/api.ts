@@ -330,7 +330,7 @@ export function collectItem(
   quantity?: number,
   description?: string | null,
   actionId?: string
-): Promise<{ result: { karmaDelta: number; factionDelta: { factionId: string; delta: number } | null }; state: GameState }> {
+): Promise<{ result: { karmaDelta: number; factionDelta: { factionId: string; delta: number } | null; companionReaction: { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null }; state: GameState }> {
   return request("/api/game/inventory/collect", {
     method: "POST",
     body: JSON.stringify({ itemId, label, ownedBy: ownedBy ?? null, quantity: quantity ?? 1, description: description ?? null, actionId: actionId ?? undefined })
