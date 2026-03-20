@@ -41,6 +41,10 @@ const collectItemSchema = z.object({
   actionId: z.string().min(1).optional()
 });
 
+const recruitCompanionSchema = z.object({
+  companionId: z.string().min(1)
+});
+
 const specialSchema = z.object({
   str: z.number().int().min(1).max(10),
   per: z.number().int().min(1).max(10),
@@ -221,6 +225,24 @@ export function createGameRouter(gameService: GameService, dialogueService: Dial
       });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to collect item.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/companion/recruit", (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = recruitCompanionSchema.parse(request.body);
+      gameService.recruitCompanion(request.currentSaveId, payload.companionId);
+      response.json({
+        state: gameService.getState(request.currentSaveId)
+      });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to recruit companion.");
       response.status(400).json({ error: message });
     }
   });

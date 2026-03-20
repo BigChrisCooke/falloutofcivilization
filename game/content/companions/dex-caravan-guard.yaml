@@ -1,0 +1,46 @@
+id: dex
+name: Dex
+bio: "A former caravan guard stranded at the Dusty Spur after his last outfit was ambushed on the north road. Quiet, dependable, and looking for someone worth following into the wasteland."
+recruitLocationId: dusty_tavern
+recruitDialogueId: recruit_greeting
+storyStages:
+  - id: backstory
+    title: "Old Roads"
+    triggerCondition:
+      type: immediate
+    dialogueTreeId: story_backstory
+  - id: revelation
+    title: "The Ambush"
+    triggerCondition:
+      type: locationsVisited
+      count: 2
+    dialogueTreeId: story_revelation
+  - id: crisis
+    title: "Unfinished Business"
+    triggerCondition:
+      type: locationsVisited
+      count: 4
+    dialogueTreeId: story_crisis
+  - id: resolution
+    title: "What Matters"
+    triggerCondition:
+      type: locationsVisited
+      count: 6
+    dialogueTreeId: story_resolution
+reactions:
+  positive:
+    - id: pos_1
+      text: "Good call. The wasteland needs more people like you."
+    - id: pos_2
+      text: "That's the kind of thing that keeps me around. Respect."
+    - id: pos_3
+      text: "You keep surprising me. In a good way."
+  negative:
+    - id: neg_1
+      text: "That wasn't yours to take. You know that, right?"
+    - id: neg_2
+      text: "I've walked with thieves before. Didn't end well for them."
+    - id: neg_3
+      text: "Keep this up and I'll have to rethink our arrangement."
+  warning: "I'm not going to stick around if this is who you really are. Consider this your last warning."
+  farewell: "I signed on because I thought you were different. Guess I was wrong. Good luck out there — you'll need it."

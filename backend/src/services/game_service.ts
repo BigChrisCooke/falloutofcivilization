@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 
+import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
 
@@ -40,12 +41,14 @@ export class GameService {
   private readonly saveRepo: SaveRepo;
   private readonly gameStateRepo: GameStateRepo;
   private readonly inventoryRepo: InventoryRepo;
+  private readonly companionRepo: CompanionRepo;
   private readonly dialogueService: DialogueService;
 
   public constructor(db: Database.Database) {
     this.saveRepo = new SaveRepo(db);
     this.gameStateRepo = new GameStateRepo(db);
     this.inventoryRepo = new InventoryRepo(db);
+    this.companionRepo = new CompanionRepo(db);
     this.dialogueService = new DialogueService(db);
   }
 
@@ -85,6 +88,7 @@ export class GameService {
     const inventoryRows = this.inventoryRepo.getAll(saveId);
     const collectedItemIds = inventoryRows.map((row) => row.item_id);
     const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
+    const companionRows = this.companionRepo.getAll(saveId);
 
     return {
       save,
@@ -133,6 +137,12 @@ export class GameService {
       })),
       collectedItemIds,
       collectedActionIds,
+      companions: companionRows.map((row) => ({
+        companionId: row.companion_id,
+        loyalty: row.loyalty,
+        storyStage: row.story_stage,
+        recruitedAt: row.recruited_at
+      })),
       locations: regionLocations.map((location) => ({
         ...location,
         discovered: normalizedState.discoveredLocationIds.includes(location.id),
@@ -437,6 +447,24 @@ export class GameService {
       discoveredLocationIds: normalizedExploration.discoveredLocationIds,
       discoveredTileKeys: normalizedExploration.discoveredTileKeys
     };
+  }
+
+  public recruitCompanion(saveId: string, companionId: string): void {
+    const content = getGameContent();
+    const companion = content.companions.find((c) => c.id === companionId);
+    if (!companion) {
+      throw new Error("Unknown companion.");
+    }
+
+    const existing = this.companionRepo.find(saveId, companionId);
+    if (existing && !existing.departed) {
+      throw new Error("Companion is already recruited.");
+    }
+    if (existing && existing.departed) {
+      throw new Error("This companion has departed and cannot be re-recruited.");
+    }
+
+    this.companionRepo.recruit(saveId, companionId);
   }
 
   public savePlayerSpecial(saveId: string, special: Record<string, number>): void {

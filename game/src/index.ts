@@ -5,6 +5,7 @@ export {
   type GameContentBundle
 } from "./content/load_game_content.js";
 export {
+  companionSchema,
   dialogueNodeSchema,
   dialogueOptionSchema,
   dialogueTreeSchema,
@@ -17,6 +18,9 @@ export {
   specialGateSchema,
   specialStatEnum,
   specialStatNames,
+  type CompanionDefinition,
+  type CompanionReactionLine,
+  type CompanionStoryStage,
   type DialogueNode,
   type DialogueOption,
   type DialogueTree,
