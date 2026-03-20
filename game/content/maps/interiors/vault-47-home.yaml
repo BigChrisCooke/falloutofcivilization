@@ -19,15 +19,209 @@ interactables:
   - id: stash
     type: stash
     label: Home Stash
+    actions:
+      - id: examine_stash
+        label: Examine
+        response: "A reinforced footlocker bolted to the floor. Standard Vault-Tec issue — meant to survive a direct hit. Yours has a few dents and a faded name tag."
+      - id: take_rations
+        label: Take Emergency Rations
+        grant:
+          itemId: emergency_rations
+          label: "Emergency Rations"
+          description: "Vacuum-sealed Vault-Tec rations. The label promises 'complete nutrition in every bite.' They taste like cardboard and desperation, but they'll keep you alive."
+        response: "You grab the vacuum-sealed rations from the footlocker. Vault-Tec brand — still edible after 200 years, which says something about the ingredients."
+      - id: take_photograph
+        label: Take Faded Photograph
+        grant:
+          itemId: faded_photograph
+          label: "Faded Photograph"
+          description: "Someone you don't recognize — maybe you did once. The back reads: 'Don't forget us.'"
+        response: "You pick up the photograph carefully. Someone you don't recognize — maybe you did once. The back reads: 'Don't forget us.'"
   - id: terminal
     type: terminal
     label: Vault Terminal
+    actions:
+      - id: examine_terminal
+        label: Examine
+        response: "A chunky green-screen terminal. The Vault-Tec logo flickers in the corner. Most of the files are corrupted, but the environmental readouts still work."
+      - id: access_terminal
+        label: Access Logs
+        response: "VAULT 47 STATUS: Population — 1 (you). Water recycler — NOMINAL. Air filtration — DEGRADED. Power core — 23% capacity. Recommendation: SEEK EXTERNAL RESOURCES."
 npcs:
   - id: overseer_hale
     name: Overseer Hale
     disposition: neutral
+    x: 1
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "You're awake. Good. The vault's systems are failing and you're the only one left who can do anything about it. I'm Overseer Hale — or what's left of the title. Tap on objects and people to interact with them — like you just did with me."
+          options:
+            - id: ask_vault
+              label: "What happened to everyone?"
+              next: vault_history
+            - id: ask_systems
+              label: "What's wrong with the vault?"
+              next: vault_systems
+            - id: ask_outside
+              label: "What's it like outside?"
+              next: outside_info
+            - id: ask_help
+              label: "Is there anything I can do to help?"
+              next: vault_help
+            - id: cha_reassure
+              label: "We'll figure this out together, Overseer. You're not alone."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_reassure
+            - id: cha_blunt
+              label: "So you're useless and the vault is broken. Great."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_blunt
+            - id: dumb_greeting
+              label: "Pretty lights! Me push buttons?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_greeting
+            - id: return_kit
+              label: "I found a repair kit. Will this work?"
+              inventoryGate: { itemId: makeshift_repair_kit }
+              consumeItem: true
+              questComplete: save_vault_47
+              next: quest_complete
+        - id: vault_history
+          text: "Vault 47 was never meant for long-term habitation — it was a monitoring station. The original crew left decades ago. I stayed behind to maintain the systems. You wandered in half-dead about a week ago."
+          options:
+            - id: int_vault
+              label: "A monitoring station implies external sensor arrays. Are they still functional?"
+              specialGate: { stat: int, min: 7 }
+              response: "Sharp. Yes — the topside antenna still pings, but I can't read the data anymore. The decoder board fried last winter. If you find a replacement out there, we could map the whole valley from here."
+            - id: dumb_vault
+              label: "So... this is my house now? I live in a big metal tube?"
+              specialGate: { stat: int, max: 3 }
+              response: "...Yes. You live in the big metal tube. It keeps you alive. Please don't break anything."
+            - id: back_to_help
+              label: "Is there anything I can do to help?"
+              next: vault_help
+        - id: vault_systems
+          text: "Power core is down to 23%. Water recycler works but the filters need replacing. Air filtration is holding, barely. If we don't find parts, this vault becomes a tomb in about six months. Check your Pip-Boy for details — tap the Pip-Boy button at the top of the screen to open it."
+          options:
+            - id: int_tech
+              label: "Fusion cell degradation at 23% means we have about 4-5 months before cascade failure. What's the priority?"
+              specialGate: { stat: int, min: 7 }
+              response: "Water filters first — we can survive bad air longer than no water. There's a pre-war treatment plant somewhere in the valley. Might still have compatible filter cartridges."
+            - id: dumb_tech
+              label: "Can you fix it with tape? Tape fixes everything."
+              specialGate: { stat: int, max: 3 }
+              response: "*sighs* No, tape will not — actually, you know what, there's a surprising amount of duct tape holding this vault together already. But we need real parts."
+            - id: offer_help
+              label: "I'll find what you need. Tell me what to do."
+              next: vault_help
+        - id: outside_info
+          text: "Dangerous. The valley has settlements — I've picked up radio chatter. There's a tavern on the road, some kind of old power station, and cave systems. Raiders too. Be careful out there. Walk to the gold exit tile at the bottom of the vault to leave — just tap the tiles to move, one step at a time."
+          options:
+            - id: ask_tavern
+              label: "Tell me about the tavern."
+              response: "The Dusty Spur, they call it. Neutral ground. Multiple factions have representatives there. It's the closest thing to civilization you'll find. Head south on the road — you can't miss it."
+            - id: ask_spire
+              label: "A power station? That could help the vault."
+              response: "The Solar Spire. Pre-war solar collection tower. If it's still operational, it might have compatible power cells. But I've heard strange signals from that direction — be cautious."
+            - id: ask_gas_station
+              label: "Anywhere I could scavenge parts nearby?"
+              next: gas_station_hint
+        - id: gas_station_hint
+          text: "There's an old gas station east of here — Poseidon Energy, I think. Pre-war, so it might still have tools or parts in the back room. Scavengers have picked over most places, but a gas station mechanic's supply closet? That might have what we need. On the overworld map, tap the hex tiles to walk toward it. You'll discover new locations as you explore."
+          options:
+            - id: accept_quest
+              label: "I'll check the gas station. Hang tight."
+              questGrant: save_vault_47
+              next: quest_accepted
+        - id: vault_help
+          text: "The power systems are dying. I need someone to find a repair kit — duct tape and prayers won't cut it anymore. There's an Abandoned Gas Station east of the valley. Pre-war, so the back room might still have mechanical tools or a jury-rigged repair kit. Bring it back and I can patch the core systems. Open your Pip-Boy and check the Quests tab to track your objectives, and the Map tab to see where you need to go."
+          options:
+            - id: accept_quest_direct
+              label: "I'll find what you need. Count on it."
+              questGrant: save_vault_47
+              next: quest_accepted
+            - id: cha_negotiate
+              label: "I'll save your vault — but I expect the best room when this is over."
+              specialGate: { stat: cha, min: 5 }
+              questGrant: save_vault_47
+              factionDelta: { factionId: vault-dwellers, delta: 3 }
+              next: quest_accepted_cha
+            - id: dumb_accept
+              label: "Me find tool thing! Me fix tube house!"
+              specialGate: { stat: int, max: 3 }
+              questGrant: save_vault_47
+              next: quest_accepted_dumb
+            - id: decline_quest
+              label: "I've got my own problems."
+              next: quest_declined
+        - id: quest_accepted
+          text: "Thank you. Head east once you're outside — look for the Poseidon Energy sign. The back room is your best bet. Before you go, grab anything useful from the stash and the terminal. Tap on objects around the vault to interact with them — you never know what you'll find. Good luck out there."
+          options:
+            - id: ask_tips
+              label: "Any survival tips?"
+              next: survival_tips
+        - id: quest_accepted_cha
+          text: "*Hale cracks a rare smile.* Deal. You bring back a working repair kit and I'll give you the Overseer's quarters. It's got a real mattress. Now get moving — tap on the objects around here before you leave, and check your Pip-Boy to track the quest."
+          options: []
+        - id: quest_accepted_dumb
+          text: "*Hale stares at you for a long moment.* ...Right. The tool thing is in the big building with the gas pumps. East. That way. *Points.* Please come back alive. Tap the things you see — boxes, machines, people. That's how you learn about the world."
+          options: []
+        - id: quest_declined
+          text: "I understand. The offer stands — this vault is your home too, whether you like it or not. When you're ready, talk to me again."
+          options:
+            - id: reconsider
+              label: "Actually, tell me more about what you need."
+              next: vault_help
+        - id: survival_tips
+          text: "Tap on everything — stashes, terminals, people. Items you pick up go into your Pip-Boy inventory. Your S.P.E.C.I.A.L. stats open different dialogue options with people you meet. High Charisma or Intelligence might unlock paths that brute force can't. And watch your karma — every choice you make shapes how the wasteland sees you."
+          options: []
+        - id: cha_reassure
+          text: "That... means more than you know. It's been a long time since I've had someone to talk to who wasn't a terminal. Thank you. Listen — the vault needs a repair kit badly. There's an old gas station east of here that might have one. Would you look into it?"
+          options:
+            - id: accept_after_cha
+              label: "Of course. I'll find what you need."
+              questGrant: save_vault_47
+              next: quest_accepted
+        - id: cha_blunt
+          text: "I've kept this vault running for thirty years by myself. I am many things, but useless is not one of them. Now — the vault needs a repair kit or we both die in here. There's a gas station east of the valley. Are you going to help or just complain?"
+          options:
+            - id: grudging_accept
+              label: "Fine. I'll check the gas station."
+              questGrant: save_vault_47
+              next: quest_accepted
+            - id: keep_complaining
+              label: "Still sounds like a you problem."
+              response: "It'll be an 'us' problem when the air recycler gives out. But sure — take your time."
+        - id: dumb_greeting
+          text: "No! Do not push — *catches your hand* — look, the vault is broken. I need you to go outside and find a repair kit. A kit. Tools. Fix-it stuff. Can you do that? Tap on things. Learn about the world. Then come back. Please."
+          options:
+            - id: dumb_accept_early
+              label: "Ooh! Adventure! Me go find fix-it stuff!"
+              questGrant: save_vault_47
+              next: quest_accepted_dumb
+        - id: quest_complete
+          text: "*Hale's eyes widen.* That's — yes! A makeshift repair kit with a fusion cell adapter. This is exactly what we need. *She immediately starts working.* The power core will hold for another year at least. The water filters... I can jury-rig something. You've saved this vault. You've saved both of us. Thank you."
+          options:
+            - id: humble_response
+              label: "Just doing what needed to be done."
+              response: "And that's what makes you different from the people who left. This is your home now. Truly. Come back anytime — the vault will be here."
+            - id: cha_modest
+              label: "What can I say? I'm a natural hero."
+              specialGate: { stat: cha, min: 5 }
+              response: "*Hale laughs — a real laugh, not the bitter kind.* Humble too, I see. Get out of here, hero. The wasteland needs you more than I do right now."
+            - id: dumb_complete
+              label: "Me did it! Tube house saved!"
+              specialGate: { stat: int, max: 3 }
+              response: "*Hale looks at you with genuine warmth.* Yes. You did it. Tube house saved. You're a good person. Now go — there's more world out there to see. Tap on things. Talk to people. You'll be fine."
 loot:
   - id: stimpak_cache
     label: Emergency Kit
+    description: "A dented metal case with a red cross stenciled on the lid. Inside: two stimpaks, a roll of gauze, and a faded instruction card that reads 'Apply directly to wound. Do not ingest.'"
+    x: 3
+    y: 1
 questHooks:
   - intro_return_home
+  - save_vault_47

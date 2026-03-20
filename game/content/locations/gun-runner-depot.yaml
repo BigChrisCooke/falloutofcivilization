@@ -1,0 +1,15 @@
+id: gun_runner_depot
+name: Gun Runner Depot
+type: shop
+regionId: frontier_valley
+position:
+  x: 20
+  y: 10
+interiorMapId: gun_runner_depot
+factionTags:
+  - gun_runners
+questTags:
+  - trade
+encounterFlags:
+  - merchant
+description: A fortified workshop behind razor wire. The Gun Runners manufacture and sell the best weapons in the wasteland — for the right price.

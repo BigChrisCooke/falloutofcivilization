@@ -1,0 +1,19 @@
+id: danger_in_the_hollow
+name: Danger in the Hollow
+description: "A desperate cave raider named Kell needs help. The Powder Gangers think he stole from their stash. Return their dynamite and tell them Kell is dead — or find another way to settle the score."
+grantedBy: cave_raider
+objectives:
+  - id: retrieve_dynamite
+    description: "Find the hidden dynamite stash near the cave entrance."
+    type: fetch
+    target: dynamite_stash
+  - id: deal_with_gangers
+    description: "Return the dynamite to the Powder Gangers and convince them Kell is dead."
+    type: talk
+    target: powder_ganger
+rewards:
+  karma: 5
+  caps: 30
+mapMarker:
+  locationId: dusty_tavern
+  label: "Talk to Boxcars"

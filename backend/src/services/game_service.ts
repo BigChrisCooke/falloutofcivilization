@@ -1,8 +1,23 @@
 import type Database from "better-sqlite3";
 
 import { GameStateRepo } from "../repos/game_state_repo.js";
+import { InventoryRepo } from "../repos/inventory_repo.js";
+
+function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
+  if (json === null || json === undefined) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    console.warn("Failed to parse stored JSON, using fallback:", json.slice(0, 80));
+    return fallback;
+  }
+}
 import { SaveRepo } from "../repos/save_repo.js";
 import { getGameContent } from "./content_service.js";
+import { DialogueService } from "./dialogue_service.js";
 import {
   canTravel,
   getOverworldMap,
@@ -24,10 +39,14 @@ import type { MapDiscoveryRow, WorldStateRow } from "../shared/types.js";
 export class GameService {
   private readonly saveRepo: SaveRepo;
   private readonly gameStateRepo: GameStateRepo;
+  private readonly inventoryRepo: InventoryRepo;
+  private readonly dialogueService: DialogueService;
 
   public constructor(db: Database.Database) {
     this.saveRepo = new SaveRepo(db);
     this.gameStateRepo = new GameStateRepo(db);
+    this.inventoryRepo = new InventoryRepo(db);
+    this.dialogueService = new DialogueService(db);
   }
 
   public getState(saveId: string) {
@@ -46,14 +65,15 @@ export class GameService {
     const region = content.regions.find((candidate) => candidate.id === worldState.current_region_id) ?? null;
     const regionLocations = region ? getRegionLocations(content, region.id) : [];
     const overworldMap = region ? getOverworldMap(content, region) : null;
+    const isOnOverworld = worldState.current_screen === "overworld";
     const normalizedState =
-      region && overworldMap
+      region && overworldMap && isOnOverworld
         ? this.ensureExplorationState(saveId, worldState, mapDiscovery)
         : {
             worldState,
             mapDiscovery,
-            discoveredLocationIds: JSON.parse(mapDiscovery.discovered_locations_json) as string[],
-            discoveredTileKeys: JSON.parse(mapDiscovery.discovered_tiles_json ?? "[]") as string[]
+            discoveredLocationIds: safeJsonParse<string[]>(mapDiscovery.discovered_locations_json, []),
+            discoveredTileKeys: safeJsonParse<string[]>(mapDiscovery.discovered_tiles_json, [])
           };
     const currentLocation = worldState.current_location_id
       ? content.locations.find((candidate) => candidate.id === worldState.current_location_id) ?? null
@@ -62,9 +82,21 @@ export class GameService {
       ? content.interiorMaps.find((candidate) => candidate.id === worldState.current_map_id) ?? null
       : null;
 
+    const inventoryRows = this.inventoryRepo.getAll(saveId);
+    const collectedItemIds = inventoryRows.map((row) => row.item_id);
+    const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
+
     return {
       save,
-      playerCharacter,
+      playerCharacter: {
+        name: playerCharacter.name,
+        level: playerCharacter.level,
+        archetype: playerCharacter.archetype,
+        special: playerCharacter.special_json
+          ? safeJsonParse<Record<string, number> | null>(playerCharacter.special_json, null)
+          : null,
+        karma: playerCharacter.karma ?? 0
+      },
       worldState: normalizedState.worldState,
       region,
       overworldMap,
@@ -75,10 +107,32 @@ export class GameService {
         discoveredTileKeys: normalizedState.discoveredTileKeys
       },
       questState: {
-        active: JSON.parse(questState.active_quests_json) as string[],
-        completed: JSON.parse(questState.completed_quests_json) as string[]
+        active: safeJsonParse<string[]>(questState.active_quests_json, []),
+        completed: safeJsonParse<string[]>(questState.completed_quests_json, []),
+        definitions: content.quests
+          .filter((q) => {
+            const activeIds = safeJsonParse<string[]>(questState.active_quests_json, []);
+            const completedIds = safeJsonParse<string[]>(questState.completed_quests_json, []);
+            return activeIds.includes(q.id) || completedIds.includes(q.id);
+          })
+          .map((q) => ({
+            id: q.id,
+            name: q.name,
+            description: q.description,
+            objectives: q.objectives.map((o) => ({ id: o.id, description: o.description, type: o.type, target: o.target })),
+            mapMarker: q.mapMarker ?? null
+          }))
       },
-      factionStanding: JSON.parse(factionStanding.standings_json) as Record<string, number>,
+      factionStanding: safeJsonParse<Record<string, number>>(factionStanding.standings_json, {}),
+      inventory: inventoryRows.map((row) => ({
+        id: row.item_id,
+        label: row.label,
+        ownedBy: row.owned_by,
+        quantity: row.quantity,
+        description: row.description ?? null
+      })),
+      collectedItemIds,
+      collectedActionIds,
       locations: regionLocations.map((location) => ({
         ...location,
         discovered: normalizedState.discoveredLocationIds.includes(location.id),
@@ -87,6 +141,21 @@ export class GameService {
           normalizedState.worldState.player_y === location.position.y
       }))
     };
+  }
+
+  public recordCollectedAction(saveId: string, actionId: string): void {
+    const questState = this.gameStateRepo.getQuestState(saveId);
+    if (!questState) return;
+
+    const collected = safeJsonParse<string[]>(questState.collected_actions_json, []);
+    if (!collected.includes(actionId)) {
+      collected.push(actionId);
+      this.gameStateRepo.updateQuestState({
+        ...questState,
+        collected_actions_json: JSON.stringify(collected),
+        updated_at: Date.now()
+      });
+    }
   }
 
   public updateScreen(saveId: string, screen: "overworld" | "vault"): void {
@@ -318,6 +387,9 @@ export class GameService {
 
     const location = getInteriorLocation(content, worldState.current_location_id);
 
+    // Reset NPC dialogue positions back to root when leaving an area
+    this.dialogueService.resetAllDialoguePositions(saveId);
+
     this.restoreOverworldFromLocation(saveId, worldState, location);
   }
 
@@ -367,6 +439,13 @@ export class GameService {
     };
   }
 
+  public savePlayerSpecial(saveId: string, special: Record<string, number>): void {
+    const existing = this.saveRepo.findPlayerCharacter(saveId);
+    if (!existing) throw new Error("Player character not found.");
+    if (existing.special_json !== null) throw new Error("Character has already been created.");
+    this.saveRepo.updateSpecial(saveId, JSON.stringify(special));
+  }
+
   private restoreOverworldFromLocation(saveId: string, worldState: WorldStateRow, location: { regionId: string; position: { x: number; y: number } }) {
     const content = getGameContent();
     const region = getRegion(content, location.regionId);
@@ -394,8 +473,8 @@ export class GameService {
       overworldMap,
       regionLocations,
       location.position,
-      JSON.parse(mapDiscovery.discovered_locations_json) as string[],
-      JSON.parse(mapDiscovery.discovered_tiles_json ?? "[]") as string[]
+      safeJsonParse<string[]>(mapDiscovery.discovered_locations_json, []),
+      safeJsonParse<string[]>(mapDiscovery.discovered_tiles_json, [])
     );
 
     this.gameStateRepo.updateMapDiscovery({

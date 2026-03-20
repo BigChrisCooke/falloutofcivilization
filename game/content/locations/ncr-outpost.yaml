@@ -1,0 +1,15 @@
+id: ncr_outpost
+name: NCR Outpost Alpha
+type: military
+regionId: frontier_valley
+position:
+  x: 8
+  y: 12
+interiorMapId: ncr_outpost_alpha
+factionTags:
+  - ncr
+questTags:
+  - military
+encounterFlags:
+  - faction-hub
+description: A fortified NCR checkpoint controlling the southern road. Sandbags, a watchtower, and the Republic flag flying overhead.

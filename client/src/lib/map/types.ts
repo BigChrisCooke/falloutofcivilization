@@ -68,12 +68,22 @@ export interface InteriorMarkerNode {
   hitRadius: number;
   isActionable: boolean;
   zIndex: number;
+  ownedBy?: string;
 }
 
 export interface InteriorActorNode {
   id: "courier";
   point: GridPoint;
   anchor: ProjectedPoint;
+  zIndex: number;
+}
+
+export interface OverworldQuestMarkerNode {
+  id: string;
+  questId: string;
+  label: string;
+  point: GridPoint;
+  markerPosition: ProjectedPoint;
   zIndex: number;
 }
 
@@ -89,7 +99,7 @@ export interface OverworldSceneModel {
   courier: OverworldActorNode;
   routes: Array<{ id: string }>;
   terrainFeatures: Array<{ id: string }>;
-  questMarkers: Array<{ id: string }>;
+  questMarkers: OverworldQuestMarkerNode[];
   factionMarkers: Array<{ id: string }>;
   borders: Array<{ id: string }>;
   encounterMarkers: Array<{ id: string }>;
@@ -103,6 +113,7 @@ export interface InteriorSceneModel {
   boardSize: MapSize;
   currentTileKey: string;
   hoverTileKey: string | null;
+  hoveredMarkerId: string | null;
   tiles: InteriorTileNode[];
   markers: InteriorMarkerNode[];
   courier: InteriorActorNode;
@@ -116,6 +127,10 @@ export type MapInteractionTarget =
 export type InteriorInteractionTarget =
   | { kind: "none" }
   | { kind: "tile"; point: GridPoint; tileKey: string }
-  | { kind: "exit"; exitId: string; tileKey: string };
+  | { kind: "exit"; exitId: string; tileKey: string }
+  | { kind: "npc"; npcId: string }
+  | { kind: "loot"; lootId: string }
+  | { kind: "interactable"; interactableId: string }
+  | { kind: "player" };
 
 export type OverworldState = GameState;

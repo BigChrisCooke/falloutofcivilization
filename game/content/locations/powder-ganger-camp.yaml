@@ -1,0 +1,15 @@
+id: powder_ganger_camp
+name: Powder Ganger Camp
+type: camp
+regionId: frontier_valley
+position:
+  x: 25
+  y: 17
+interiorMapId: powder_ganger_camp_interior
+factionTags:
+  - powder_gangers
+questTags:
+  - danger
+encounterFlags:
+  - hostile
+description: A makeshift camp of escaped convicts. Dynamite crates and crude barricades surround a cluster of tents. They don't take kindly to visitors.

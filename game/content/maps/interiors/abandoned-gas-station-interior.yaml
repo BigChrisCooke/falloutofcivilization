@@ -1,0 +1,63 @@
+id: abandoned_gas_station_interior
+name: Abandoned Gas Station
+theme: ruins
+layout:
+  - [wall, wall, wall, wall, wall, wall]
+  - [wall, shelves, floor, floor, cache, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, pump, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, wall, wall]
+spawnPoints:
+  - id: player_spawn
+    x: 2
+    y: 2
+exits:
+  - id: to_frontier_valley
+    target: frontier_valley
+    x: 3
+    y: 4
+interactables:
+  - id: gas_pump
+    type: machine
+    label: Gas Pump
+    actions:
+      - id: examine_pump
+        label: Examine
+        response: "A rusted Poseidon Energy pump. The digital display is long dead, but the faded logo — a trident over a globe — is still visible. Someone scratched 'NO GAS, NO HOPE' into the casing. Behind the pump, through a cracked service window, you can see a workbench in the back room with something on it."
+  - id: store_shelves
+    type: container
+    label: Store Shelves
+    actions:
+      - id: examine_shelves
+        label: Look Around
+        response: "Mostly bare — stripped years ago by scavengers. Crushed Nuka-Cola cans, rat droppings, and a torn magazine cover. But tucked behind a collapsed display stand..."
+      - id: take_snack_cakes
+        label: Take Fancy Lads Snack Cakes
+        grant:
+          itemId: fancy_lads_snack_cakes
+          label: "Fancy Lads Snack Cakes"
+          description: "Pre-war packaged snack cakes. The mascot on the box looks suspiciously cheerful for a product that survived nuclear apocalypse. Still edible. Probably."
+        response: "You pull a miraculously intact box of Fancy Lads Snack Cakes from behind the stand. 200 years old and still sealed. Some things are built to last."
+  - id: back_room_cache
+    type: container
+    label: Back Room Cache
+    actions:
+      - id: examine_cache
+        label: Examine
+        response: "A supply closet behind the counter. The lock is broken and the door hangs crooked on one hinge. Inside: motor oil stains, scattered tools, and a workbench with something jury-rigged on top."
+      - id: take_repair_kit
+        label: Take Makeshift Repair Kit
+        grant:
+          itemId: makeshift_repair_kit
+          label: "Makeshift Repair Kit"
+          description: "A bundle of duct tape, spare screws, a bent screwdriver, and what looks like a fusion cell adapter. Cobbled together by someone who knew what they were doing. Could patch up basic mechanical systems."
+        response: "You carefully lift the kit off the workbench. Whoever left this behind clearly intended to come back for it. Their loss."
+npcs: []
+loot:
+  - id: motor_oil
+    label: Motor Oil
+    x: 4
+    y: 1
+    description: "A half-full can of pre-war motor oil. Still slick and usable — machines don't care how old their lubricant is."
+questHooks:
+  - save_vault_47

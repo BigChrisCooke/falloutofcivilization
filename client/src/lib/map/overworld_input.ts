@@ -27,7 +27,7 @@ function isWithinLocationMarker(location: OverworldLocationNode, worldPoint: Wor
 
 function resolveLocationTarget(scene: OverworldSceneModel, worldPoint: WorldPoint): MapInteractionTarget {
   for (const location of scene.locations) {
-    if (!location.isCurrent || !location.interiorMapId) {
+    if (!location.interiorMapId) {
       continue;
     }
 
@@ -43,20 +43,23 @@ function resolveLocationTarget(scene: OverworldSceneModel, worldPoint: WorldPoin
   return { kind: "none" };
 }
 
-export function resolveHoverTile(scene: OverworldSceneModel, worldPoint: WorldPoint): string | null {
+export function resolveHoverTile(
+  scene: OverworldSceneModel,
+  worldPoint: WorldPoint
+): { tileKey: string | null; markerId: string | null } {
   const locationTarget = resolveLocationTarget(scene, worldPoint);
 
   if (locationTarget.kind === "location") {
-    return locationTarget.tileKey;
+    return { tileKey: locationTarget.tileKey, markerId: null };
   }
 
   const tile = findTileAtWorldPoint(worldPoint, scene.tiles);
 
   if (!tile) {
-    return null;
+    return { tileKey: null, markerId: null };
   }
 
-  return tile.isReachable || tile.enterableLocationId ? tile.key : null;
+  return { tileKey: tile.isReachable || tile.enterableLocationId ? tile.key : null, markerId: null };
 }
 
 export function resolveInteractionTarget(scene: OverworldSceneModel, worldPoint: WorldPoint): MapInteractionTarget {

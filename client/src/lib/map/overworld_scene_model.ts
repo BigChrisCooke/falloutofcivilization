@@ -4,13 +4,12 @@ import {
   getHexBoardSize,
   getMarkerAnchor,
   getTileZIndex,
-  hexDistance,
   projectHex,
   toTileKey
 } from "../iso.js";
 
 import { getHexWorldPolygon } from "./hex_geometry.js";
-import type { OverworldLocationNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
+import type { OverworldLocationNode, OverworldQuestMarkerNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
 
 function getPrimaryLocation(locations: LocationSummary[]): LocationSummary | null {
   return locations[0] ?? null;
@@ -62,7 +61,7 @@ export function buildOverworldSceneModel(state: GameState): OverworldSceneModel 
         polygon: getHexWorldPolygon(point),
         discovered: discoveredTiles.has(tileKey),
         isCurrent: tileKey === currentTileKey,
-        isReachable: hexDistance(currentPoint, point) === 1,
+        isReachable: tileKey !== currentTileKey && discoveredTiles.has(tileKey),
         zIndex: getTileZIndex(point),
         locationId: primaryLocation?.id ?? null,
         enterableLocationId:
@@ -95,6 +94,35 @@ export function buildOverworldSceneModel(state: GameState): OverworldSceneModel 
     })
     .sort((left, right) => left.zIndex - right.zIndex);
 
+  const activeQuestIds = new Set(state.questState.active);
+  const questMarkers: OverworldQuestMarkerNode[] = [];
+
+  for (const quest of state.questState.definitions) {
+    if (!quest.mapMarker || !activeQuestIds.has(quest.id)) {
+      continue;
+    }
+
+    const targetLocation = discoveredLocations.find((loc) => loc.id === quest.mapMarker!.locationId);
+
+    if (!targetLocation) {
+      continue;
+    }
+
+    const markerAnchor = getMarkerAnchor(targetLocation.position);
+
+    questMarkers.push({
+      id: `quest_${quest.id}`,
+      questId: quest.id,
+      label: quest.mapMarker.label,
+      point: targetLocation.position,
+      markerPosition: {
+        x: markerAnchor.x - 22,
+        y: markerAnchor.y - 28
+      },
+      zIndex: getTileZIndex(targetLocation.position) + 70
+    });
+  }
+
   return {
     mapId: overworldMap.id,
     mapName: overworldMap.name,
@@ -112,7 +140,7 @@ export function buildOverworldSceneModel(state: GameState): OverworldSceneModel 
     },
     routes: [],
     terrainFeatures: [],
-    questMarkers: [],
+    questMarkers,
     factionMarkers: [],
     borders: [],
     encounterMarkers: [],

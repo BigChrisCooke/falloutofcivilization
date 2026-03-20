@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 
 import { clearSessionCookie, createSessionCookie, requireAuth } from "../middleware/authenticate.js";
 import { AuthService } from "../services/auth_service.js";
@@ -24,7 +24,9 @@ export function createAuthRouter(authService: AuthService, config: AppConfig): R
         user
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Registration failed.";
+      const message = error instanceof ZodError
+          ? error.issues.map((issue) => issue.message).join(", ")
+          : error instanceof Error ? error.message : "Registration failed.";
       response.status(400).json({ error: message });
     }
   });
@@ -40,7 +42,9 @@ export function createAuthRouter(authService: AuthService, config: AppConfig): R
         user
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Login failed.";
+      const message = error instanceof ZodError
+          ? error.issues.map((issue) => issue.message).join(", ")
+          : error instanceof Error ? error.message : "Login failed.";
       response.status(400).json({ error: message });
     }
   });

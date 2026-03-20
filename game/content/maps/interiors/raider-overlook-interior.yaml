@@ -1,0 +1,316 @@
+id: raider_overlook_interior
+name: Raider Overlook
+theme: camp
+layout:
+  - [rock, rock, rock, rock, rock, rock, rock]
+  - [rock, floor, floor, floor, floor, floor, rock]
+  - [rock, floor, floor, floor, floor, floor, rock]
+  - [rock, floor, floor, cache, floor, floor, rock]
+  - [rock, floor, floor, floor, floor, floor, rock]
+  - [rock, rock, rock, exit, rock, rock, rock]
+spawnPoints:
+  - id: overlook_entrance
+    x: 3
+    y: 4
+exits:
+  - id: to_raider_overlook
+    target: raider_overlook
+    x: 3
+    y: 5
+interactables:
+  - id: lookout_telescope
+    type: console
+    label: Lookout Telescope
+    actions:
+      - id: examine_telescope
+        label: Examine
+        response: "A crude telescope fashioned from scrap pipe and salvaged lenses, mounted on a tripod of welded rebar. It's pointed at the road below. Scratched markings on the base track patrol times."
+      - id: look_through
+        label: Look Through the Telescope
+        response: "Through the cracked lens you can see the main road winding through the valley. Faint dust trails mark a caravan route. Scratched notes on the mount read: 'NCR patrol — dawn and dusk. Caravan — midday. Hit the caravan BEFORE the ridge.' This is how they plan their ambushes."
+      - id: per_details
+        label: "[PER 6] Study the patrol route markings"
+        specialGate: { stat: per, min: 6 }
+        response: "Your sharp eyes pick out additional details. The markings go back weeks — there's a pattern. The raiders have been timing their hits to a gap in the NCR patrol schedule. A two-hour window every afternoon. If you reported this to the rangers, they could close the gap and shut down the raider operation for good."
+  - id: ammo_crate
+    type: crate
+    label: Ammo Crate
+    actions:
+      - id: examine_ammo
+        label: Examine
+        response: "A dented metal ammo crate with a faded military stencil. The lock has been pried off. Inside you can see rows of ammunition, neatly sorted. The raiders may be savages, but someone here understands logistics."
+      - id: take_ammo
+        label: Take .308 Rounds
+        grant: { itemId: ammo_308, label: ".308 Rounds (x12)" }
+      - id: steal_remaining
+        label: Steal the Rest
+        steal: { itemId: ammo_mixed, label: "Mixed Ammunition", description: "A grab bag of mixed ammunition. Different calibers, different conditions, but all still fireable. Wasteland potpourri.", ownedBy: raiders }
+npcs:
+  # ── Gristle ─────────────────────────────────────────────────
+  - id: gristle
+    name: "Gristle"
+    disposition: hostile
+    factionId: raiders
+    x: 3
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A heavily scarred man with a shaved head and a necklace of dog tags looks up from a crude map table.* Well, well. Either you're the bravest or the dumbest thing to walk into my camp. What do you want?"
+          options:
+            - id: confront
+              label: "I'm here to put an end to your raiding, Gristle."
+              next: confront_response
+            - id: negotiate
+              label: "I'm here to talk, not fight. There might be a way out of this for everyone."
+              next: negotiate_start
+            - id: intimidate
+              label: "I've killed worse than you. Stand down or join them."
+              next: intimidate_start
+            - id: cha_negotiate
+              label: "[CHA 8] Look around you, Gristle. Dwindling supplies, NCR closing in. This can't last. Let me offer you an alternative."
+              specialGate: { stat: cha, min: 8 }
+              next: cha_disband
+            - id: ask_why
+              label: "Before anything happens — why? Why raid the valley?"
+              next: raider_motive
+            - id: dumb_greeting
+              label: "You Gristle? You look like a gristle. What a gristle?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_gristle
+        - id: confront_response
+          text: "*Gristle stands slowly, cracking his knuckles.* A hero. Wonderful. You know what happens to heroes in the wasteland? They get shallow graves and forgotten names. But I'll give you credit for the guts."
+          options:
+            - id: demand_surrender
+              label: "Surrender and I'll let you walk. The rangers just want you gone."
+              factionDelta: { factionId: rangers, delta: 5 }
+              next: surrender_demand
+            - id: fight_words
+              label: "Last chance. Drop your weapons."
+              next: fight_threat
+            - id: cha_reason
+              label: "[CHA 7] Your people are hungry, Gristle. The NCR will wipe you out eventually. I'm offering a way out."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_disband
+        - id: negotiate_start
+          text: "*Gristle narrows his eyes.* Talk. Nobody comes up here to talk. What's your angle?"
+          options:
+            - id: offer_deal
+              label: "The rangers want you gone. I can tell them the job's done — if you actually leave."
+              next: deal_offer
+            - id: ask_needs
+              label: "What do you actually need? Maybe we can work something out."
+              next: raider_needs
+            - id: int_analyze
+              label: "[INT 7] Your supply lines are cut, your ammo is running low, and the NCR patrol gap you've been exploiting is about to close. Negotiation is your best option."
+              specialGate: { stat: int, min: 7 }
+              next: int_leverage
+        - id: intimidate_start
+          text: "*Gristle's hand moves to his weapon, then pauses. He studies you carefully.* ...You're either bluffing or crazy. I've seen both. Which is it?"
+          options:
+            - id: str_intimidate
+              label: "[STR 7] *Crack your knuckles and step forward.* Try me."
+              specialGate: { stat: str, min: 7 }
+              next: str_success
+            - id: bluff_more
+              label: "Does it matter? Either way, this ends today."
+              next: bluff_response
+        - id: cha_disband
+          text: "*Gristle is quiet for a long time. He looks around the camp — at the meager supplies, the worn weapons, the tired faces of his crew.* ...You're not wrong. We've been running on fumes for weeks. The NCR's tightening the noose. I'm not stupid — just stubborn."
+          options:
+            - id: seal_deal
+              label: "Disband. Scatter your crew. Start over somewhere the NCR isn't hunting you."
+              factionDelta: { factionId: rangers, delta: 10 }
+              karmaDelta: 5
+              next: disband_accepted
+            - id: offer_direction
+              label: "Head west. I hear there's work for fighters who don't ask too many questions."
+              factionDelta: { factionId: rangers, delta: 8 }
+              karmaDelta: 3
+              next: disband_west
+        - id: raider_motive
+          text: "*Something flickers in Gristle's expression. Not quite guilt — but close.* We were Powder Gangers once. Broke out of the NCR work camp. No skills, no caps, no prospects. Raiding was the only trade left. It ain't noble. But it kept us alive."
+          options:
+            - id: sympathize
+              label: "I understand. But there has to be a better way."
+              next: negotiate_start
+            - id: no_excuse
+              label: "Doesn't excuse the people you've hurt."
+              next: no_excuse_response
+            - id: per_observe
+              label: "[PER 6] You keep looking at that map. You're planning something bigger, aren't you?"
+              specialGate: { stat: per, min: 6 }
+              next: bigger_plan
+        - id: dumb_gristle
+          text: "*Gristle stares at you in disbelief.* ...Gristle. It's the tough bit in meat. The part you can't chew through. That's me. And you are clearly the other part of the meat. The soft part."
+          options:
+            - id: dumb_follow
+              label: "Me like meat! We friends now?"
+              specialGate: { stat: int, max: 3 }
+              response: "*Gristle pinches the bridge of his nose.* No. We are not friends. Go away before I do something I... actually, I probably won't regret it. Just go."
+        - id: surrender_demand
+          text: "Walk? WALK? I've got fifteen people depending on me. Where do we walk to, hero? The NCR won't take us. Nobody will."
+          options:
+            - id: offer_help
+              label: "I'll talk to the rangers. Reduced sentences for cooperation."
+              factionDelta: { factionId: rangers, delta: 5 }
+              next: ranger_deal
+            - id: harsh_truth
+              label: "That's not my problem. Leave or face the consequences."
+              next: harsh_response
+        - id: fight_threat
+          text: "*Gristle spits on the ground.* You've got nerve. I'll give you that much when they're carving your headstone."
+          options: []
+        - id: deal_offer
+          text: "*Gristle considers this for a long moment.* And what — we just disappear? My crew's got nowhere to go. Give me something real and maybe we talk."
+          options:
+            - id: offer_scrapyard
+              label: "There's a scrapyard south of here. Honest work for people who know how to use their hands."
+              next: scrapyard_offer
+            - id: offer_caps
+              label: "I can get you enough caps to start over somewhere else."
+              next: caps_offer
+        - id: raider_needs
+          text: "Food. Medicine. A place that isn't a windblown rock. You think we raid for fun? ...Okay, some of the crew does. But most of us just want to survive."
+          options:
+            - id: promise_help
+              label: "Help me shut this operation down peacefully and I'll find your people work."
+              factionDelta: { factionId: rangers, delta: 5 }
+              karmaDelta: 3
+              next: peaceful_shutdown
+        - id: int_leverage
+          text: "*Gristle's jaw tightens. He wasn't expecting that.* ...You've done your homework. Fine. You've got leverage and you know it. What are your terms?"
+          options:
+            - id: terms_disband
+              label: "Disband. Leave the valley. I tell the rangers the job's done."
+              factionDelta: { factionId: rangers, delta: 8 }
+              karmaDelta: 3
+              next: disband_accepted
+            - id: terms_intel
+              label: "Give me everything you know about raider operations in the region. Then leave."
+              next: intel_offer
+        - id: str_success
+          text: "*Gristle takes a step back — the first time anyone's seen him flinch.* ...Alright. I know a killer when I see one. What do you want?"
+          options:
+            - id: demand_leave
+              label: "Pack up and leave. Tonight. Don't come back."
+              factionDelta: { factionId: rangers, delta: 5 }
+              next: forced_retreat
+        - id: bluff_response
+          text: "Hmph. Fair point. Talk then. But make it quick — my patience isn't what it used to be."
+          options:
+            - id: back_to_negotiate
+              label: "Disband your crew. Walk away. Simple."
+              next: deal_offer
+        - id: disband_accepted
+          text: "*Gristle exhales slowly and pulls the dog tag necklace over his head, setting it on the table.* Done. I'll scatter the crew by morning. Some won't like it, but they'll listen. They always do. You've got your peace, hero. Hope it lasts."
+          options: []
+        - id: disband_west
+          text: "West, huh? ...Yeah. Maybe. Heard rumors about mercenary outfits that don't care about your past. Better than waiting for an NCR noose. Alright. We're gone by sunrise."
+          options: []
+        - id: no_excuse_response
+          text: "No. It doesn't. *Gristle's voice is flat.* But understanding why a man does what he does is the first step to stopping him. You want me to stop? Give me a reason that isn't a bullet."
+          options:
+            - id: back_to_negotiate
+              label: "Fine. Let's talk terms."
+              next: negotiate_start
+        - id: bigger_plan
+          text: "*Gristle's hand slams down on the map.* ...You're too sharp for your own good. Yeah. One last hit — the NCR supply convoy. Enough to set the crew up for months. After that, we were going to disappear anyway."
+          options:
+            - id: stop_plan
+              label: "Cancel it. Walk away now and I keep this between us."
+              factionDelta: { factionId: rangers, delta: 5 }
+              karmaDelta: 3
+              next: cancel_plan
+            - id: report_plan
+              label: "The rangers will want to know about this."
+              factionDelta: { factionId: rangers, delta: 8 }
+              next: report_threat
+        - id: ranger_deal
+          text: "*Gristle weighs this carefully.* Reduced sentences. Not execution. You can guarantee that?"
+          options:
+            - id: cha_promise
+              label: "[CHA 7] I give you my word. Cooperation for leniency."
+              specialGate: { stat: cha, min: 7 }
+              factionDelta: { factionId: rangers, delta: 10 }
+              karmaDelta: 5
+              response: "*Gristle studies your face for a long moment, then nods slowly.* ...Alright. I believe you. God help me, but I do. Tell the rangers we'll come in quiet."
+        - id: harsh_response
+          text: "Cold. But honest. I respect that more than lies. Give me a day. We'll be gone."
+          options: []
+        - id: scrapyard_offer
+          text: "A scrapyard? Manual labor? *Gristle laughs bitterly.* ...It's better than dying on this rock. Fine. Point me in the direction and I'll see if the crew bites."
+          options: []
+        - id: caps_offer
+          text: "Caps buy time. Time buys options. How many are we talking?"
+          options: []
+        - id: peaceful_shutdown
+          text: "*Gristle looks at his crew, then back at you.* Work. Real work. That's more than the NCR ever offered us. Alright — you've got a deal. But if you're lying, I'll find you."
+          options: []
+        - id: intel_offer
+          text: "*Gristle pulls out a battered notebook.* Everything. Routes, caches, contacts. This buys my people safe passage, understood? No ambushes on the way out."
+          options: []
+        - id: forced_retreat
+          text: "*Gristle clenches his fists but holds his ground.* ...Fine. Tonight. But remember — I chose to walk. That counts for something."
+          options: []
+        - id: cancel_plan
+          text: "Between us. *Gristle tears the map in half.* Done. The convoy lives. My crew scatters. And you... you better hope the wasteland remembers mercy, because it usually doesn't."
+          options: []
+        - id: report_threat
+          text: "*Gristle's expression hardens.* Then we've got nothing to talk about. Get out of my camp before I change my mind about letting you leave breathing."
+          options: []
+
+  # ── Raider Guard ────────────────────────────────────────────
+  - id: raider_guard
+    name: "Raider Guard"
+    disposition: hostile
+    factionId: raiders
+    x: 5
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A raider with a pipe rifle slung across their back eyes you with open suspicion.* You shouldn't be here. Boss didn't say nothing about visitors."
+          options:
+            - id: here_for_gristle
+              label: "I'm here to see Gristle."
+              next: see_boss
+            - id: just_passing
+              label: "Just passing through."
+              next: passing_through
+            - id: cha_disarm
+              label: "[CHA 6] Easy. I'm not looking for trouble. Gristle and I have business."
+              specialGate: { stat: cha, min: 6 }
+              next: cha_disarm
+            - id: intimidate
+              label: "Out of my way."
+              next: intimidate_guard
+        - id: see_boss
+          text: "Boss is over there. Talk fast — he don't like wasted time. And neither do I. *The guard keeps one hand on their weapon.*"
+          options: []
+        - id: passing_through
+          text: "Nobody 'passes through' a raider camp. You came here on purpose. Say your piece or start walking back the way you came."
+          options: []
+        - id: cha_disarm
+          text: "*The guard relaxes slightly, but doesn't take their hand off the rifle.* ...Fine. But I'm watching you. One wrong move and we skip the talking part."
+          options: []
+        - id: intimidate_guard
+          text: "*The guard's grip tightens on the pipe rifle.* Big talk. Gristle's the one you want. I'm just the one who makes sure you don't leave with anything that ain't yours. Move along."
+          options: []
+loot:
+  - id: gristle_tags
+    label: "Gristle's Dog Tags"
+    description: "Dog tags from someone called 'Gristle.' The metal is scratched and dented. A trophy or a warning — depends on who's asking."
+    x: 1
+    y: 1
+  - id: stolen_goods
+    label: Stolen Trade Goods
+    description: "A bundle of goods clearly stolen from caravan traders — cloth, tools, and canned food, all with merchant tags still attached."
+    ownedBy: traders
+    x: 6
+    y: 4
+questHooks:
+  - ranger_bounty
+  - ncr_raider_problem

@@ -1,0 +1,21 @@
+id: ranger_bounty
+name: Dead or Alive
+description: "Ranger Jackson has posted a bounty on a raider boss operating from the overlook east of the valley. Bring proof of the kill — or convince the raider to leave peacefully."
+grantedBy: ranger_jackson
+objectives:
+  - id: find_raider_boss
+    description: "Track down the raider boss at the Raider Overlook."
+    type: visit
+    target: raider_overlook
+  - id: report_jackson
+    description: "Report back to Ranger Jackson at Ranger Station Delta."
+    type: talk
+    target: ranger_jackson
+rewards:
+  karma: 10
+  factionDeltas:
+    ncr: 10
+  caps: 150
+mapMarker:
+  locationId: raider_overlook
+  label: "Find the Raider Boss"

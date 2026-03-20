@@ -21,7 +21,9 @@ function createGameState(): GameState {
     playerCharacter: {
       name: "Courier",
       level: 1,
-      archetype: "Scout"
+      archetype: "Scout",
+      special: null,
+      karma: 0
     },
     worldState: {
       current_screen: "overworld",
@@ -57,6 +59,10 @@ function createGameState(): GameState {
       discoveredLocationIds: ["vault_47", "dusty_tavern"],
       discoveredTileKeys: ["0,0", "1,0", "2,0", "0,1", "1,1", "2,1", "1,2"]
     },
+    questState: { active: [], completed: [], definitions: [] },
+    inventory: [],
+    collectedItemIds: [],
+    collectedActionIds: [],
     factionStanding: {
       settlers: 1
     },
@@ -162,7 +168,7 @@ describe("overworld map modules", () => {
       throw new Error("Adjacent tile missing from scene model.");
     }
 
-    expect(resolveHoverTile(scene, adjacentTile.projected)).toBe("2,1");
+    expect(resolveHoverTile(scene, adjacentTile.projected)).toEqual({ tileKey: "2,1", markerId: null });
     expect(resolveInteractionTarget(scene, adjacentTile.projected)).toEqual({
       kind: "tile",
       point: { x: 2, y: 1 },
@@ -189,7 +195,7 @@ describe("overworld map modules", () => {
       locationId: "vault_47",
       tileKey: "1,1"
     });
-    expect(resolveHoverTile(scene, currentLocation.markerPosition)).toBe("1,1");
+    expect(resolveHoverTile(scene, currentLocation.markerPosition)).toEqual({ tileKey: "1,1", markerId: null });
     expect(resolveInteractionTarget(scene, currentLocation.markerPosition)).toEqual({
       kind: "location",
       locationId: "vault_47",

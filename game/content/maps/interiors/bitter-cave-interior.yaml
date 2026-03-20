@@ -19,12 +19,126 @@ interactables:
   - id: cache
     type: container
     label: Hidden Cache
+    actions:
+      - id: examine_cache
+        label: Examine
+        response: "A metal box wedged between the rocks, covered in dust and cave moss. Someone went to a lot of trouble to hide this. The lock is broken — someone got here first."
+      - id: search_cache
+        label: Search Thoroughly
+        response: "Underneath a false bottom you find a handful of .38 rounds, a crumpled map fragment, and a note: 'If you're reading this, they followed me. Don't trust the one with the scar.' Cryptic."
+      - id: take_ammo
+        label: Take the .38 Rounds
+        grant: { itemId: ammo_38, label: ".38 Rounds", description: "A handful of .38 caliber rounds. Common wasteland ammunition — won't win any wars, but it'll keep the radroaches honest.", quantity: 12 }
+        response: "You pocket the ammunition. Twelve rounds — enough to matter in a pinch."
+      - id: take_map
+        label: Take the Map Fragment
+        grant: { itemId: map_fragment, label: "Crumpled Map Fragment", description: "A crumpled piece of paper showing part of the surrounding terrain. Hand-drawn with charcoal, but surprisingly detailed." }
+        response: "You carefully fold the map fragment and tuck it away. It shows part of the eastern valley — might be useful."
 npcs:
   - id: cave_raider
     name: Cave Raider
     disposition: hostile
+    x: 3
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A figure rises from the shadows, hand on a rusted machete.* Turn around. Now. This cave is mine."
+          options:
+            - id: ask_who
+              label: "Who are you?"
+              next: who_are_you
+            - id: ask_cave
+              label: "What's in this cave?"
+              next: whats_here
+            - id: cha_calm
+              label: "Easy. I'm not here for trouble. Looks like you're hurt — I can help."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_calm
+            - id: cha_threaten
+              label: "You point that thing at me again and I'll shove it somewhere dark."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_threaten
+            - id: int_observe
+              label: "You're favoring your left side. Broken ribs, maybe two. You can barely hold that machete. Let's talk instead."
+              specialGate: { stat: int, min: 7 }
+              next: int_observe
+            - id: dumb_greeting
+              label: "Ooh, dark cave! Me like caves. You live here? Like a bat?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_greeting
+        - id: who_are_you
+          text: "Nobody. Just someone who got in too deep with the wrong people. The Powder Gangers sent me out here to stash supplies. Now they want me dead for skimming. So yeah — this is my life now."
+          options:
+            - id: ask_deal
+              label: "Maybe we can help each other."
+              next: make_deal
+        - id: whats_here
+          text: "Supplies. Some weapons. Nothing you need badly enough to die for. I'm giving you a chance to walk away. Take it."
+          options:
+            - id: ask_deal
+              label: "What if I told you I can get the Gangers off your back?"
+              next: make_deal
+        - id: make_deal
+          text: "*The raider lowers the machete slightly.* ...I'm listening. There's a stash of dynamite the Gangers want back — it's why they sent me. You return it to them, tell them I'm dead, and maybe we both walk out of this alive."
+          options:
+            - id: accept_deal
+              label: "Deal. Where's the dynamite?"
+              questGrant: danger_in_the_hollow
+              factionDelta: { factionId: powder_gangers, delta: -2 }
+              next: deal_accepted
+            - id: cha_better_deal
+              label: "I'll do it — but you owe me. Whatever's in that cache, I get half."
+              specialGate: { stat: cha, min: 7 }
+              questGrant: danger_in_the_hollow
+              next: deal_charmed
+            - id: decline_deal
+              label: "Not my problem. Good luck."
+              next: deal_declined
+        - id: deal_accepted
+          text: "Behind the rocks near the entrance. Wrapped in oilcloth. And... thanks. I didn't think anyone out here still made deals instead of just taking."
+          options: []
+        - id: deal_charmed
+          text: "*A grudging laugh.* Fair enough. You drive a hard bargain. The dynamite's near the entrance. And here — take this too. Consider it a down payment on not getting me killed. *Hands you a scrap bundle.*"
+          options: []
+        - id: deal_declined
+          text: "*Grips the machete tighter.* Then we've got nothing to talk about. Get out of my cave."
+          options: []
+        - id: cha_calm
+          text: "*The raider hesitates, then winces and touches their side.* ...Yeah. It's bad. Took a beating from my own crew. They think I stole from the stash. I didn't — but try telling that to Powder Gangers."
+          options:
+            - id: offer_help
+              label: "Let me take a look at that wound."
+              response: "You patch the worst of it with strips from your shirt. The raider watches you with suspicious, grateful eyes. 'You're alright. Name's Kell. I owe you one.'"
+            - id: ask_deal_cha
+              label: "Maybe I can help with the Ganger problem too."
+              next: make_deal
+        - id: cha_threaten
+          text: "*The raider actually laughs.* Ha! Okay, tough guy. You know what? Fine. I'm too beat up to fight anyway. What do you want?"
+          options:
+            - id: ask_deal_forced
+              label: "Information. Why are you hiding in a cave?"
+              next: who_are_you
+        - id: int_observe
+          text: "*The raider freezes, then slowly lowers the machete.* ...How did you — yeah. Two ribs, maybe three. My own crew did this. You're observant. That's either going to save your life or end it out here."
+          options:
+            - id: offer_medical
+              label: "I know enough field medicine to help. Let me look."
+              response: "You splint the worst break with a cave stalactite and torn cloth. Crude but effective. The raider stares at you. 'You're not like the other wastelanders. Thanks.'"
+            - id: ask_deal_int
+              label: "Tell me everything. Start with why the Powder Gangers want you dead."
+              next: who_are_you
+        - id: dumb_greeting
+          text: "*The raider stares at you for a long moment.* ...Are you... are you serious right now? I've got a machete and you're talking about bats. *Lowers the blade.* I can't stab someone this stupid. It wouldn't be right."
+          options:
+            - id: dumb_friend
+              label: "We friends now? Me like friends!"
+              next: make_deal
 loot:
   - id: scrap_bundle
     label: Scrap Bundle
+    x: 1
+    y: 1
 questHooks:
   - danger_in_the_hollow

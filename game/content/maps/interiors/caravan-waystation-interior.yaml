@@ -1,0 +1,296 @@
+id: caravan_waystation_interior
+name: Caravan Waystation
+theme: market
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, crate, floor, floor, notice, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, wall, wall, wall]
+spawnPoints:
+  - id: front_entrance
+    x: 3
+    y: 4
+exits:
+  - id: to_caravan_waystation
+    target: caravan_waystation
+    x: 3
+    y: 5
+interactables:
+  - id: notice_board
+    type: notice_board
+    label: Notice Board
+    actions:
+      - id: examine_board
+        label: Examine
+        response: "A weathered corkboard nailed to a wagon side. Scraps of paper flutter in the dry wind. Most are trade postings and route warnings, but a few stand out."
+      - id: read_bounties
+        label: Read Bounty Notices
+        response: "'BOUNTY: Raider gang calling themselves the Scorpion Tails — 30 caps per head, proof required. Contact NCR Ranger Station Delta.' Below it: 'WANTED: Information on missing Kings courier. Last seen east road. Reward negotiable. — The Kings.'"
+      - id: read_routes
+        label: Read Caravan Routes
+        response: "'ROUTE ADVISORY: East road past the gas station — Powder Ganger activity confirmed. Travel in groups of 3+. North fork to Jacobstown still clear as of last week. South road to Nipton — AVOID. Legion presence heavy.' A faded map is pinned underneath, showing the valley trade network."
+  - id: campfire
+    type: campfire
+    label: Campfire
+    actions:
+      - id: examine_campfire
+        label: Examine
+        response: "A well-maintained fire pit ringed with scavenged bricks. The coals glow a steady orange. A blackened cooking pot hangs from a tripod — something that might have been gecko stew bubbles inside. The warmth feels good against the desert night air."
+      - id: rest_campfire
+        label: Rest by the Fire
+        response: "You sit by the fire and let the warmth seep into your bones. The crackle of burning wood and the low murmur of caravan hands trading stories almost makes you forget where you are. Almost."
+npcs:
+  # ── Cassidy — Caravan Boss ────────────────────────────────
+  - id: cassidy
+    name: "Cassidy"
+    disposition: neutral
+    factionId: traders
+    x: 3
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Another drifter. Welcome to the waystation — long as you're buying, selling, or moving on. Name's Cassidy. I run the caravan through this stretch of nowhere."
+          options:
+            - id: ask_trade
+              label: "What are the trade routes like right now?"
+              next: trade_routes
+            - id: ask_rumors
+              label: "Heard any good rumors lately?"
+              next: rumors
+            - id: ask_goods
+              label: "What kind of goods are you moving?"
+              next: goods_info
+            - id: cha_insider
+              label: "Between you and me, Cassidy — I know how business works. What's really moving out here?"
+              specialGate: { stat: cha, min: 7 }
+              next: insider_info
+            - id: cha_rude
+              label: "You look like you sell junk to idiots. Am I wrong?"
+              specialGate: { stat: cha, max: 3 }
+              next: cha_rude_response
+            - id: int_supply
+              label: "Your wagons are heavy but your guards are light. Supply chain optimization issue or budget constraint?"
+              specialGate: { stat: int, min: 7 }
+              next: supply_analysis
+            - id: int_dumb
+              label: "You sell... things? From the wagon? How does wagon know where to go?"
+              specialGate: { stat: int, max: 3 }
+              next: int_dumb_response
+            - id: ask_courier
+              label: "I heard a Kings courier went missing. Know anything?"
+              questGate: { questId: kings_missing_courier }
+              next: courier_info
+        - id: trade_routes
+          text: "Three main routes through Frontier Valley. North fork is safest — Jacobstown traders keep it clean. East road is fast but risky, Powder Gangers have been hitting anything that moves. South to Nipton is a death sentence right now — Legion's got it locked down."
+          options:
+            - id: int_routes
+              label: "If the east road is compromised, that creates a bottleneck on the north fork. Prices must be inflating."
+              specialGate: { stat: int, min: 6 }
+              response: "Sharp. Yeah, supply costs are up 40% this month. Anyone who clears the east road would make a lot of friends in the trading business. And a lot of enemies with the Powder Gangers."
+            - id: ask_safe
+              label: "Which route would you recommend for a solo traveler?"
+              response: "North fork, no question. Slower, but you'll actually arrive. The east road will chew you up and spit you out if you're alone."
+            - id: back_to_start
+              label: "Good to know. What else can you tell me?"
+              next: greeting
+        - id: rumors
+          text: "Rumors? Got plenty. Word is someone's been poking around the old reactor complex at night — and not coming back. And I keep hearing whispers about a pre-war cache somewhere in the ridge, but nobody's found it yet."
+          options:
+            - id: ask_reactor
+              label: "The reactor complex? What's out there?"
+              next: reactor_rumor
+            - id: ask_courier_rumor
+              label: "Tell me about the missing courier."
+              questGate: { questId: kings_missing_courier }
+              next: courier_info
+            - id: ask_cache
+              label: "A pre-war cache? Sounds valuable."
+              response: "Could be. Could also be a wild goose chase. Scavengers love their fairy tales. But if even half the stories are true, whoever finds it would be set for a long time."
+        - id: reactor_rumor
+          text: "Pre-war power plant, north end of the valley. Place should be crawling with ghouls, but the scavengers say it's worse than ghouls. Two teams went in this month. Neither came back. I don't go near it and I advise you don't either."
+          options:
+            - id: int_reactor
+              label: "A functioning pre-war reactor would still have residual radiation. Whatever's in there is either heavily mutated or shielded."
+              specialGate: { stat: int, min: 7 }
+              response: "That's a cheerful thought. Either way, my caravans give it a five-mile berth. If you're the curious type, that's your funeral."
+            - id: back_rumors
+              label: "Noted. Anything else?"
+              next: rumors
+        - id: goods_info
+          text: "Basics, mostly. Clean water, preserved food, medicine when we can get it. Some ammunition. We're not Gun Runners — we move the stuff that keeps settlements alive, not the stuff that ends arguments permanently."
+          options:
+            - id: cha_deal
+              label: "Sounds like essential supplies. I bet you could use someone reliable on the road."
+              specialGate: { stat: cha, min: 6 }
+              response: "Maybe. You prove yourself out there and we'll talk. The traders always need capable hands — and we pay fair. Better than fair, if you're good."
+              factionDelta: { factionId: traders, delta: 1 }
+            - id: ask_medicine
+              label: "Medicine is hard to come by?"
+              response: "Stimpaks, Rad-Away, antibiotics — worth their weight in caps. Most of it comes from pre-war stockpiles. When those run out... well, let's not think about that."
+        - id: insider_info
+          text: "*Cassidy glances around and lowers her voice.* Alright, since you seem like someone who gets it. The real money isn't in water or food — it's in tech. Pre-war electronics, working terminals, holotapes with useful data. The Gun Runners pay triple for anything they can reverse-engineer. And the Brotherhood? They pay even more, but dealing with them is... complicated."
+          options:
+            - id: ask_brotherhood
+              label: "Complicated how?"
+              response: "They want the tech but they don't want you to know they want the tech. Middlemen, dead drops, coded messages. Paranoid bunch. But their caps are good."
+            - id: cha_partner
+              label: "Sounds like you could use a silent partner for those kinds of deals."
+              specialGate: { stat: cha, min: 8 }
+              response: "Ha! I like your style. Tell you what — you bring me something interesting and we'll split the profit 60-40. My 60, your 40. Non-negotiable. That's the friends and family rate."
+              factionDelta: { factionId: traders, delta: 3 }
+        - id: supply_analysis
+          text: "*Cassidy raises an eyebrow.* Well, well. Someone who actually thinks. You're right — I'm running lean on guards because three of them quit last week. Powder Gangers spooked them. So I'm taking the long route and hoping for the best. Not ideal, but it beats losing the whole shipment."
+          options:
+            - id: int_optimize
+              label: "If you stagger your departures and use decoy wagons on the east road, you could split their attention and run the real cargo north."
+              specialGate: { stat: int, min: 8 }
+              response: "...That's actually brilliant. I've been thinking too linear about this. Decoy wagons — light, fast, expendable. Run them east while the real cargo goes north. You ever want a job in logistics, you come find me."
+              factionDelta: { factionId: traders, delta: 5 }
+            - id: offer_help
+              label: "I could watch your back on the next run."
+              response: "I appreciate the offer. Prove you can handle yourself in the valley first, then we'll talk about road work. I don't hire unknowns for caravan duty — too much at stake."
+        - id: courier_info
+          text: "Yeah, I know about it. Kings courier named Danny — young kid, more guts than sense. He was carrying a satchel for Rex, something important. Left here two mornings ago heading east. Never arrived at the Freeside outpost. My guess? Powder Gangers grabbed him. They've been hitting anything on the east road."
+          options:
+            - id: int_courier
+              label: "If the Powder Gangers took him, they'd want the cargo, not the courier. He might still be alive if he gave it up."
+              specialGate: { stat: int, min: 6 }
+              response: "That's what I'm hoping. Danny's smart enough to hand over a satchel rather than die for it. But if whatever was in that satchel was valuable enough... well, the Gangers don't always leave witnesses."
+            - id: cha_courier
+              label: "I'm looking into it. Anything you can tell me that might help?"
+              specialGate: { stat: cha, min: 5 }
+              response: "He stopped here for water before heading out. Mentioned he was taking the shortcut past the ridge — not the main road. If he went off-trail, the Powder Gangers might not have been the problem. There are worse things in those hills."
+            - id: generic_courier
+              label: "I'll keep my eyes open."
+              response: "Do that. Danny's a good kid. The Kings would owe you one, and that's worth more than caps in this valley."
+        - id: cha_rude_response
+          text: "*Cassidy's expression goes flat.* ...Wow. You know, most people at least pretend to have manners before they insult someone's livelihood. I sell supplies that keep people alive. What do you do, besides make enemies?"
+          options: []
+        - id: int_dumb_response
+          text: "*Cassidy stares at you for a very long time.* The brahmin pull the wagon. I tell the brahmin where to go. The brahmin are... smarter than some of my customers, apparently. Do you need someone to walk you back to wherever you came from?"
+          options: []
+
+  # ── Brick — Guard ─────────────────────────────────────────
+  - id: brick
+    name: "Brick"
+    disposition: neutral
+    x: 5
+    y: 3
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A mountain of a man leans on a battered rifle, scanning the horizon.* Road's dangerous. You armed?"
+          options:
+            - id: ask_dangers
+              label: "What kind of dangers?"
+              next: road_dangers
+            - id: ask_powder
+              label: "I heard the Powder Gangers are active out here."
+              next: powder_info
+            - id: ask_brick
+              label: "You been doing this long? Guarding caravans?"
+              next: personal
+            - id: cha_tough
+              label: "Armed enough. I can handle myself."
+              specialGate: { stat: cha, min: 6 }
+              next: tough_response
+            - id: cha_rude_brick
+              label: "Why do you care? Mind your own business, big guy."
+              specialGate: { stat: cha, max: 3 }
+              next: brick_cha_rude
+            - id: str_intimidate
+              label: "*Crack your knuckles.* I don't need a weapon."
+              specialGate: { stat: str, min: 7 }
+              next: strong_response
+            - id: int_dumb_brick
+              label: "What is 'armed'? Like... more arms? I only got two."
+              specialGate: { stat: int, max: 3 }
+              next: brick_int_dumb
+        - id: road_dangers
+          text: "Take your pick. Radscorpions on the north trail — big ones, not the little stingers. Powder Gangers running toll operations on the east road. And something weird coming out of the old reactor at night. I don't spook easy, but that place gives me the creeps."
+          options:
+            - id: ask_radscorpions
+              label: "How big are we talking with the radscorpions?"
+              response: "Big enough that a hunting rifle won't cut it. You need armor-piercing rounds or energy weapons. Or just don't go north alone. Buddy system, like the old world kindergartens. Except with more poison."
+            - id: ask_reactor_brick
+              label: "What's coming out of the reactor?"
+              next: reactor_brick
+            - id: back_greeting
+              label: "I'll be careful. Thanks."
+              response: "See that you are. Wasteland doesn't give second chances."
+        - id: reactor_brick
+          text: "I don't know and I don't want to know. Two weeks ago I was on night watch and I saw lights moving in the reactor complex. Not flashlights — something blue, pulsing. Next morning, there were tracks in the sand. Not human. Not animal. Something in between."
+          options:
+            - id: int_tracks
+              label: "Bioluminescence combined with unusual tracks — could be a new strain of ghoul mutation, or something mechanical."
+              specialGate: { stat: int, min: 7 }
+              response: "Mechanical? Like robots? ...That's somehow worse. At least ghouls you can shoot in the head. Whatever it is, I'm paid to guard the waystation, not investigate the reactor. That's someone else's problem."
+            - id: brave_response
+              label: "Sounds like someone should check it out."
+              response: "Sure. Someone. Not me. I've got a good thing here — steady pay, regular meals, and I'd like to keep breathing. You want to play hero, that's your business."
+        - id: powder_info
+          text: "Active? They're running the east road like they own it. Toll stations, ambushes, the works. Cassidy lost a whole shipment last month. The NCR says they're handling it, but from where I'm standing, the Gangers are getting bolder, not weaker."
+          options:
+            - id: ask_powder_leader
+              label: "Who's running them?"
+              response: "Guy called Eddie, far as I know. Set up in the old NCRCF — that's the correctional facility east of here. He's got maybe forty, fifty men with access to dynamite and mining explosives. Not the smartest bunch, but you don't need to be smart when you've got that much boom."
+            - id: ask_powder_deal
+              label: "Can you deal with them? Pay the toll?"
+              response: "Some caravans do. Cassidy won't — says it's the principle. I say principles are great until they get you killed. But she's the boss."
+        - id: personal
+          text: "Twelve years on the road. Started as a pack brahmin handler, worked my way up to guard. It's honest work. Boring, mostly — which is how I like it. The exciting days are the ones where people die."
+          options:
+            - id: cha_bond
+              label: "Twelve years is impressive. You must've seen a lot."
+              specialGate: { stat: cha, min: 5 }
+              response: "More than I'd like. Lost friends, lost cargo, lost a toe to frostbite up near Jacobstown. But I'm still here. That counts for something in the wasteland."
+            - id: cha_rude_personal
+              label: "Twelve years? Doing THIS? Couldn't find anything better?"
+              specialGate: { stat: cha, max: 3 }
+              response: "*Brick's grip tightens on his rifle.* Better? I get paid, I eat, and nobody's tried to kill me this week. In the wasteland, that's a career most people would kill for. Literally. Now shut up before I demote you from 'stranger' to 'problem.'"
+            - id: ask_advice
+              label: "Any advice for someone new to the valley?"
+              response: "Don't trust anyone until they've earned it. Keep your water close and your weapon closer. And if someone offers you a deal that sounds too good to be true — it is. Every time."
+        - id: tough_response
+          text: "*Brick looks you over appraisingly.* Maybe you can. You've got that look — the one that says you've been in a fight or two. Just don't get cocky. The wasteland has a way of humbling people."
+          options:
+            - id: back_greeting
+              label: "Fair enough. What should I watch out for?"
+              next: road_dangers
+        - id: strong_response
+          text: "*Brick actually grins.* Ha! Alright, tough guy. I respect that. I've seen a few bare-knuckle types out here — most of them end up as radscorpion food, but the survivors are something else. You might do alright."
+          options:
+            - id: back_greeting
+              label: "So what's dangerous around here?"
+              next: road_dangers
+        - id: brick_cha_rude
+          text: "*Brick slowly turns to face you fully. He's a head taller and twice as wide.* ...Did you just tell me to mind my own business? At my waystation? Where I'm paid to mind everyone's business? *He leans down.* I'm going to pretend you didn't say that. Once."
+          options:
+            - id: back_greeting
+              label: "...What's dangerous around here?"
+              next: road_dangers
+        - id: brick_int_dumb
+          text: "*Brick blinks. Then blinks again.* ...Armed. With weapons. Do you have weapons. Guns. Pointy things. Things that hurt bad people. *He speaks very slowly now.* Are you... okay? Did something happen to your head recently?"
+          options:
+            - id: dumb_reply
+              label: "Oh! Weapons! Yeah I got a... a thing. The shooty one."
+              response: "*Brick pinches the bridge of his nose.* ...Cassidy, we got another one. *He waves you through.* Just... stay close to the fire and try not to eat anything that glows."
+loot:
+  - id: purified_water
+    label: Purified Water
+    description: "A bottle of purified water. Crystal clear and rad-free. In the wasteland, this is worth more than gold."
+    ownedBy: traders
+    x: 1
+    y: 1
+  - id: trail_mix
+    label: Trail Mix
+    description: "A pouch of caravan trail mix — dried brahmin jerky, mutfruit pieces, and roasted nuts. Trail-tested nutrition."
+    x: 5
+    y: 1
+questHooks:
+  - kings_missing_courier

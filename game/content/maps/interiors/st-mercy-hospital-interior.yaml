@@ -1,0 +1,248 @@
+id: st_mercy_hospital_interior
+name: St. Mercy General Hospital
+theme: hospital
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, desk, floor, floor, medbay, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, terminal, floor, floor, floor, wall]
+  - [wall, floor, cache, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, wall, exit, wall, wall, wall]
+spawnPoints:
+  - id: front_entrance
+    x: 4
+    y: 6
+exits:
+  - id: to_prewar_hospital
+    target: prewar_hospital
+    x: 4
+    y: 7
+interactables:
+  - id: pharmacy_counter
+    type: pharmacy
+    label: Pharmacy Counter
+    actions:
+      - id: examine_pharmacy
+        label: Examine
+        response: "A long counter with a security cage, the metal mesh torn open long ago by desperate scavengers. Most of the shelves behind the counter are empty — picked clean over the decades. But the back room door is wedged shut. Something might still be inside."
+      - id: search_pharmacy
+        label: Search Behind Counter
+        response: "You squeeze past the torn security cage and check the back shelves. Most bottles are empty or contain pills that crumbled to powder years ago. But wedged behind a collapsed shelf, you find an intact stimpak in its original Med-Tek packaging. Pre-war quality — the good stuff."
+        grant: { itemId: stimpak, label: "Stimpak" }
+  - id: patient_records
+    type: terminal
+    label: Patient Records Terminal
+    actions:
+      - id: examine_terminal
+        label: Examine
+        response: "A RobCo terminal, its screen flickering green in the darkness. The hospital's patient records system, somehow still running on backup power after two centuries. Most of the data is corrupted, but some entries are still readable."
+      - id: access_records
+        label: Access Patient Records
+        response: "You scroll through fragmented records. Most are routine — broken arms, flu cases, a lot of radiation sickness in the final weeks. One entry is flagged as 'CLASSIFIED — MILITARY LIAISON ONLY': a patient admitted with symptoms consistent with FEV exposure, transferred to an unnamed facility. The file was accessed one last time on October 23, 2077, at 9:42 AM. Then nothing."
+      - id: recover_data
+        label: Attempt Data Recovery
+        specialGate: { stat: int, min: 7 }
+        response: "Your technical knowledge lets you bypass the corrupted sectors and access the deeper archives. You find a series of encrypted communications between the hospital administrator and someone at West Tek Research. They were running unauthorized drug trials on terminal patients — experimental compounds derived from something called 'Batch 11-011.' The results were... not what anyone expected. Several patients showed rapid tissue regeneration before becoming violent and unresponsive. The last entry reads: 'Subjects contained in sublevel B. God forgive us.'"
+  - id: operating_table
+    type: medbay
+    label: Operating Table
+    actions:
+      - id: examine_table
+        label: Examine
+        response: "A pre-war surgical table, still stained with something dark and old. The overhead light fixture hangs at an angle, one bulb somehow still faintly glowing. Surgical tools are scattered across a nearby tray — scalpels, forceps, a bone saw. Everything is coated in a fine layer of dust except the area around the table, which has been recently cleaned. Doc Sawyer's handiwork."
+      - id: inspect_tools
+        label: Inspect Surgical Tools
+        response: "The tools are a mix of pre-war medical instruments and improvised wasteland replacements. A genuine pre-war laser scalpel sits next to a sharpened piece of scrap metal. The juxtaposition says everything about medicine in the wasteland — half science, half desperation."
+npcs:
+  # ── Doc Sawyer ────────────────────────────────────────────
+  - id: doc_sawyer
+    name: "Doc Sawyer"
+    disposition: friendly
+    x: 4
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Well now, a visitor. Welcome to St. Mercy — or what's left of it. I'm Doc Sawyer. If you're hurt, you came to the right place. If you're here to scavenge, I'd appreciate you not taking the things I need to keep people alive."
+          options:
+            - id: ask_doctor
+              label: "You're a real doctor? Out here?"
+              next: about_doctor
+            - id: ask_supplies
+              label: "How's the medical supply situation?"
+              next: supply_info
+            - id: ask_hospital
+              label: "What's the story with this hospital?"
+              next: hospital_info
+            - id: int_surgery
+              label: "That operating table — you've been performing actual surgeries? With what anesthetic protocol?"
+              specialGate: { stat: int, min: 7 }
+              next: surgery_talk
+            - id: cha_heal
+              label: "Doc, I've been through the wringer. Any chance you could patch me up? I'd owe you one."
+              specialGate: { stat: cha, min: 7 }
+              next: free_healing
+            - id: ask_trade
+              label: "I might have some things to trade for medical supplies."
+              next: trade_info
+            - id: cha_rude_sawyer
+              label: "Great, another quack playing doctor in a ruin. You got anything actually useful or just speeches?"
+              specialGate: { stat: cha, max: 3 }
+              next: sawyer_cha_rude_response
+            - id: int_dumb_sawyer
+              label: "You a doctor? Can you fix my think-muscle? Sometimes it doesn't think good."
+              specialGate: { stat: int, max: 3 }
+              next: sawyer_int_dumb_response
+        - id: about_doctor
+          text: "Trained by the Followers of the Apocalypse in New Vegas. Spent ten years in their clinics before I decided I could do more good out here. Most settlements don't have anyone who can do more than wrap a bandage. I set bones, remove bullets, treat infections — real medicine, not just stimpak-and-pray."
+          options:
+            - id: ask_followers
+              label: "The Followers of the Apocalypse?"
+              next: followers_info
+            - id: int_training
+              label: "Followers training is good, but limited. Did you supplement with pre-war medical texts?"
+              specialGate: { stat: int, min: 6 }
+              next: training_detail
+            - id: cha_respect
+              label: "That's admirable. The wasteland needs more people like you."
+              specialGate: { stat: cha, min: 5 }
+              response: "Kind of you to say. Most people just want their stitches and leave. It's nice to be appreciated for once."
+        - id: followers_info
+          text: "Good people trying to preserve knowledge and help the helpless. They run clinics, schools, research programs. Not everyone agrees with their methods — the NCR thinks they're idealists, the Brotherhood thinks they're dangerous. But they saved my life and taught me everything I know."
+          options:
+            - id: back_main
+              label: "Tell me about something else."
+              next: greeting
+        - id: training_detail
+          text: "Exactly right. The Followers have the best curriculum in the wasteland, but it's still post-apocalyptic education. I found the hospital's medical library mostly intact when I moved in. Pre-war surgical textbooks, pharmaceutical references, anatomy charts. It's like having a thousand teachers who've been dead for two hundred years. Morbid, but effective."
+          options:
+            - id: int_advanced
+              label: "Have you found anything about pre-war surgical techniques that we've lost? Cybernetic implants, auto-docs?"
+              specialGate: { stat: int, min: 8 }
+              next: advanced_medicine
+            - id: back_main
+              label: "Fascinating. What else can you tell me?"
+              next: greeting
+        - id: advanced_medicine
+          text: "You know your stuff. Yes — the pre-war surgeons were doing things we can barely imagine. Cybernetic limb replacements, neural interface implants, organ cloning. I found schematics for an Auto-Doc Mark IV in the basement. If I had the parts and the power supply, I could build one. It would revolutionize medicine in the valley. But that's a big 'if.'"
+          options:
+            - id: offer_help_parts
+              label: "If I find Auto-Doc parts in my travels, I'll bring them to you."
+              response: "I'd be in your debt. The key components are a surgical laser array, a diagnostic sensor suite, and a micro-fusion power cell. Any pre-war medical facility or military base might have them. It's a long shot, but it's the best shot we've got."
+            - id: back_main
+              label: "I'll keep that in mind."
+              next: greeting
+        - id: supply_info
+          text: "Dire, to be honest. I've got enough stimpaks for maybe two weeks. Rad-Away is almost gone. Antibiotics — don't even ask. Every week I patch someone up and pray the infection doesn't set in because I've got nothing to fight it with."
+          options:
+            - id: ask_sources
+              label: "Where do you get your supplies?"
+              next: supply_sources
+            - id: cha_sympathy
+              label: "That sounds incredibly difficult. How do you keep going?"
+              specialGate: { stat: cha, min: 5 }
+              response: "Because someone has to. Last month a caravan hand came in with a bullet in his gut. I operated for three hours with improvised tools and half a dose of Med-X for anesthetic. He lived. That's why I keep going."
+            - id: int_pharma
+              label: "The hospital pharmacy — have you fully cleared it? Pre-war facilities often have hidden pharmaceutical storage."
+              specialGate: { stat: int, min: 6 }
+              response: "I've been through it twice, but you might be right. There could be sealed compartments I missed — the pharmacy had a controlled substances vault that I haven't been able to crack. If you're handy with locks or terminals, I wouldn't say no to help."
+        - id: supply_sources
+          text: "Scavenging, mostly. I pick through every pre-war ruin I can reach safely. The caravan traders sell medical supplies, but the markup is brutal. And occasionally someone pays for treatment in supplies rather than caps. It's hand-to-mouth, but it works. Barely."
+          options:
+            - id: back_main
+              label: "What else should I know?"
+              next: greeting
+        - id: hospital_info
+          text: "St. Mercy General — built in 2041, expanded in 2065. It was one of the biggest hospitals in the region before the war. When the bombs hit, most of the upper floors collapsed. But the ground floor and basement are mostly intact. I cleared out the ferals when I moved in and set up shop. It's not pretty, but the infrastructure is here — running water from the old pipes, some backup power, and more medical equipment than anywhere else in the valley."
+          options:
+            - id: ask_ferals
+              label: "Ferals? Are there still ghouls in the building?"
+              next: feral_info
+            - id: ask_basement
+              label: "What's in the basement?"
+              next: basement_info
+            - id: int_power
+              label: "Backup power after two hundred years? That's either a remarkably resilient generator or a nuclear battery."
+              specialGate: { stat: int, min: 7 }
+              response: "Micro-fusion cells in the hospital's emergency power system. Military grade — they were installed during the Resource Wars when the government started hardening critical infrastructure. They'll run out eventually, but I estimate another ten to fifteen years of low-power operation. Enough to keep the lights on and the terminal running."
+        - id: feral_info
+          text: "Cleared them all from the ground floor. The upper floors... I sealed the stairwells. There might still be some up there, but they can't get down. The basement is clean too — I made sure of that. Can't have ghouls wandering into your operating room."
+          options:
+            - id: back_main
+              label: "Good to know. Anything else?"
+              next: greeting
+        - id: basement_info
+          text: "Storage, mostly. Medical supplies that were in transit when the bombs fell, some still sealed in their original crates. A morgue that I try not to think about. And the old pharmacy vault — heavy door, electronic lock. I haven't been able to get in. Whatever's behind that door could be the mother lode of pre-war medicine... or nothing. But it haunts me."
+          options:
+            - id: int_vault
+              label: "Electronic lock — if the terminal network is still active, there might be an override code in the administrator's files."
+              specialGate: { stat: int, min: 7 }
+              response: "I hadn't thought of that. The administrator's office is on the second floor — feral territory. If you could get up there and access the terminal, you might find the code. I'd make it worth your while."
+            - id: back_main
+              label: "Interesting. I'll keep that in mind."
+              next: greeting
+        - id: surgery_talk
+          text: "*Doc Sawyer's eyes light up.* Finally, someone who speaks the language. Anesthetic is my biggest challenge. Med-X is the standard, but supply is unreliable. I've been experimenting with a combination of barrel cactus extract and mentats — it's crude, but it provides about forty minutes of effective analgesia. Pre-war surgeons had it easy with their automated anesthesia systems."
+          options:
+            - id: int_technique
+              label: "Barrel cactus contains mescaline analogs — combined with the cognitive enhancement from mentats, you'd get dissociative anesthesia. Clever, but watch for respiratory depression."
+              specialGate: { stat: int, min: 8 }
+              response: "You know your pharmacology! Yes, respiratory depression is the main risk. I monitor breathing rate manually — no pulse oximeter, unfortunately. Lost two patients early on before I figured out the dosing. Now I keep the ratio at 3:1 cactus to mentats and haven't had an issue. Are you medically trained?"
+            - id: ask_patients
+              label: "What kind of surgeries have you performed?"
+              response: "Bullet extractions, mostly. Some bone setting — I've gotten good at splints. One amputation that I'd rather not talk about. And last month I removed a tumor from a trader's abdomen. That one I'm proud of — she's walking around healthy today. Pre-war surgeons would laugh at my setup, but the results speak for themselves."
+            - id: back_main
+              label: "Impressive work, Doc."
+              next: greeting
+        - id: free_healing
+          text: "*Doc Sawyer looks you over with a practiced eye.* You do look a bit roughed up. Tell you what — first one's on the house. Consider it a professional courtesy for anyone brave enough to walk the wasteland alone. *He pulls out a clean bandage and a half-dose of Med-X.* Hold still — this'll sting, then it won't."
+          options:
+            - id: thanks_doc
+              label: "Thanks, Doc. I appreciate it."
+              response: "Don't mention it. Literally — if word gets out I'm giving away free treatment, I'll have a line out the door. And I barely have enough supplies as it is."
+            - id: cha_extra
+              label: "You're a good man, Doc. The wasteland doesn't deserve you."
+              specialGate: { stat: cha, min: 8 }
+              response: "*He pauses, and for a moment something vulnerable crosses his face.* ...Thank you. I don't hear that often. Most days I wonder if any of this matters. But then someone walks in alive who wouldn't be without me, and... yeah. It matters. Now hold still, I'm not done patching you up."
+        - id: sawyer_cha_rude_response
+          text: "*Doc Sawyer's friendly expression vanishes.* 'Quack.' Right. I'll remember that when you come crawling back with a bullet in your gut and an infection that's eating your leg. And you will come crawling back — they always do. Until then, feel free to let the door hit you on the way out."
+          options:
+            - id: cha_rude_apologize
+              label: "Okay maybe that was harsh. What do you actually do here?"
+              next: about_doctor
+        - id: sawyer_int_dumb_response
+          text: "*Doc Sawyer tilts his head, studying you with clinical interest.* Your... think-muscle. You mean your brain? *He reaches for a light.* Can you follow this with your eyes? ...Hmm. Pupils are reactive. No obvious trauma. You might just be... you. Tell me, did your mother drop you as a child, or did you grow up near a reactor?"
+          options:
+            - id: int_dumb_followup_sawyer
+              label: "I dunno about reactors but I did eat a lot of glowing mushrooms when I was little. They tasted like angry."
+              specialGate: { stat: int, max: 3 }
+              response: "*Doc Sawyer slowly puts down the light and picks up a notepad.* Glowing mushrooms. Tasted like 'angry.' That is... genuinely the most medically alarming thing anyone has ever said to me, and I once treated a man who swallowed a live grenade. I'm going to recommend you don't eat anything that glows. Can you remember that? Nothing. That. Glows."
+        - id: trade_info
+          text: "I'm always interested. What I need most: stimpaks, Rad-Away, antibiotics, surgical tools, clean bandages. What I can trade: my services, medical knowledge, and whatever scavenged goods I've accumulated. I don't deal in caps much — barter works better for everyone out here."
+          options:
+            - id: ask_rare
+              label: "Anything rare you're looking for specifically?"
+              response: "A functioning Auto-Doc would be a dream, but I'd settle for parts. A surgical laser array, diagnostic sensors, or a micro-fusion power cell. Any of those would let me do things I can only read about in the textbooks right now. Pre-war military bases and hospitals are your best bet."
+            - id: back_main
+              label: "I'll see what I can find."
+              next: greeting
+loot:
+  - id: rad_away
+    label: Rad-Away
+    description: "A packet of RadAway — the standard treatment for radiation exposure. Tastes terrible, works wonders."
+    x: 1
+    y: 1
+  - id: surgical_tubing
+    label: Surgical Tubing
+    description: "A length of surgical tubing from the hospital supply. Flexible, durable, and useful for a dozen different improvised applications."
+    x: 6
+    y: 1
+  - id: medical_journal
+    label: Pre-War Medical Journal
+    description: "A pre-war medical journal. Dense reading, but the surgical diagrams and drug interaction charts could be genuinely useful."
+    x: 7
+    y: 6
+questHooks: []

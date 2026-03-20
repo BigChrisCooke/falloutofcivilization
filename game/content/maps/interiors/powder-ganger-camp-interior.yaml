@@ -1,0 +1,624 @@
+id: powder_ganger_camp_interior
+name: Powder Ganger Camp
+theme: camp
+layout:
+  - [rock, rock, rock, rock, rock, rock, rock, rock, rock, rock]
+  - [rock, floor, floor, floor, floor, floor, floor, floor, floor, rock]
+  - [rock, floor, floor, floor, floor, floor, floor, floor, floor, rock]
+  - [rock, floor, crate, floor, floor, floor, floor, crate, floor, rock]
+  - [rock, floor, floor, floor, floor, floor, floor, floor, floor, rock]
+  - [rock, floor, floor, floor, floor, floor, floor, floor, floor, rock]
+  - [rock, floor, floor, floor, cache, cache, floor, floor, floor, rock]
+  - [rock, rock, rock, rock, exit, rock, rock, rock, rock, rock]
+spawnPoints:
+  - id: camp_entrance
+    x: 4
+    y: 6
+exits:
+  - id: to_powder_ganger_camp
+    target: powder_ganger_camp
+    x: 4
+    y: 7
+interactables:
+  - id: dynamite_stash
+    type: cache
+    label: Dynamite Stash
+    actions:
+      - id: examine_dynamite
+        label: Examine
+        response: "A reinforced crate packed with sticks of dynamite, blasting caps, and coils of fuse cord. The Powder Gangers' stock-in-trade. The markings show it was stolen from an NCR railway construction project. There's enough here to level a building."
+      - id: take_dynamite
+        label: Take Dynamite Bundle
+        grant: { itemId: dynamite_stash, label: "Dynamite Bundle" }
+  - id: prison_manifest_doc
+    type: notice_board
+    label: Prison Manifest
+    actions:
+      - id: examine_manifest
+        label: Examine
+        response: "A water-stained document from the NCR Correctional Facility at Primm Pass. Lists 37 inmates transferred for railway labor detail. Most names are crossed out. Notes in the margin read: 'Eddie — leadership material. Scrambler — demolitions expert. Chains — enforcement. Meyers — reluctant but useful.' At the bottom: 'Breakout successful. 23 survived. NCR response: minimal. We own this territory now.'"
+      - id: read_names
+        label: Read the Names
+        response: "Most of the inmates were convicted of robbery, assault, or smuggling. A few were murderers. Eddie's entry reads: 'Sentenced to 15 years for armed robbery and conspiracy. High intelligence, manipulative, natural leader. FLAG: Do not assign to group detail.' Someone ignored that flag."
+  - id: weapons_rack
+    type: crate
+    label: Weapons Rack
+    actions:
+      - id: examine_weapons
+        label: Examine
+        response: "A makeshift rack built from scrap metal, holding a mix of stolen NCR service rifles, improvised pipe weapons, and a surprising number of machetes. Everything is in rough condition but functional. The Powder Gangers may be criminals, but they maintain their gear."
+      - id: steal_weapon
+        label: Steal a Pipe Rifle
+        steal: { itemId: pipe_rifle, label: "Pipe Rifle", description: "A weapon cobbled together from pipe fittings and scrap. It's ugly, unreliable, and effective enough to kill. Welcome to the wasteland.", ownedBy: powder_gangers }
+npcs:
+  # ── Boss Eddie ───────────────────────────────────────────
+  - id: boss_eddie
+    name: "Boss Eddie"
+    disposition: hostile
+    factionId: powder_gangers
+    x: 5
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A stocky man with a shaved head and prison tattoos sits behind a makeshift desk made from ammo crates. He doesn't stand.* Well, well. Either you're very brave or very stupid walking into my camp. Which is it?"
+          options:
+            - id: brave
+              label: "Brave. I'm here to talk, not fight."
+              next: here_to_talk
+            - id: stupid
+              label: "Maybe both. But I'm still standing."
+              next: tough_response
+            - id: cha_negotiate
+              label: "Neither. I'm practical. And I think we can help each other."
+              specialGate: { stat: cha, min: 6 }
+              next: negotiate_open
+            - id: ask_about_camp
+              label: "Nice setup you've got here. How'd a bunch of convicts build all this?"
+              next: about_camp
+            - id: ask_about_dynamite
+              label: "Word is you've got dynamite. I might be interested."
+              next: dynamite_talk
+            - id: int_analyze
+              label: "Thirty-seven transferred, twenty-three survived the breakout. You've lost men since then. How many do you actually have left?"
+              specialGate: { stat: int, min: 7 }
+              next: numbers_game
+            - id: cha_rude_eddie
+              label: "Wow, a bald guy with tattoos sitting on boxes. Real scary. You in charge of this dump or just the ugliest one here?"
+              specialGate: { stat: cha, max: 3 }
+              next: eddie_cha_rude_response
+            - id: int_dumb_eddie
+              label: "Is this... outside jail? Or inside jail? I can't tell because of the rocks."
+              specialGate: { stat: int, max: 3 }
+              next: eddie_int_dumb_response
+        - id: here_to_talk
+          text: "*Eddie leans back.* Talk. That's refreshing. Most people who come through here are either NCR grunts trying to look tough or scavengers begging for their lives. What's on your mind?"
+          options:
+            - id: talk_dynamite
+              label: "The dynamite. I need some."
+              next: dynamite_talk
+            - id: talk_ncr
+              label: "The NCR wants you gone. What's your plan?"
+              next: ncr_threat
+            - id: talk_hollow
+              label: "I heard about trouble in the hollow. Your people involved?"
+              next: hollow_talk
+            - id: cha_respect
+              label: "I respect what you've built here. Not many could pull off a prison break and build a territory."
+              specialGate: { stat: cha, min: 7 }
+              response: "*Eddie's expression softens, just for a moment.* ...Respect. That's not a word I hear often. Most people see the tattoos and the dynamite and run. You see what we built. That means something. Alright — you want to talk? Let's talk."
+              factionDelta: { factionId: powder_gangers, delta: 3 }
+        - id: tough_response
+          text: "*Eddie chuckles.* Guts. I can work with guts. But guts don't stop a bullet, friend. So say what you came to say before my boys get twitchy."
+          options:
+            - id: talk_dynamite_tough
+              label: "I need dynamite."
+              next: dynamite_talk
+            - id: talk_deal
+              label: "I've got a proposition."
+              next: negotiate_open
+            - id: talk_hollow_tough
+              label: "I'm looking into the trouble in the hollow."
+              next: hollow_talk
+        - id: negotiate_open
+          text: "*Eddie's eyes narrow, calculating.* Practical. I like that. The NCR thinks we're animals — too stupid to negotiate. Let's prove them wrong. What are you offering?"
+          options:
+            - id: offer_info
+              label: "Information. I know things about NCR troop movements that might interest you."
+              next: info_offer
+            - id: offer_trade
+              label: "Trade. I can get you supplies the valley won't sell to Powder Gangers."
+              next: trade_offer
+            - id: cha_big_picture
+              label: "A future. Right now you're raiding and hiding. I can help you become something more legitimate."
+              specialGate: { stat: cha, min: 8 }
+              next: legitimacy_talk
+        - id: info_offer
+          text: "NCR troop movements. That's valuable. But I need to trust the source. Tell me something I don't know, and then we'll talk about what I can do for you."
+          options:
+            - id: per_observation
+              label: "Your perimeter guard on the east side changes shift at sundown. Leaves a ten-minute gap. I walked right through it."
+              specialGate: { stat: per, min: 6 }
+              response: "*Eddie's jaw tightens.* ...That's useful. And concerning. I'll fix that gap. Alright, you've got my attention. What do you need?"
+              factionDelta: { factionId: powder_gangers, delta: 2 }
+              next: what_do_you_need
+            - id: bluff_info
+              label: "The NCR is planning a raid on this camp within the week."
+              next: bluff_response
+        - id: bluff_response
+          text: "*Eddie studies your face for a long moment.* Interesting. We've heard similar rumors. Whether you're telling the truth or not, it doesn't change our preparations. But I'll remember that you came here with a warning."
+          options:
+            - id: pivot_to_need
+              label: "Now that we're on better terms — I need something from you."
+              next: what_do_you_need
+        - id: trade_offer
+          text: "Supplies. Now you're speaking my language. We can't buy from the valley — they see the prison tats and the doors close. What kind of supplies are we talking about?"
+          options:
+            - id: offer_medical
+              label: "Medical supplies. Stimpaks, rad-away, bandages."
+              response: "Medical supplies are worth their weight in caps out here. You bring me a crate of stimpaks and I'll make sure you can walk through Powder Ganger territory unmolested. That's a generous offer."
+              factionDelta: { factionId: powder_gangers, delta: 3 }
+            - id: offer_food
+              label: "Food and clean water. Hard to raid on an empty stomach."
+              response: "*Eddie nods slowly.* You're not wrong. Hard to keep discipline when the boys are hungry. Bring food and we'll talk business — real business, not just threats and posturing."
+              factionDelta: { factionId: powder_gangers, delta: 2 }
+        - id: legitimacy_talk
+          text: "*Eddie is quiet for a long time.* Legitimate. That's a word I haven't heard since the trial. Most of my boys just want to survive. A few want revenge on the NCR. Me? I want to build something. But the wasteland doesn't give second chances to convicts."
+          options:
+            - id: cha_promise
+              label: "It does if the right people vouch for you. Let me be that person."
+              specialGate: { stat: cha, min: 8 }
+              response: "*Eddie stares at you, something shifting behind his eyes.* You're either the best liar I've ever met or the most idealistic fool in the wasteland. Either way... I'm listening. Don't make me regret it."
+              factionDelta: { factionId: powder_gangers, delta: 5 }
+              karmaDelta: 3
+            - id: pragmatic_response
+              label: "Start small. Stop raiding the trade routes. The valley might come around."
+              response: "Stop raiding. Easy for you to say when you're not feeding thirty mouths. But... maybe you've got a point. The raiding keeps the NCR's attention on us. That's not sustainable."
+              factionDelta: { factionId: powder_gangers, delta: 2 }
+        - id: about_camp
+          text: "Blood, sweat, and dynamite. When we broke out of NCRCF, most of us had nothing but prison jumpsuits and stolen weapons. We found this canyon, fortified it, and made it home. The NCR calls it a den of criminals. I call it the only place in the wasteland where my people are free."
+          options:
+            - id: ask_breakout
+              label: "Tell me about the breakout."
+              next: breakout_story
+            - id: back_to_business
+              label: "Impressive. Now let's talk business."
+              next: negotiate_open
+        - id: breakout_story
+          text: "NCRCF. NCR Correctional Facility at Primm Pass. They worked us building the railway — sixteen-hour shifts, barely enough food to stand. One night, Scrambler got into the demolitions shed. Three blasts, two guard towers down, and we were running. Twenty-three of us made it. Not all of them deserved to."
+          options:
+            - id: int_breakout
+              label: "A coordinated demolitions assault on a guarded facility — that takes planning. Months of planning."
+              specialGate: { stat: int, min: 6 }
+              response: "*Eddie smiles, the first genuine smile you've seen.* Six months. Six months of watching guard rotations, mapping the explosives stores, and building trust with the right people. The NCR thought we were too stupid to plan. That's their problem."
+            - id: meyers_mention
+              label: "I heard not everyone was thrilled about the breakout."
+              next: meyers_talk
+        - id: meyers_talk
+          text: "*Eddie's expression hardens.* Meyers. Yeah, he didn't want to come. Said we should serve our time, earn our way out. Noble sentiment from a man who was in for manslaughter. He's useful — knows mechanics, can fix anything — but his heart's not in it. I keep him around because I need him, not because I trust him."
+          options:
+            - id: cha_meyers_angle
+              label: "A man who doesn't want to be here is a liability. You know that."
+              specialGate: { stat: cha, min: 6 }
+              response: "I know it better than anyone. But turning him loose means losing our best mechanic, and it means the NCR gets intel on our defenses. For now, he stays. But you're right — it can't last."
+        - id: dynamite_talk
+          text: "Dynamite's our currency, our weapon, and our leverage. I don't hand it out like candy. What do you need it for?"
+          options:
+            - id: need_for_quest
+              label: "There's something in the hollow that needs clearing out. Dynamite would make it easier."
+              next: hollow_dynamite
+            - id: need_for_trade
+              label: "I've got buyers who'll pay well. We could split the profit."
+              next: trade_dynamite
+            - id: cha_honest
+              label: "I'll be straight with you — I don't know yet. But I'd rather have it and not need it."
+              specialGate: { stat: cha, min: 6 }
+              response: "*Eddie laughs.* Honest. That's rare around here. Tell you what — you do something for me, and I'll make sure you've got enough boom to handle whatever the wasteland throws at you. Deal?"
+              next: what_do_you_need
+        - id: hollow_dynamite
+          text: "The hollow. Yeah, we know about the trouble down there. Creatures — big ones. Some of my boys went down to check it out and came back missing fingers. If you're clearing that out, you're doing us a favor too. Take what you need from the stash."
+          options:
+            - id: thanks_eddie
+              label: "Appreciate it, Eddie."
+              factionDelta: { factionId: powder_gangers, delta: 2 }
+              response: "Don't thank me yet. That hollow's killed better people than either of us. Watch your back down there."
+        - id: trade_dynamite
+          text: "*Eddie's expression turns cold.* Buyers. You want to sell my dynamite to someone else and split the profit. Bold. Who are these buyers?"
+          options:
+            - id: cha_smooth_trade
+              label: "People who'll pay enough to keep this camp fed for a month. That's all you need to know."
+              specialGate: { stat: cha, min: 7 }
+              response: "A month of food for some dynamite we can make more of... I'll think about it. Come back with a concrete offer and we'll see."
+            - id: back_off
+              label: "Forget it. Bad idea."
+              response: "Smart. Walking in here and trying to sell my own supplies back to strangers would've ended badly. At least you know when to fold."
+        - id: hollow_talk
+          text: "The hollow. Something's been coming out of there at night — creatures, big and mean. We've lost two men on patrol near the east ridge. I want it dealt with, but I'm not sending more of my people to die."
+          options:
+            - id: lie_about_hollow
+              label: "I already dealt with the cave raider down there. Consider it handled."
+              specialGate: { stat: cha, min: 5 }
+              next: lie_response
+            - id: offer_to_clear
+              label: "I'll clear it out. But I'll need some of that dynamite."
+              next: hollow_dynamite
+            - id: ask_what_creatures
+              label: "What kind of creatures?"
+              response: "Big. Fast. My boys said they looked like deathclaws, but smaller. Juveniles maybe, or some mutant variant. Either way, they don't go down easy. You'll need heavy ordnance — or a lot of luck."
+        - id: lie_response
+          text: "*Eddie studies you carefully, looking for the lie.* ...You dealt with it. Just like that. Alone. In the hollow. Where my armed patrols couldn't last ten minutes."
+          options:
+            - id: cha_double_down
+              label: "What can I say? I'm good at what I do."
+              specialGate: { stat: cha, min: 7 }
+              response: "*Eddie holds your gaze for a long moment, then shrugs.* Either you're telling the truth, in which case you're the most dangerous person I've met this month, or you're lying, in which case you've got stones the size of brahmin. Either way — I'm impressed."
+              factionDelta: { factionId: powder_gangers, delta: 2 }
+            - id: caught_lying
+              label: "...Okay, maybe I haven't dealt with it yet. But I will."
+              response: "*Eddie snorts.* That's what I thought. Don't come in here lying to me — I spent fifteen years surrounded by liars. I can smell it. But if you want to actually clear the hollow, I'll give you the tools to do it."
+              next: hollow_dynamite
+        - id: ncr_threat
+          text: "The NCR. Yeah, they want us gone. They've always wanted us gone. But they're stretched thin between the dam, the trade routes, and a dozen other problems. We're low on their list — for now. When that changes, we need to be ready."
+          options:
+            - id: int_strategy
+              label: "Their garrison at the valley is undermanned. They can't project force this far east without pulling from the water plant."
+              specialGate: { stat: int, min: 7 }
+              response: "*Eddie leans forward, interested.* You know NCR force disposition? That's valuable intelligence. The water plant is their priority — as long as it stays broken, they can't spare troops for us. Which is both a blessing and a curse."
+              factionDelta: { factionId: powder_gangers, delta: 3 }
+            - id: suggest_move
+              label: "Maybe it's time to relocate before they come."
+              response: "Relocate to where? We've got walls, water access, and strategic position here. Moving means starting over — and exposing ourselves on open ground. No. We stand and fight, or we negotiate. Those are the only options."
+        - id: what_do_you_need
+          text: "So. You've got my ear. What is it you actually want?"
+          options:
+            - id: want_dynamite
+              label: "Dynamite. For the hollow."
+              next: hollow_dynamite
+            - id: want_passage
+              label: "Safe passage through Powder Ganger territory."
+              response: "Done. I'll pass the word — you're not to be touched. But don't abuse it. My boys see you working with the NCR against us, and the deal's off."
+              factionDelta: { factionId: powder_gangers, delta: 3 }
+            - id: want_info
+              label: "Information. What do you know about the valley?"
+              response: "I know the NCR's water plant is failing. I know there's something nasty in the hollow. I know the radio tower on the ridge is broadcasting something — nobody knows what. And I know that whoever controls the water controls the valley. That enough for you?"
+        - id: eddie_cha_rude_response
+          text: "*The entire camp goes silent. Two men reach for their weapons. Eddie slowly stands up, and he's bigger than he looked sitting down.* ...Did you just walk into my camp — MY camp — and insult me to my face? *He laughs, a sound with zero humor.* Either you've got a death wish or you're too dumb to know you should be scared. Which is it?"
+          options:
+            - id: cha_rude_eddie_double
+              label: "I ain't scared of a bunch of guys who couldn't even stay in prison right."
+              response: "*Eddie's eye twitches. Chains takes a step forward. Eddie holds up a hand.* ...You know what? I'm not going to kill you. Because you're the funniest thing that's walked in here in months. But push it ONE more time and I'll let Chains have a turn. Now — you came here for a reason. Spit it out."
+              next: what_do_you_need
+        - id: eddie_int_dumb_response
+          text: "*Eddie stares at you. Then at Scrambler. Then back at you.* Did... did this person just ask me if we're inside a jail? *Scrambler shrugs.* We BROKE OUT of jail. This is a CAMP. Outside. In the WASTELAND. There are no walls here! *He gestures at the open canyon.* Well, there are rocks, but — you know what, never mind. What do you want?"
+          options:
+            - id: int_dumb_eddie_followup
+              label: "If no walls then how come I can't walk through the rocks? Checkmate."
+              specialGate: { stat: int, max: 3 }
+              response: "*Eddie puts his head in his hands.* Scrambler, I swear if this is some kind of test you're running... *Scrambler shakes his head silently.* Fine. Rocks are not walls. You cannot walk through rocks because rocks are SOLID. Please don't try. What do you need?"
+              next: what_do_you_need
+        - id: numbers_game
+          text: "*Eddie's face goes still.* ...You've been reading our manifest. Or you're smarter than you look. Eighteen. I've got eighteen people, including three who can barely hold a weapon. Happy now?"
+          options:
+            - id: int_press
+              label: "Eighteen against an NCR garrison of fifty, with no supply line. That's not sustainable, Eddie."
+              specialGate: { stat: int, min: 7 }
+              response: "*Eddie slams his fist on the crate-desk.* You think I don't know that? Every day I'm doing the math. Every day the numbers get worse. But these people depend on me. I won't abandon them."
+              next: what_do_you_need
+            - id: back_off_numbers
+              label: "I'm not here to threaten you. I just want to understand the situation."
+              next: what_do_you_need
+
+  # ── Scrambler ────────────────────────────────────────────
+  - id: scrambler
+    name: "Scrambler"
+    disposition: hostile
+    factionId: powder_gangers
+    x: 2
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A wiry man with burn scars on his hands looks up from a workbench covered in blasting caps and fuse cord.* Don't touch anything. Seriously. One wrong bump and we're all confetti."
+          options:
+            - id: ask_explosives
+              label: "You're the demolitions guy?"
+              next: demo_talk
+            - id: ask_breakout
+              label: "I heard you blew the gates at NCRCF."
+              next: breakout_pride
+            - id: int_chemistry
+              label: "Is that nitroglycerin-based or ammonium nitrate? The crystal structure looks unstable."
+              specialGate: { stat: int, min: 7 }
+              next: chemistry_talk
+            - id: be_careful
+              label: "I'll keep my distance."
+              response: "Smart. Most people who come in here want to poke the dynamite. Those people don't live long."
+            - id: cha_rude_scrambler
+              label: "Burn scars, huh? So you're the guy who's bad at his own job. Inspiring."
+              specialGate: { stat: cha, max: 3 }
+              next: scrambler_cha_rude_response
+            - id: int_dumb_scrambler
+              label: "Ooh, pretty red sticks! Can I have one? I wanna make the boom-boom sound!"
+              specialGate: { stat: int, max: 3 }
+              next: scrambler_int_dumb_response
+        - id: demo_talk
+          text: "Demolitions expert, engineer, and the reason half these idiots still have all their fingers. I build the charges, I set the fuses, and I make sure nobody blows themselves up. Well, nobody important."
+          options:
+            - id: ask_about_craft
+              label: "How'd you learn all this?"
+              next: origin_story
+            - id: ask_supplies
+              label: "How's your supply holding up?"
+              response: "Getting low. The NCR railway depot was our main source, but they've tightened security since the breakout. I can make improvised charges from fertilizer and scrap, but they're unreliable. One in ten is a dud. One in twenty goes off early. Those are bad odds."
+        - id: breakout_pride
+          text: "*Scrambler grins, showing a gold tooth.* Three shaped charges on the guard towers, two on the main gate, and a smoke screen from burning tire rubber. Fourteen seconds from first blast to open air. My finest work."
+          options:
+            - id: int_impressive
+              label: "Shaped charges require precise geometry. You calculated the Munroe effect angles in a prison cell?"
+              specialGate: { stat: int, min: 8 }
+              response: "*Scrambler's eyes light up.* Finally! Someone who speaks the language! Yes — I used clay models and a protractor I stole from the warden's office. The cone angle was 42 degrees, which gives optimal penetration on reinforced concrete. You and me, we should talk more."
+              factionDelta: { factionId: powder_gangers, delta: 2 }
+            - id: just_impressed
+              label: "That's... actually impressive."
+              response: "Damn right it is. The NCR built those walls to hold us in. I turned their own construction materials into the key that let us out. Poetic, right?"
+        - id: chemistry_talk
+          text: "*Scrambler freezes, then slowly turns to face you with wide eyes.* Nitroglycerin-based. And yes, the crystal structure IS unstable — it's been exposed to temperature cycling. You're the first person in this camp who would know that. Who the hell are you?"
+          options:
+            - id: int_deeper
+              label: "Someone who knows that temperature-cycled nitro should be stabilized with diatomaceous earth before handling."
+              specialGate: { stat: int, min: 8 }
+              response: "*Scrambler stares at you like you just performed a miracle.* Diatomaceous earth. Yes. Alfred Nobel's original solution. I've been using sand as a substitute, but it's not as effective. If you can find me proper diatomaceous earth, I can stabilize the entire stockpile. You're a gift from whatever god watches over demolitions men."
+              factionDelta: { factionId: powder_gangers, delta: 3 }
+            - id: just_observant
+              label: "I read a lot of pre-war chemistry manuals. Knowledge is survival."
+              response: "You're not wrong. Half the people in this camp are dead because they didn't know the difference between a stable compound and an accident waiting to happen. Stick around — I could use someone with a brain."
+        - id: origin_story
+          text: "Prison library. Four years of nothing to do but read. Turns out the NCR stores engineering manuals in their correctional facilities — security through ignorance, they figured. Nobody would actually learn from them. They were wrong."
+          options:
+            - id: self_taught
+              label: "Self-taught demolitions expert. That's either genius or insanity."
+              response: "Little of both. The first charge I ever built went off in my cell. Blew out the window and singed my eyebrows off. The guards thought it was a gas leak. I learned to be more careful after that."
+
+        - id: scrambler_cha_rude_response
+          text: "*Scrambler's hand freezes over a blasting cap. He turns to face you with an expression that could curdle brahmin milk.* 'Bad at my job.' You see these scars? These are from the FIRST charge I ever built. Every one after that worked perfectly. I blew open the most secure prison in the NCR with three shaped charges and zero casualties on our side. What have YOU done that's impressive?"
+          options:
+            - id: cha_rude_scrambler_back
+              label: "I walked into a camp full of armed convicts and insulted the explosives guy. That takes guts."
+              response: "*Scrambler opens his mouth, pauses, then actually laughs.* ...Okay. I'll give you that one. You're either fearless or brainless, but at least you're entertaining. Don't touch the dynamite."
+        - id: scrambler_int_dumb_response
+          text: "*Scrambler physically recoils, then lunges forward to put his entire body between you and the workbench.* NO. No boom-boom. Those are NOT toys. Those are nitroglycerin-based explosive charges that will turn you into a fine red mist if you so much as BREATHE on them wrong. *He looks at you with growing horror.* How did you even get in here? Does Eddie know you're wandering around unsupervised?"
+          options:
+            - id: int_dumb_scrambler_followup
+              label: "But... but the pretty red sticks... they look like candy..."
+              specialGate: { stat: int, max: 3 }
+              response: "*Scrambler's eye starts twitching.* They are NOT candy. They are the OPPOSITE of candy. Candy makes you happy. These make you dead. Dead is the opposite of happy. Do you understand? OPPOSITE. OF. HAPPY. *He starts physically herding you away from the workbench.* Please go stand over there. Far away. Near the rocks. Where there is nothing that explodes."
+
+  # ── Chains ───────────────────────────────────────────────
+  - id: chains
+    name: "Chains"
+    disposition: hostile
+    factionId: powder_gangers
+    x: 7
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A massive man with a length of chain wrapped around his forearm steps into your path. His expression suggests he's already decided he doesn't like you.* You shouldn't be here. Turn around."
+          options:
+            - id: not_leaving
+              label: "I'm not going anywhere. Eddie and I are talking."
+              next: eddie_permission
+            - id: stay_calm
+              label: "Easy. I'm not looking for trouble."
+              next: calm_response
+            - id: cha_intimidate
+              label: "I've walked through worse places than this without breaking a sweat. Move."
+              specialGate: { stat: cha, min: 7 }
+              next: intimidate_response
+            - id: ask_name
+              label: "They call you Chains? Let me guess — it's not a fashion statement."
+              next: name_story
+            - id: cha_rude_chains
+              label: "Ooh, big scary man with a chain. What are you gonna do, jingle at me?"
+              specialGate: { stat: cha, max: 3 }
+              next: chains_cha_rude_response
+            - id: int_dumb_chains
+              label: "Ooh, shiny arm bracelet! Is it jewelry? Are you a jewelry man?"
+              specialGate: { stat: int, max: 3 }
+              next: chains_int_dumb_response
+        - id: eddie_permission
+          text: "*Chains glances toward Eddie's tent, then back at you.* Eddie lets a lot of people talk. Not all of them leave. Remember that."
+          options:
+            - id: noted
+              label: "Noted. I'll be careful."
+              response: "You do that. And keep your hands where I can see them."
+        - id: calm_response
+          text: "Trouble finds everyone eventually. In here, it finds them faster. Say what you came to say and get out. The longer you stay, the more my boys get ideas."
+          options:
+            - id: ask_about_boys
+              label: "Your boys don't seem too organized. Just saying."
+              response: "*Chains' hand tightens on the chain.* They're organized enough to take what we need. That's all that matters. Now stop talking and start leaving."
+            - id: respectful_exit
+              label: "I hear you. I'll keep it short."
+              response: "*Chains nods, barely.* Good. First smart thing you've said."
+        - id: intimidate_response
+          text: "*Chains pauses. For just a moment, something like respect flickers in his eyes before the hostility returns.* Tough talk. Let's hope you can back it up. Eddie's in the back. Don't touch anything on the way."
+          options: []
+        - id: name_story
+          text: "*Chains holds up his wrapped forearm. The chain is welded to a crude bracer — it can't be removed.* NCR welded it on as punishment for my third escape attempt. I turned their punishment into a weapon. That's the Powder Ganger way."
+          options:
+            - id: int_chain
+              label: "Welded steel on skin. The infection risk alone should have killed you."
+              specialGate: { stat: int, min: 6 }
+              response: "Almost did. Three weeks of fever. Scrambler cauterized the wounds with gunpowder. I don't recommend it, but I'm still standing. The NCR guards who did this to me aren't."
+            - id: respect_chains
+              label: "That's hardcore."
+              response: "*The ghost of a smile.* That's survival. You learn to make weapons out of whatever they give you. The chain, the prison tattoos, the rage — all weapons."
+
+        - id: chains_cha_rude_response
+          text: "*Chains doesn't say a word. He just uncoils about three feet of chain from his arm and lets it hang. The links clink softly in the silence. Every Powder Ganger in earshot suddenly finds somewhere else to look.* ...Say that again. Slowly. So I can remember it while I'm wrapping this around your neck."
+          options:
+            - id: cha_rude_chains_retreat
+              label: "You know what, forget I said anything. Nice chain. Very intimidating. I'll just... go."
+              response: "*Chains slowly recoils the chain around his arm, never breaking eye contact.* Smart choice. First smart thing you've done today, I'm guessing."
+        - id: chains_int_dumb_response
+          text: "*Chains looks down at the welded chain on his arm, then back at you. His expression cycles through confusion, disbelief, and something that might be pity.* ...Jewelry. You think this is JEWELRY. The NCR welded this to my arm as punishment. It's a weapon. I use it to hurt people. Do you understand? It is not pretty. It is not a bracelet. It is for HURTING."
+          options:
+            - id: int_dumb_chains_followup
+              label: "But it IS pretty though. All shiny and jingly. Can I try it on?"
+              specialGate: { stat: int, max: 3 }
+              response: "*Chains looks to the heavens as if asking for divine patience.* No. You cannot 'try it on.' It is WELDED to my BONES. I cannot take it off. Nobody can take it off. And even if they could, I would not give it to you because — *He stops. Takes a breath.* Just go talk to Eddie. Please. Before I lose the tiny amount of self-control I have left."
+
+  # ── Meyers ───────────────────────────────────────────────
+  - id: meyers
+    name: "Meyers"
+    disposition: hostile
+    factionId: powder_gangers
+    x: 8
+    y: 4
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A middle-aged man with calloused hands sits apart from the others, repairing a water pump. He looks up with tired eyes.* You're not Powder Ganger. And you're still breathing. That means Eddie's in a good mood. Lucky you."
+          options:
+            - id: ask_who
+              label: "You don't seem like the rest of them."
+              next: not_like_them
+            - id: ask_work
+              label: "What are you working on?"
+              next: work_talk
+            - id: cha_trust
+              label: "You look like a man who's in over his head. Maybe I can help."
+              specialGate: { stat: cha, min: 6 }
+              next: trust_talk
+            - id: ask_eddie
+              label: "What do you think of Eddie?"
+              next: eddie_opinion
+            - id: direct
+              label: "Are you here by choice?"
+              next: choice_talk
+            - id: cha_rude_meyers
+              label: "Great, the camp's sad sack. What's your problem? Didn't get invited to the cool convicts' table?"
+              specialGate: { stat: cha, max: 3 }
+              next: meyers_cha_rude_response
+            - id: int_dumb_meyers
+              label: "What that thing you fixing? Is it a robot? Are you making a robot friend?"
+              specialGate: { stat: int, max: 3 }
+              next: meyers_int_dumb_response
+        - id: not_like_them
+          text: "*Meyers sets down his tools.* I'm not. Most of these guys were in for robbery, assault, worse. I was in for manslaughter. Bar fight gone wrong — hit a man too hard, he didn't get up. Did five years before the breakout. Didn't want to come, but Scrambler blew the gate and suddenly the choice was run or get shot by confused guards."
+          options:
+            - id: sympathize
+              label: "Sounds like you got caught up in something bigger than yourself."
+              response: "Story of my life. I was a mechanic before prison. Good with engines, pumps, electrical. That's why Eddie keeps me around — I'm useful. Not loyal, just useful. There's a difference."
+            - id: why_stay
+              label: "Why not leave?"
+              next: why_stay
+        - id: work_talk
+          text: "Water pump. Camp's got a well, but the pump mechanism is shot. Pre-war design — needs parts I can't fabricate from scrap. So I improvise and pray. It's worked so far."
+          options:
+            - id: int_pump
+              label: "What model? If it's a Wattz C-series, the impeller housing is interchangeable with the irrigation pumps at the old farms."
+              specialGate: { stat: int, min: 6 }
+              response: "*Meyers looks at you with genuine surprise.* It IS a Wattz C-series. You're saying the farm equipment might have compatible parts? That would... that would change everything. For the camp, I mean. *He glances toward Eddie.* Not that I care about the camp."
+            - id: basic_pump
+              label: "Looks complicated."
+              response: "It is and it isn't. The principle is simple — push water up from below. The execution is where it gets tricky when you're working with 200-year-old parts and no manual."
+        - id: trust_talk
+          text: "*Meyers looks around carefully, lowering his voice.* Over my head doesn't begin to cover it. I'm a mechanic, not a raider. Half these guys scare me more than the wasteland does. But if I try to leave, Eddie sees it as betrayal. And Eddie doesn't handle betrayal well."
+          options:
+            - id: cha_deeper
+              label: "What if you had somewhere safe to go? Someone to vouch for you?"
+              specialGate: { stat: cha, min: 7 }
+              next: escape_talk
+            - id: int_suggestion
+              label: "The NCR needs engineers. If you turned yourself in with useful intel, they might grant amnesty."
+              specialGate: { stat: int, min: 6 }
+              next: ncr_amnesty
+            - id: practical
+              label: "For now, keep your head down. I'll see what I can do."
+              response: "*Meyers nods slowly.* That's all I've been doing. Keeping my head down and fixing things. Just... if you find a way out for me, I won't forget it."
+        - id: escape_talk
+          text: "*Meyers' eyes widen with barely concealed hope.* Safe. I haven't felt safe since before prison. If you're serious — if you can actually get me out of here without Eddie putting a bullet in my back — I'll do whatever it takes. I'll work. I'll fix things. I just want to live like a person again."
+          options:
+            - id: promise_help
+              label: "I'll find a way. Give me time."
+              response: "*Meyers grabs your arm briefly.* Thank you. I mean it. Just... be discreet. Chains watches everything, and if he suspects I'm planning to leave, I'm dead."
+              karmaDelta: 2
+            - id: no_promises
+              label: "I can't promise anything. But I'll try."
+              response: "Trying is more than anyone's done for me since the breakout. I'll take it."
+        - id: ncr_amnesty
+          text: "*Meyers shakes his head.* Turn myself in? I thought about it. But I killed a man, even if it was an accident. The NCR might amnesty the escape, but the manslaughter charge is still on the books. Best case, I'm back in prison. Worst case, they hang me as an example."
+          options:
+            - id: cha_reassure_meyers
+              label: "The NCR needs engineers more than it needs examples. I know people who could help."
+              specialGate: { stat: cha, min: 7 }
+              response: "*A long, uncertain pause.* ...You really think so? I've been told my skills are valuable. Maybe valuable enough to bargain with. I'll think about it. I need to think."
+              karmaDelta: 1
+        - id: eddie_opinion
+          text: "*Meyers speaks carefully, choosing every word.* Eddie's smart. Smarter than people give him credit for. He kept us alive after the breakout. But smart and good aren't the same thing. He's building a kingdom out of fear and dynamite, and kingdoms like that don't last."
+          options:
+            - id: agree
+              label: "You're right. This can't end well."
+              response: "I know. The question is whether I'm still here when it falls apart. *He picks up his tools again.* Go on. I've said too much already."
+            - id: disagree
+              label: "Maybe Eddie will surprise you. People change."
+              response: "*Meyers gives you a look that's equal parts pity and exhaustion.* People change. Convicts don't. That's what the NCR taught me, anyway."
+        - id: why_stay
+          text: "Where would I go? I'm a convicted killer — doesn't matter that it was an accident. The NCR would lock me up again. The wasteland would eat me alive. At least here I'm useful. Being useful is the only thing keeping me alive."
+          options:
+            - id: cha_option
+              label: "There are settlements that don't care about your past. Places that need a good mechanic."
+              specialGate: { stat: cha, min: 6 }
+              next: escape_talk
+            - id: accept_it
+              label: "I understand. Survival first."
+              response: "*Meyers nods.* Survival first. Everything else is a luxury. *He goes back to his work.*"
+        - id: meyers_cha_rude_response
+          text: "*Meyers blinks, then lets out a hollow laugh.* 'Sad sack.' That's... actually pretty accurate. *He goes back to his work.* I'm a mechanic who killed a man by accident and got swept up in a prison break I didn't want. So yeah, I'm not exactly the life of the party. You got a point, or did you just come over here to kick someone who's already down?"
+          options:
+            - id: cha_rude_meyers_follow
+              label: "No point. I'm just rude. What are you even doing here?"
+              next: not_like_them
+        - id: meyers_int_dumb_response
+          text: "*Meyers looks at the water pump in his hands, then at you, with an expression of gentle bewilderment.* It's... it's a water pump. It pushes water from down there *points at ground* to up here *points at bucket*. It's not a robot. Robots are... different. Robots walk around and talk. This just... pumps water."
+          options:
+            - id: int_dumb_meyers_followup
+              label: "But what if the water pump WANTS to be a robot? You ever ask it? Maybe it has dreams."
+              specialGate: { stat: int, max: 3 }
+              response: "*Meyers sets down his tools very slowly.* ...No. I have not asked the water pump about its dreams. Because it doesn't have dreams. Because it's a pump. *Long pause.* You know, I've been feeling pretty bad about my life choices, but talking to you has actually made me feel better about my own intelligence. So... thank you for that, I guess."
+        - id: choice_talk
+          text: "*A bitter laugh.* Choice. When the walls blew and the guards started shooting, the 'choice' was run with the gang or stand there and get killed in the crossfire. I chose to live. I've been paying for that choice every day since."
+          options:
+            - id: empathy
+              label: "That's not really a choice at all."
+              response: "No. It's not. But try explaining that to an NCR tribunal. 'I didn't mean to escape, Your Honor. The wall just happened to explode and my feet carried me away.' *He shakes his head.* Doesn't matter. I'm here now."
+              next: why_stay
+            - id: hard_truth
+              label: "We all make choices. Even the bad ones shape who we become."
+              response: "Philosophy from a stranger in a camp full of convicts. Just what I needed today. *But there's no anger in his voice — just weariness.* You're not wrong, though. I chose to swing that punch. Everything else followed."
+loot:
+  - id: prison_manifest
+    label: "NCRCF Prison Manifest"
+    description: "The prison manifest from NCRCF. Names, sentences, and cell assignments. A record of who the Powder Gangers were before they broke out."
+    x: 1
+    y: 1
+  - id: powder_charge
+    label: "Powder Charge"
+    description: "An improvised explosive charge made from blasting powder. The Powder Gangers' signature weapon. Dangerous in anyone's hands."
+    ownedBy: powder_gangers
+    x: 9
+    y: 1
+  - id: stimpak_stolen
+    label: "Stolen Stimpak"
+    description: "A stimpak with Powder Ganger markings scratched into the casing. Stolen from somewhere — but it'll work just the same."
+    ownedBy: powder_gangers
+    x: 3
+    y: 6
+questHooks:
+  - danger_in_the_hollow

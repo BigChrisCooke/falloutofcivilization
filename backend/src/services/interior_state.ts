@@ -1,12 +1,11 @@
 import {
   hexDistance,
+  isPassableTile,
   type GameContentBundle,
   type HexPoint,
   type InteriorMapDefinition,
   type LocationDefinition
 } from "../../../game/src/index.js";
-
-const BLOCKING_INTERIOR_TILES = new Set(["wall", "rock", "metal"]);
 
 export function getInteriorMap(content: GameContentBundle, mapId: string): InteriorMapDefinition {
   const interiorMap = content.interiorMaps.find((candidate) => candidate.id === mapId);
@@ -37,7 +36,7 @@ export function getInteriorTile(point: HexPoint, map: InteriorMapDefinition): st
 }
 
 export function isPassableInteriorTile(tile: string | null): boolean {
-  return tile !== null && !BLOCKING_INTERIOR_TILES.has(tile);
+  return isPassableTile(tile);
 }
 
 export function getInteriorSpawnPoint(map: InteriorMapDefinition): HexPoint {

@@ -1,0 +1,15 @@
+id: crashed_vertibird
+name: Crashed Vertibird
+type: wreck
+regionId: frontier_valley
+position:
+  x: 26
+  y: 4
+interiorMapId: crashed_vertibird_interior
+factionTags:
+  - old-world
+questTags:
+  - salvage
+encounterFlags:
+  - loot
+description: The twisted remains of a pre-war military aircraft half-buried in the sand. Its cargo bay might still hold something valuable.

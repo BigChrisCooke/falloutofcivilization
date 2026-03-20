@@ -1,0 +1,14 @@
+id: old_church
+name: Chapel of the Wastes
+type: church
+regionId: frontier_valley
+position:
+  x: 11
+  y: 14
+interiorMapId: null
+factionTags: []
+questTags:
+  - sanctuary
+encounterFlags:
+  - safe-zone
+description: A surprisingly intact pre-war chapel. Someone has been maintaining it — fresh candles burn in the windows and the pews are swept clean.

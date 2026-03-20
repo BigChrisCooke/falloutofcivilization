@@ -1,0 +1,14 @@
+id: abandoned_gas_station
+name: Abandoned Gas Station
+type: ruin
+regionId: frontier_valley
+position:
+  x: 6
+  y: 7
+interiorMapId: abandoned_gas_station_interior
+factionTags: []
+questTags:
+  - salvage
+encounterFlags:
+  - loot
+description: A Poseidon Energy station with faded pumps and a collapsed awning. The convenience store has been picked over but the back room might hold surprises.

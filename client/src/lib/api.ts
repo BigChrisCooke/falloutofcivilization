@@ -23,12 +23,69 @@ export interface LocationSummary {
   atPlayerPosition: boolean;
 }
 
+export interface DialogueOption {
+  id: string;
+  label: string;
+  specialGateLabel: string | null;
+  hasResponse: boolean;
+  hasNext: boolean;
+  grantsQuest: string | null;
+  returnToRoot: boolean;
+  alreadySelected: boolean;
+}
+
+export interface DialogueNode {
+  id: string;
+  text: string;
+  options: DialogueOption[];
+  isRoot: boolean;
+}
+
+export interface QuestCompletionResult {
+  questId: string;
+  questName: string;
+  karmaDelta: number;
+  factionDeltas: Record<string, number>;
+  itemsGranted: Array<{ itemId: string; label: string; quantity: number }>;
+  capsGranted: number;
+}
+
+export interface DialogueSelectResult {
+  response: string | null;
+  nextNode: DialogueNode | null;
+  questGranted: { id: string; name: string; description: string } | null;
+  questCompleted: QuestCompletionResult | null;
+  karmaDelta: number;
+  factionDelta: { factionId: string; delta: number } | null;
+  stateUpdated: boolean;
+}
+
+export interface QuestObjective {
+  id: string;
+  description: string;
+  type: "talk" | "fetch" | "kill" | "visit";
+  target: string;
+}
+
+export interface QuestSummary {
+  id: string;
+  name: string;
+  description: string;
+  objectives: QuestObjective[];
+  mapMarker: { locationId: string; label: string } | null;
+}
+
 export interface GameState {
   save: SaveGame;
   playerCharacter: {
     name: string;
     level: number;
     archetype: string;
+    special: {
+      str: number; per: number; end: number; cha: number;
+      int: number; agl: number; lck: number;
+    } | null;
+    karma: number;
   };
   worldState: {
     current_screen: "overworld" | "vault" | "location";
@@ -62,15 +119,63 @@ export interface GameState {
     layout: string[][];
     spawnPoints: Array<{ id: string; x: number; y: number }>;
     exits: Array<{ id: string; target: string; x: number; y: number }>;
-    interactables: Array<{ id: string; label: string; type: string }>;
-    npcs: Array<{ id: string; name: string; disposition: string }>;
-    loot: Array<{ id: string; label: string }>;
+    interactables: Array<{
+      id: string;
+      label: string;
+      type: string;
+      actions?: Array<{
+        id: string;
+        label: string;
+        response?: string;
+        steal?: { itemId: string; label: string; ownedBy?: string; quantity?: number; description?: string };
+        grant?: { itemId: string; label: string; quantity?: number; description?: string };
+      }>;
+    }>;
+    npcs: Array<{
+      id: string;
+      name: string;
+      disposition: string;
+      factionId?: string;
+      dialogue?: {
+        rootNodeId: string;
+        nodes: Array<{
+          id: string;
+          text: string;
+          options: Array<{
+            id: string;
+            label: string;
+            response?: string;
+            next?: string;
+            specialGate?: { stat: string; min?: number; max?: number };
+            questGrant?: string;
+            factionDelta?: { factionId: string; delta: number };
+            karmaDelta?: number;
+            returnToRoot?: boolean;
+          }>;
+        }>;
+      };
+    }>;
+    loot: Array<{ id: string; label: string; ownedBy?: string; description?: string }>;
     questHooks: string[];
   } | null;
   mapDiscovery: {
     discoveredLocationIds: string[];
     discoveredTileKeys: string[];
   };
+  questState: {
+    active: string[];
+    completed: string[];
+    definitions: QuestSummary[];
+  };
+  inventory: Array<{
+    id: string;
+    label: string;
+    ownedBy: string | null;
+    quantity: number;
+    description: string | null;
+  }>;
+  collectedItemIds: string[];
+  collectedActionIds: string[];
   factionStanding: Record<string, number>;
   locations: LocationSummary[];
 }
@@ -146,6 +251,12 @@ export function loadSave(saveId: string): Promise<{ save: SaveGame }> {
   });
 }
 
+export function deleteSave(saveId: string): Promise<{ deleted: boolean }> {
+  return request(`/api/saves/${saveId}`, {
+    method: "DELETE"
+  });
+}
+
 export function getGameState(): Promise<{ saveLoaded: false } | { saveLoaded: true; state: GameState }> {
   return request("/api/game/state");
 }
@@ -182,5 +293,53 @@ export function exitInterior(exitId: string): Promise<{ state: GameState }> {
   return request("/api/game/interior/exit", {
     method: "POST",
     body: JSON.stringify({ exitId })
+  });
+}
+
+export function savePlayerSpecial(special: Record<string, number>): Promise<{ state: GameState }> {
+  return request("/api/game/character/special", {
+    method: "POST",
+    body: JSON.stringify(special)
+  });
+}
+
+export function getDialogueNode(npcId: string): Promise<{ node: DialogueNode | null }> {
+  return request("/api/game/dialogue/node", {
+    method: "POST",
+    body: JSON.stringify({ npcId })
+  });
+}
+
+export function selectDialogueOption(npcId: string, optionId: string): Promise<{ result: DialogueSelectResult; state: GameState }> {
+  return request("/api/game/dialogue/select", {
+    method: "POST",
+    body: JSON.stringify({ npcId, optionId })
+  });
+}
+
+export function collectItem(
+  itemId: string,
+  label: string,
+  ownedBy?: string | null,
+  quantity?: number,
+  description?: string | null,
+  actionId?: string
+): Promise<{ result: { karmaDelta: number; factionDelta: { factionId: string; delta: number } | null }; state: GameState }> {
+  return request("/api/game/inventory/collect", {
+    method: "POST",
+    body: JSON.stringify({ itemId, label, ownedBy: ownedBy ?? null, quantity: quantity ?? 1, description: description ?? null, actionId: actionId ?? undefined })
+  });
+}
+
+export function saveCurrentGame(saveId: string): Promise<{ save: SaveGame; message: string }> {
+  return request(`/api/saves/${saveId}/save`, {
+    method: "POST"
+  });
+}
+
+export function resetDialogue(npcId: string): Promise<{ node: DialogueNode | null }> {
+  return request("/api/game/dialogue/reset", {
+    method: "POST",
+    body: JSON.stringify({ npcId })
   });
 }

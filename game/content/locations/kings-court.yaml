@@ -1,0 +1,15 @@
+id: kings_court
+name: The Kings' Court
+type: faction_hq
+regionId: frontier_valley
+position:
+  x: 15
+  y: 6
+interiorMapId: kings_court
+factionTags:
+  - kings
+questTags:
+  - faction
+encounterFlags:
+  - social-hub
+description: A pre-war theater converted into the headquarters of the Kings — a gang of pompadoured idealists who worship the Old World's coolest icon.

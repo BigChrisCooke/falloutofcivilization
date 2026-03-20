@@ -15,7 +15,16 @@ const INTERACTABLE_TILE_TOKENS = new Set([
   "stage",
   "cache",
   "console",
-  "relay"
+  "relay",
+  "notice",
+  "pool",
+  "desk",
+  "crate",
+  "shelves",
+  "pump",
+  "machine",
+  "counter",
+  "electronics"
 ]);
 
 export interface InteriorPlacements {
@@ -54,10 +63,17 @@ function choosePlacement(
   used: Set<string>,
   index: number
 ): GridPoint | null {
-  const candidates = [...preferred, ...fallback];
+  for (const candidate of preferred) {
+    const key = `${candidate.x},${candidate.y}`;
 
-  for (let offset = 0; offset < candidates.length; offset += 1) {
-    const candidate = candidates[(index + offset) % candidates.length];
+    if (!used.has(key)) {
+      used.add(key);
+      return candidate;
+    }
+  }
+
+  for (let offset = 0; offset < fallback.length; offset += 1) {
+    const candidate = fallback[(index + offset) % fallback.length];
 
     if (!candidate) {
       continue;
@@ -88,10 +104,37 @@ export function deriveInteriorPlacements(state: GameState): InteriorPlacements |
   const interactableTiles = collectTiles(map.layout, (tile) => INTERACTABLE_TILE_TOKENS.has(tile));
   const used = new Set<string>([`${courier.x},${courier.y}`]);
 
+  // Pre-reserve explicit NPC and loot positions so interactables avoid them
+  for (const npc of map.npcs) {
+    if (npc.x !== undefined && npc.y !== undefined) {
+      used.add(`${npc.x},${npc.y}`);
+    }
+  }
+  for (const item of map.loot) {
+    if (item.x !== undefined && item.y !== undefined) {
+      used.add(`${item.x},${item.y}`);
+    }
+  }
+  for (const exit of map.exits) {
+    used.add(`${exit.x},${exit.y}`);
+  }
+
   const interactables = map.interactables
     .map((item, index) => {
       const token = normalizeToken(item.id);
-      const explicitTiles = collectTiles(map.layout, (tile) => tile === token || tile === normalizeToken(item.type));
+      const typeToken = normalizeToken(item.type);
+      // Prefer exact tile matches first
+      const exactTiles = collectTiles(map.layout, (tile) => {
+        const normalTile = normalizeToken(tile);
+        return normalTile === token || normalTile === typeToken;
+      });
+      // Fall back to word-boundary matches only if no exact match
+      const explicitTiles = exactTiles.length > 0 ? exactTiles : collectTiles(map.layout, (tile) => {
+        const normalTile = normalizeToken(tile);
+        const tokenParts = token.split("_");
+        const typeParts = typeToken.split("_");
+        return tokenParts.includes(normalTile) || typeParts.includes(normalTile);
+      });
       const point = choosePlacement(explicitTiles, interactableTiles, used, index);
 
       return point ? { id: item.id, point } : null;
@@ -108,6 +151,10 @@ export function deriveInteriorPlacements(state: GameState): InteriorPlacements |
 
   const npcs = map.npcs
     .map((npc, index) => {
+      if (npc.x !== undefined && npc.y !== undefined) {
+        used.add(`${npc.x},${npc.y}`);
+        return { id: npc.id, point: { x: npc.x, y: npc.y } };
+      }
       const point = choosePlacement(floorTiles, interactableTiles, used, index);
 
       return point ? { id: npc.id, point } : null;
@@ -116,6 +163,10 @@ export function deriveInteriorPlacements(state: GameState): InteriorPlacements |
 
   const loot = map.loot
     .map((item, index) => {
+      if (item.x !== undefined && item.y !== undefined) {
+        used.add(`${item.x},${item.y}`);
+        return { id: item.id, point: { x: item.x, y: item.y } };
+      }
       const point = choosePlacement(interactableTiles, floorTiles, used, index);
 
       return point ? { id: item.id, point } : null;

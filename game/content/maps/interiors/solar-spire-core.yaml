@@ -19,15 +19,127 @@ interactables:
   - id: console
     type: console
     label: Power Console
+    actions:
+      - id: examine_console
+        label: Examine
+        response: "A pre-war power management console. The screen flickers with amber readouts — voltage graphs, thermal warnings, and a blinking 'MAINTENANCE OVERDUE' alert that's probably been blinking for 200 years."
+      - id: access_console
+        label: Access Readings
+        response: "SOLAR COLLECTION ARRAY: 12% efficiency (panels degraded). CAPACITOR BANK: 67% charge. RELAY STATUS: OFFLINE — manual reset required. OUTPUT: 0.0 kW (relay disconnected)."
   - id: relay
     type: machinery
     label: Relay Core
+    actions:
+      - id: examine_relay
+        label: Examine
+        response: "A massive electromagnetic relay — the bridge between the solar collectors above and the power grid below. Scorch marks on the housing suggest a surge blew the main coil. Repairable, maybe, with the right parts."
+      - id: attempt_repair
+        label: Attempt Repair
+        response: "You pull the access panel. The coil is fused solid — no fixing it without a replacement. A stabilized fusion cell might work as a bypass, but you'd need to find one first."
 npcs:
   - id: caretaker_drone
     name: Caretaker Drone
     disposition: wary
+    x: 2
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "ALERT — UNAUTHORIZED BIOLOGICAL ENTITY DETECTED. UNIT DESIGNATION: CARETAKER. FACILITY STATUS: COMPROMISED. STATE YOUR PURPOSE OR VACATE IMMEDIATELY."
+          options:
+            - id: ask_facility
+              label: "What is this place?"
+              next: facility_info
+            - id: ask_status
+              label: "What happened here?"
+              next: damage_report
+            - id: ask_help
+              label: "Can the power be restored?"
+              next: restoration
+            - id: int_override
+              label: "Caretaker, initiate maintenance protocol seven-seven-alpha. Authorization: pre-war facility clearance."
+              specialGate: { stat: int, min: 7 }
+              next: int_override
+            - id: dumb_greeting
+              label: "Hello robot! You are a big shiny boy!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_greeting
+            - id: cha_diplomatic
+              label: "I'm not here to cause trouble. I might be able to help with your facility problems."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_diplomatic
+            - id: cha_rude
+              label: "Out of my way, tin can."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_rude
+        - id: facility_info
+          text: "DESIGNATION: SOLAR SPIRE COLLECTION FACILITY. PURPOSE: SOLAR ENERGY HARVESTING AND DISTRIBUTION. PRE-WAR OPERATOR: POSEIDON ENERGY. CURRENT OPERATOR: NONE. CARETAKER UNIT MAINTAINS MINIMAL FUNCTION."
+          options:
+            - id: ask_poseidon
+              label: "Poseidon Energy — what do you know about them?"
+              response: "POSEIDON ENERGY: PRE-WAR ENERGY CORPORATION. STATUS: DISSOLVED. ASSETS: SCATTERED. THIS FACILITY IS ONE OF SEVENTEEN SOLAR COLLECTION POINTS IN THE WESTERN GRID. OTHERS: STATUS UNKNOWN."
+        - id: damage_report
+          text: "ELECTROMAGNETIC PULSE EVENT — APPROXIMATE DATE: OCTOBER 2077. PRIMARY RELAY COIL: FUSED. SOLAR PANEL ARRAY: 12% FUNCTIONAL. CAPACITOR BANK: HOLDING CHARGE BUT CANNOT DISTRIBUTE. CARETAKER UNIT: 41% OPERATIONAL CAPACITY."
+          options:
+            - id: int_diagnosis
+              label: "An EMP would fuse ferrite cores but leave the capacitor bank intact. The panels degraded naturally from 200 years of exposure."
+              specialGate: { stat: int, min: 7 }
+              response: "ANALYSIS: CORRECT. YOU POSSESS TECHNICAL KNOWLEDGE EXCEEDING 94% OF POST-WAR CONTACTS. RECOMMENDATION: ASSIST WITH RELAY REPAIR. CARETAKER UNIT WILL PROVIDE FACILITY ACCESS."
+        - id: restoration
+          text: "AFFIRMATIVE. RELAY COIL REPLACEMENT REQUIRED. COMPATIBLE COMPONENT: STABILIZED FUSION CELL OR EQUIVALENT ELECTROMAGNETIC CONDUCTOR. LOCATE COMPONENT. INSTALL IN RELAY HOUSING. CARETAKER UNIT WILL HANDLE CALIBRATION."
+          options:
+            - id: use_fusion_cell
+              label: "Use the Military-Grade Fusion Cell to repair the relay."
+              inventoryGate: { itemId: fusion_cell }
+              consumeItem: true
+              karmaDelta: 10
+              factionDelta: { factionId: old_world, delta: 15 }
+              next: repair_complete
+            - id: accept_spire
+              label: "I'll find a replacement part. Where should I look?"
+              questGrant: wake_the_spire
+              next: quest_accepted
+            - id: dumb_accept
+              label: "Me find shiny thing for robot!"
+              specialGate: { stat: int, max: 3 }
+              questGrant: wake_the_spire
+              next: quest_dumb
+            - id: decline_spire
+              label: "Not my problem."
+              next: quest_declined
+        - id: repair_complete
+          text: "COMPONENT DETECTED: STABILIZED FUSION CELL. COMPATIBILITY: 97.3%. INSTALLING... CALIBRATING... *The relay hums to life. Lights flicker on throughout the facility. The console screens glow steady amber.* RELAY ONLINE. POWER OUTPUT: 4.2 kW AND RISING. FACILITY STATUS: OPERATIONAL. CARETAKER UNIT THANKS YOU, TECHNICIAN. THIS FACILITY WILL SERVE THE REGION ONCE MORE."
+          options: []
+        - id: quest_accepted
+          text: "SCANNING LOCAL DATABASE... POSEIDON ENERGY MAINTAINED A SUPPLY CACHE AT COORDINATES CONSISTENT WITH THE SETTLEMENT DESIGNATED 'GUN RUNNER DEPOT.' PROBABILITY OF COMPATIBLE COMPONENT: 34%. ACCEPTABLE."
+          options: []
+        - id: quest_dumb
+          text: "...PROCESSING. SIMPLIFYING INSTRUCTIONS. FIND GLOWING TUBE. BRING HERE. PUT IN BIG MACHINE. CARETAKER WILL DO REST. UNDERSTOOD?"
+          options: []
+        - id: quest_declined
+          text: "ACKNOWLEDGED. FACILITY WILL CONTINUE DEGRADING. CARETAKER UNIT WILL REMAIN AT POST. RETURN IF CIRCUMSTANCES CHANGE."
+          options: []
+        - id: int_override
+          text: "...PROCESSING AUTHORIZATION. PROTOCOL SEVEN-SEVEN-ALPHA RECOGNIZED. PRE-WAR CLEARANCE CODES STILL VALID IN EMERGENCY SUBROUTINES. WELCOME, TECHNICIAN. FULL FACILITY ACCESS GRANTED. HOW MAY CARETAKER ASSIST?"
+          options:
+            - id: request_data
+              label: "Download all facility diagnostic data to my Pip-Boy."
+              response: "TRANSMITTING. DIAGNOSTIC PACKAGE INCLUDES: facility schematics, relay specifications, Poseidon Energy supply chain manifest (partial), and regional power grid topology. DATA TRANSFER COMPLETE."
+        - id: dumb_greeting
+          text: "...CARETAKER IS NOT 'SHINY BOY.' CARETAKER IS A MARK IV FACILITY MAINTENANCE UNIT. HOWEVER... COMPLIMENT NOTED AND... LOGGED. YOU MAY PROCEED. CAREFULLY."
+          options: []
+        - id: cha_diplomatic
+          text: "ANALYZING STATEMENT FOR DECEPTION... NONE DETECTED. SINCERITY INDEX: HIGH. VERY WELL. CARETAKER WILL COOPERATE. THIS FACILITY REQUIRES ASSISTANCE THAT EXCEEDS CARETAKER'S CURRENT CAPABILITIES."
+          options: []
+        - id: cha_rude
+          text: "THREAT ASSESSMENT: LOW. RUDENESS ASSESSMENT: MAXIMUM. CARETAKER WILL TOLERATE YOUR PRESENCE BUT NOTES THAT COURTESY PROTOCOLS EXIST FOR A REASON."
+          options: []
 loot:
   - id: fusion_cell
     label: Stabilized Fusion Cell
+    description: "A compact energy cell that hums faintly with stored power. Still holds a charge after two centuries of dormancy."
+    x: 2
+    y: 1
 questHooks:
   - wake_the_spire

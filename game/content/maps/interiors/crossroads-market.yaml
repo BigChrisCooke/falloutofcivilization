@@ -1,0 +1,235 @@
+id: crossroads_market
+name: Crossroads Market
+theme: market
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall, wall]
+  - [wall, counter, floor, floor, floor, floor, counter, wall]
+  - [wall, floor, floor, crate, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, crate, floor, wall]
+  - [wall, counter, floor, floor, floor, floor, counter, wall]
+  - [wall, wall, wall, exit, exit, wall, wall, wall]
+spawnPoints:
+  - id: market_entrance
+    x: 3
+    y: 4
+exits:
+  - id: to_crossroads_market
+    target: crossroads_market
+    x: 3
+    y: 5
+  - id: to_crossroads_market_2
+    target: crossroads_market
+    x: 4
+    y: 5
+interactables:
+  - id: bulletin_board
+    type: information
+    label: Bulletin Board
+    actions:
+      - id: examine_board
+        label: Examine
+        response: "A weathered corkboard covered in hand-scrawled notices. You read through them: 'WANTED: Raiders on north road. 200 caps bounty. See NCR.' 'LOST: Courier, Kings territory. Info to The King's Court.' 'TRADING: Pre-war books for medical supplies. Ask for Ada.' 'WARNING: Strange lights seen near old reactor. Stay clear.' The board tells the story of a community trying to hold itself together."
+  - id: water_barrel
+    type: container
+    label: Water Barrel
+    actions:
+      - id: examine_barrel
+        label: Examine
+        response: "A large wooden barrel filled with water. Surprisingly clear — someone's been filtering it. A tin cup hangs from a chain on the side. A sign reads: 'FREE WATER — ONE CUP PER CUSTOMER. DON'T BE GREEDY, DON'T BE DEAD.'"
+      - id: drink_water
+        label: Drink
+        response: "*You fill the cup and drink. It tastes faintly of charcoal and minerals, but it's clean. Better than most wasteland water by a long shot.* Your throat thanks you. Ada glances over and nods approvingly."
+npcs:
+  - id: merchant_ada
+    name: "Merchant Ada"
+    disposition: friendly
+    factionId: traders
+    x: 1
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Welcome to Crossroads Market! Ada's the name, trade's the game. We've got provisions, medicine, and the best gossip in Frontier Valley. What can I do for you?"
+          options:
+            - id: ask_trade
+              label: "What do you have for trade?"
+              next: trade_goods
+            - id: ask_supply
+              label: "How's business these days?"
+              next: supply_problems
+            - id: ask_rumors
+              label: "You mentioned gossip. What's the word?"
+              next: local_rumors
+            - id: ask_traders
+              label: "Tell me about the Traders faction."
+              next: traders_info
+            - id: cha_charm
+              label: "Best gossip AND the friendliest smile in the valley? I think I've found my new favorite shop."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_flatter
+            - id: cha_blunt
+              label: "Less talking, more trading."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_rude
+        - id: trade_goods
+          text: "Stimpaks, rad-away, purified water, ration packs. Some salvage — circuit boards, scrap metal, useful bits. I don't deal in weapons — that's Gun Runner territory. What I offer is everything else you need to stay alive."
+          options:
+            - id: int_medicine
+              label: "Are your stimpaks pre-war stock or locally manufactured? The compound degrades after about fifty years without proper storage."
+              specialGate: { stat: int, min: 7 }
+              response: "Locally made, actually. Got a doctor in the next settlement who synthesizes them. They're about 80% as effective as pre-war, but they'll keep you breathing. Good eye — most people don't ask."
+            - id: dumb_trade
+              label: "What's a stim-pack? Is it food?"
+              specialGate: { stat: int, max: 3 }
+              response: "It's medicine, sweetie. You stick yourself with it when you're hurt and it makes the hurt go away. Like magic, but with needles. ...Don't eat it."
+        - id: supply_problems
+          text: "*Ada's smile falters slightly.* Honestly? Rough. Raiders hit two of my supply caravans this month. The north road is practically closed. I'm running on reserves and getting nervous. If someone doesn't deal with those raiders soon, this market dries up — and when the market dries up, people start fighting over scraps."
+          options:
+            - id: offer_help
+              label: "What if I could find a way to fix the water supply? Clean water means stable trade."
+              questGrant: water_for_the_valley
+              factionDelta: { factionId: traders, delta: 3 }
+              next: water_quest_accepted
+            - id: offer_raider_help
+              label: "The NCR's got a bounty on those raiders. Maybe I can help."
+              response: "Would you? That'd be a lifesaver — literally. Talk to Corporal Hayes at the NCR outpost. And if you do clear that road, come back here first. I'll make sure you get the best prices in the valley. Trader's promise."
+              factionDelta: { factionId: traders, delta: 2 }
+            - id: int_economics
+              label: "Supply disruption cascades fast. If you lose another caravan, you'll see hyperinflation within a week."
+              specialGate: { stat: int, min: 7 }
+              response: "Don't I know it. Caps are already worth less than they were a month ago. If you understand economics, you understand why I'm worried. This market is the backbone of three settlements."
+        - id: local_rumors
+          text: "Oh, where to start? The Kings lost a courier on the east road. The Brotherhood's supposedly got a bunker somewhere nearby — nobody knows exactly where. Gun Runners got a new shipment of energy cells. And someone keeps seeing lights at the old reactor at night."
+          options:
+            - id: ask_brotherhood
+              label: "A Brotherhood bunker? Tell me more."
+              next: brotherhood_rumor
+            - id: ask_reactor
+              label: "What's the deal with the reactor?"
+              next: reactor_rumor
+        - id: brotherhood_rumor
+          text: "That's all I know — rumors of power-armored patrols in the hills east of here. If you want to know more, talk to Vex. He deals in information, among... other things. Just watch your wallet around him."
+          options: []
+        - id: reactor_rumor
+          text: "Pre-war reactor complex, south of the valley. Officially nobody goes there — too much radiation. But travelers keep reporting lights at night. Could be scavengers, could be ghouls, could be something else entirely. I'd stay clear, personally."
+          options: []
+        - id: traders_info
+          text: "We're not a faction in the traditional sense — no army, no territory. We're the people who keep goods moving. Caravan drivers, shopkeepers, brokers. Hurt the traders and you hurt everyone. That's why most factions leave us alone. Most."
+          options: []
+        - id: cha_flatter
+          text: "*Ada laughs and waves a hand.* Oh, you're trouble. The good kind, I hope. Alright, silver tongue — you've earned a friends-and-family discount. Don't tell the other customers."
+          options: []
+        - id: water_quest_accepted
+          text: "*Ada's eyes widen.* The Water Purification Plant? It's been broken since before I was born. But if you could get it running... that would change everything. The plant needs a pump regulator — try the Scrapyard or the Gun Runner Depot. They might have salvaged one. Bring it to the plant and see if you can install it."
+          options: []
+        - id: cha_rude
+          text: "...Right. Straight to business. Efficient. I can work with that. What do you need?"
+          options: []
+
+  - id: smuggler_vex
+    name: "Smuggler Vex"
+    disposition: wary
+    x: 6
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A lean figure in a patched duster leans against the stall, picking at his nails with a knife.* You're staring. That usually means you want something. Or you're a threat. Which is it?"
+          options:
+            - id: ask_business
+              label: "I hear you deal in information."
+              next: info_business
+            - id: ask_rumors
+              label: "What do you know that others don't?"
+              next: exclusive_intel
+            - id: ask_identity
+              label: "Who are you, exactly?"
+              next: vex_identity
+            - id: cha_smooth
+              label: "Neither. I'm an opportunity. You look like someone who recognizes a good one."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_opportunity
+            - id: cha_blunt
+              label: "You look sketchy. What are you hiding?"
+              specialGate: { stat: cha, max: 3 }
+              next: cha_accusation
+        - id: info_business
+          text: "Information, salvage, things that fall off the back of a brahmin. I'm a facilitator. I connect people who have things with people who need things. For a modest fee, naturally."
+          options:
+            - id: ask_brotherhood_location
+              label: "I need to find the Brotherhood bunker."
+              next: brotherhood_location
+        - id: brotherhood_location
+          text: "*Vex's eyes narrow.* Now that's premium information. The kind that gets people killed — either by the Brotherhood for finding them, or by me for sharing. What's it worth to you?"
+          options:
+            - id: cha_persuade
+              label: "I think the Brotherhood would pay handsomely for information about who's selling their location. Maybe we can help each other avoid that scenario."
+              specialGate: { stat: cha, min: 7 }
+              next: brotherhood_revealed
+            - id: int_deduce
+              label: "East hills, limited water sources, needs pre-war infrastructure for power. That narrows it to maybe three possible locations."
+              specialGate: { stat: int, min: 7 }
+              next: brotherhood_deduced
+            - id: offer_caps
+              label: "Name your price."
+              next: brotherhood_price
+            - id: cha_threaten
+              label: "Tell me or I break your fingers."
+              specialGate: { stat: cha, max: 3 }
+              next: brotherhood_threat
+        - id: brotherhood_revealed
+          text: "*Vex goes very still, then lets out a low whistle.* You play hardball. Fine. East ridge, behind the collapsed overpass. Look for the ventilation shaft disguised as a rock formation. And we never had this conversation."
+          options:
+            - id: accept_tip_cha
+              label: "I'll check it out."
+              questGrant: smugglers_tip
+        - id: brotherhood_deduced
+          text: "*Vex stares at you.* ...You just worked that out from context clues? Damn. Yeah, you're close. East ridge, collapsed overpass. The entrance is a ventilation shaft that looks like a rock formation. Guess I can't charge you for something you basically already knew."
+          options:
+            - id: accept_tip_int
+              label: "Thanks for confirming."
+              questGrant: smugglers_tip
+        - id: brotherhood_price
+          text: "Fifty caps. Non-negotiable. For that, you get the exact location and a promise I won't tell them you're coming."
+          options:
+            - id: pay_vex
+              label: "Deal. Fifty caps."
+              questGrant: smugglers_tip
+              response: "Pleasure doing business. East ridge, behind the collapsed overpass. Ventilation shaft disguised as a rock formation. Knock three times. Or don't — they'll find you either way."
+            - id: decline_price
+              label: "Too rich for my blood."
+              response: "Your loss. The offer stands. Information has a shelf life, though — the Brotherhood moves when they feel exposed."
+        - id: brotherhood_threat
+          text: "*Vex doesn't flinch.* Cute. You think you're the first person to threaten me? I'll tell you what — try it and see how fast Ada calls the settlement guard. Or we can do this like civilized people. Your move."
+          options: []
+        - id: exclusive_intel
+          text: "Plenty. I know which roads are safe and which are deathtraps. I know who's feuding with who. I know about a certain underground bunker full of power-armored tech hoarders. The question is what you're willing to trade for it."
+          options:
+            - id: go_brotherhood
+              label: "Tell me about the bunker."
+              next: brotherhood_location
+        - id: vex_identity
+          text: "Nobody important. That's the point. I don't belong to any faction, I don't owe anyone favors, and I plan to keep it that way. In this world, independence is the only real currency."
+          options: []
+        - id: cha_opportunity
+          text: "*Vex's expression shifts from guarded to intrigued.* Well, well. You speak my language. Alright, 'opportunity' — I'm listening. What have you got that I might want?"
+          options:
+            - id: offer_info_trade
+              label: "I've been around. I hear things. Maybe we can trade intel."
+              response: "Now you're talking. Come back when you've got something juicy and I'll match you piece for piece. Knowledge for knowledge. That's the fairest deal in the wasteland."
+        - id: cha_accusation
+          text: "*Vex's hand moves to his knife.* Sketchy? I prefer 'discreet.' And I'm not hiding anything — I'm just not giving it away for free. There's a difference. Learn it or leave."
+          options: []
+loot:
+  - id: trade_manifest
+    label: Trade Manifest
+    description: "A ledger of trade routes and delivery schedules. Names, dates, and quantities — the lifeblood of caravan commerce."
+    x: 3
+    y: 2
+questHooks:
+  - water_for_the_valley
+  - smugglers_tip
+  - ncr_raider_problem
+  - kings_missing_courier

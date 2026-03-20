@@ -1,0 +1,15 @@
+id: ranger_station
+name: Ranger Station Delta
+type: military
+regionId: frontier_valley
+position:
+  x: 36
+  y: 12
+interiorMapId: ranger_station_delta
+factionTags:
+  - rangers
+questTags:
+  - bounty
+encounterFlags:
+  - faction-hub
+description: A small outpost manned by Desert Rangers — tough, independent lawkeepers who patrol the eastern frontier. They always need capable hands.

@@ -1,0 +1,15 @@
+id: brotherhood_bunker
+name: Brotherhood Bunker
+type: bunker
+regionId: frontier_valley
+position:
+  x: 38
+  y: 6
+interiorMapId: brotherhood_bunker
+factionTags:
+  - brotherhood
+questTags:
+  - mystery
+encounterFlags:
+  - hidden
+description: A concealed hatch beneath a rock overhang. The Brotherhood of Steel maintains a small observation post here, monitoring the valley's technology.

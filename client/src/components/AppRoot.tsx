@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { HexOverworld } from "./HexOverworld.js";
 import { InteriorMapPanel } from "./InteriorMapPanel.js";
+import { PipBoyOverlay } from "./PipBoyOverlay.js";
 
 import {
   createSave,
+  deleteSave,
   enterLocation,
   exitInterior,
   getGameState,
@@ -14,6 +16,7 @@ import {
   moveInterior,
   logout,
   register,
+  saveCurrentGame,
   travel,
   updateScreen,
   type AuthUser,
@@ -22,7 +25,7 @@ import {
 } from "../lib/api.js";
 
 type AuthMode = "login" | "register";
-type DialogName = "settings" | "saves" | null;
+type DialogName = "settings" | "saves" | "pipboy" | null;
 
 export function AppRoot() {
   const [loading, setLoading] = useState(true);
@@ -35,6 +38,8 @@ export function AppRoot() {
   const [saveName, setSaveName] = useState("Chris Run");
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [activeDialog, setActiveDialog] = useState<DialogName>(null);
+  const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
+  const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
 
   async function refreshSession() {
     setLoading(true);
@@ -109,6 +114,33 @@ export function AppRoot() {
       setActiveDialog(null);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to load save.");
+    }
+  }
+
+  async function handleDeleteSave(saveId: string, saveName: string) {
+    if (!confirm(`Confirm delete save file: ${saveName}`)) {
+      return;
+    }
+
+    try {
+      await deleteSave(saveId);
+      setSaves((prev) => prev.filter((s) => s.id !== saveId));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete save.");
+    }
+  }
+
+  async function handleSaveGame() {
+    if (!gameState) return;
+    setError(null);
+    setSaveConfirmation(null);
+
+    try {
+      const response = await saveCurrentGame(gameState.save.id);
+      setSaveConfirmation(response.message);
+      setTimeout(() => setSaveConfirmation(null), 3000);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to save game.");
     }
   }
 
@@ -247,23 +279,33 @@ export function AppRoot() {
 
       {!gameState ? (
         <section className="panel">
-          <h2>Create or Load a Save</h2>
+          <h2>Start or Load a Game</h2>
           <p className="subtle">
-            This is the first playable handoff point: get into a real saved game shell, not a placeholder page.
+            Your progress saves automatically as you play.
           </p>
           <div className="save-create">
             <input value={saveName} onChange={(event) => setSaveName(event.target.value)} />
             <button className="primary-button" type="button" onClick={handleCreateSave}>
-              Create Save
+              New Game
             </button>
           </div>
           <div className="save-list">
             {saves.length === 0 ? <p className="subtle">No saves yet.</p> : null}
             {saves.map((save) => (
-              <button key={save.id} className="list-button" type="button" onClick={() => handleLoadSave(save.id)}>
-                <span>{save.name}</span>
-                <span>{save.region_id}</span>
-              </button>
+              <div key={save.id} className="save-entry">
+                <button className="list-button" type="button" onClick={() => handleLoadSave(save.id)}>
+                  <span>{save.name}</span>
+                  <span>{save.region_id}</span>
+                </button>
+                <button
+                  className="ghost-button delete-save-button"
+                  type="button"
+                  title="Delete save"
+                  onClick={() => void handleDeleteSave(save.id, save.name)}
+                >
+                  🗑
+                </button>
+              </div>
             ))}
           </div>
         </section>
@@ -322,20 +364,23 @@ export function AppRoot() {
             <InteriorMapPanel
               state={gameState}
               variant="location"
-              onMove={(x, y) => void handleInteriorMove(x, y)}
+              onMove={(x, y) => handleInteriorMove(x, y)}
               onExit={(exitId) => void handleInteriorExit(exitId)}
+              onStateRefresh={(newState) => setGameState(newState)}
             />
           ) : gameState.worldState.current_screen === "vault" && gameState.currentInteriorMap ? (
             <InteriorMapPanel
               state={gameState}
               variant="vault"
-              onMove={(x, y) => void handleInteriorMove(x, y)}
+              onMove={(x, y) => handleInteriorMove(x, y)}
               onExit={(exitId) => void handleInteriorExit(exitId)}
+              onStateRefresh={(newState) => setGameState(newState)}
             />
           ) : (
             <HexOverworld
               state={gameState}
-              onTravel={(x, y) => void handleTravel(x, y)}
+              selectedQuestId={selectedQuestId}
+              onTravel={(x, y) => handleTravel(x, y)}
               onEnterLocation={(locationId) => void handleEnterLocation(locationId)}
             />
           )}
@@ -348,6 +393,9 @@ export function AppRoot() {
         </button>
         <button className="nav-button" type="button" onClick={() => void handleScreenChange("vault")}>
           Vault
+        </button>
+        <button className="nav-button pipboy-nav-button" type="button" onClick={() => setActiveDialog("pipboy")}>
+          Pip-Boy
         </button>
         <button className="nav-button" type="button" onClick={() => setActiveDialog("saves")}>
           Saves
@@ -366,22 +414,50 @@ export function AppRoot() {
         </section>
       ) : null}
 
+      {activeDialog === "pipboy" && gameState ? (
+        <PipBoyOverlay
+          state={gameState}
+          onClose={() => setActiveDialog(null)}
+          selectedQuestId={selectedQuestId}
+          onSelectQuest={setSelectedQuestId}
+        />
+      ) : null}
+
       {activeDialog === "saves" ? (
         <section className="dialog-backdrop" onClick={() => setActiveDialog(null)}>
           <article className="dialog-card" onClick={(event) => event.stopPropagation()}>
             <h2>Save Slots</h2>
+            {gameState ? (
+              <div style={{ marginBottom: "0.75rem" }}>
+                <button className="primary-button" type="button" onClick={() => void handleSaveGame()}>
+                  Save Game
+                </button>
+                {saveConfirmation ? <p className="subtle" style={{ marginTop: "0.25rem" }}>{saveConfirmation}</p> : null}
+                <p className="subtle" style={{ marginTop: "0.25rem", fontSize: "0.75rem" }}>Your progress saves automatically as you play.</p>
+              </div>
+            ) : null}
             <div className="save-create">
               <input value={saveName} onChange={(event) => setSaveName(event.target.value)} />
-              <button className="primary-button" type="button" onClick={() => void handleCreateSave()}>
-                Create
+              <button className="ghost-button" type="button" onClick={() => void handleCreateSave()}>
+                New Game
               </button>
             </div>
             <div className="save-list">
               {saves.map((save) => (
-                <button key={save.id} className="list-button" type="button" onClick={() => void handleLoadSave(save.id)}>
-                  <span>{save.name}</span>
-                  <span>{save.region_id}</span>
-                </button>
+                <div key={save.id} className="save-entry">
+                  <button className="list-button" type="button" onClick={() => void handleLoadSave(save.id)}>
+                    <span>{save.name}</span>
+                    <span>{save.region_id}</span>
+                  </button>
+                  <button
+                    className="ghost-button delete-save-button"
+                    type="button"
+                    title="Delete save"
+                    onClick={() => void handleDeleteSave(save.id, save.name)}
+                  >
+                    🗑
+                  </button>
+                </div>
               ))}
             </div>
           </article>

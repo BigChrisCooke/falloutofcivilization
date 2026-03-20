@@ -1,0 +1,15 @@
+id: caravan_waystation
+name: Caravan Waystation
+type: rest_stop
+regionId: frontier_valley
+position:
+  x: 10
+  y: 9
+interiorMapId: caravan_waystation_interior
+factionTags:
+  - traders
+questTags:
+  - rumors
+encounterFlags:
+  - safe-zone
+description: A circle of wagons and brahmin around a fire pit. Caravan guards swap stories while traders count caps. A good place to hear news.

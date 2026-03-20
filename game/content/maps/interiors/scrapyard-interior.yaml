@@ -1,0 +1,292 @@
+id: scrapyard_interior
+name: "Rusty's Scrapyard"
+theme: industrial
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall, wall]
+  - [wall, floor, floor, floor, crate, crate, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, cache, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, exit, wall, wall, wall]
+spawnPoints:
+  - id: yard_entrance
+    x: 3
+    y: 5
+exits:
+  - id: to_scrapyard
+    target: scrapyard
+    x: 3
+    y: 6
+  - id: to_scrapyard_alt
+    target: scrapyard
+    x: 4
+    y: 6
+interactables:
+  - id: workbench
+    type: console
+    label: Workbench
+    actions:
+      - id: examine_workbench
+        label: Examine
+        response: "A sturdy metal workbench bolted to the concrete floor. Vice grips, soldering irons, wrenches, and a dozen unidentifiable tools are scattered across the surface. Oil stains and scorch marks tell the story of thousands of repairs. A hand-lettered sign reads: 'YOU BREAK IT, YOU BUY IT. — RUSTY.'"
+      - id: attempt_repair
+        label: Attempt a Repair
+        response: "You fiddle with some of the tools, but without proper training the equipment is more dangerous than useful. A spark jumps from a loose wire and you pull your hand back. Better leave this to someone who knows what they're doing."
+      - id: int_repair
+        label: "[INT 7] Calibrate the tools and attempt a precision repair"
+        specialGate: { stat: int, min: 7 }
+        response: "You adjust the vice, recalibrate the soldering iron's temperature, and set to work. Your hands move with practiced confidence. You manage to restore a broken sensor module to working condition. Rusty watches from across the room and gives an approving nod. 'Not bad. Not bad at all.'"
+      - id: examine_blueprints
+        label: Examine the Blueprints on the Wall
+        response: "Faded technical drawings are pinned above the workbench. Most are for common wasteland repairs — generator maintenance, water pump schematics, weapon modifications. One drawing catches your eye: a detailed schematic of a water purification system, with several components circled in red ink and labeled 'NEED THESE.'"
+  - id: scrap_pile
+    type: cache
+    label: Scrap Pile
+    actions:
+      - id: examine_pile
+        label: Examine
+        response: "A towering heap of pre-war salvage — bent metal, cracked electronics, tangles of wire, engine blocks, and unrecognizable chunks of machinery. The pile is loosely organized: metals on the left, electronics in the middle, mechanical parts on the right. Rusty runs a tight operation."
+      - id: search_pile
+        label: Search for Useful Parts
+        response: "You dig through layers of scrap, cutting your hands on sharp edges. Most of it is junk — corroded beyond use. But buried near the bottom you find something promising: a mechanical component wrapped in oilcloth, still in decent condition."
+      - id: find_regulator
+        label: Take the Wrapped Component
+        grant: { itemId: pump_regulator, label: "Pump Regulator", description: "A mechanical pump regulator, salvaged from scrapyard machinery. Someone who knows plumbing could put this to good use." }
+      - id: per_spot
+        label: "[PER 6] Look for anything hidden in the pile"
+        specialGate: { stat: per, min: 6 }
+        response: "Your keen eye spots something others would miss — a small compartment welded into the base of the scrap pile, disguised to look like just another piece of junk. Inside is a cache of pre-war components in pristine condition. Rusty's been holding out his best stock."
+npcs:
+  # ── Rusty ───────────────────────────────────────────────────
+  - id: rusty
+    name: "Rusty"
+    disposition: neutral
+    x: 2
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A stocky man with oil-stained coveralls and a prosthetic left hand looks up from a disassembled motor.* Customer or scavenger? Either way, welcome to Rusty's. Touch anything without asking and you lose a finger. Prosthetics ain't cheap — trust me."
+          options:
+            - id: ask_trade
+              label: "I'm looking to trade."
+              next: trade_talk
+            - id: ask_parts
+              label: "What kind of parts do you have?"
+              next: parts_inventory
+            - id: ask_water
+              label: "I heard something about a water purification plant nearby."
+              next: water_plant
+            - id: cha_deal
+              label: "[CHA 7] Nice operation you've got here. I bet a man with your skills is always looking for reliable partners."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_partnership
+            - id: int_hand
+              label: "[INT 7] That's a pneumatic-assist prosthetic. Pre-war medical tech. Where did you find it?"
+              specialGate: { stat: int, min: 7 }
+              next: int_prosthetic
+            - id: cha_rude_rusty
+              label: "Lose a finger? Whatever, stump-hand. Just show me what you've got and skip the threats."
+              specialGate: { stat: cha, max: 3 }
+              next: rusty_cha_rude_response
+            - id: dumb_greeting
+              label: "You name Rusty because you rusty?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_rusty
+        - id: trade_talk
+          text: "Good. I deal in parts, scrap, and salvage. Bring me working electronics or pre-war mechanical components and I'll pay fair. Emphasis on 'working' — I've got enough broken junk to build a mountain."
+          options:
+            - id: cha_better_deal
+              label: "[CHA 7] Fair is good. But I have a feeling you could do better for a regular supplier."
+              specialGate: { stat: cha, min: 7 }
+              next: better_deal
+            - id: ask_specifics
+              label: "Anything specific you're looking for?"
+              next: specific_needs
+            - id: ask_prices
+              label: "What kind of prices are we talking?"
+              next: price_talk
+        - id: parts_inventory
+          text: "Generators, pumps, filters, wiring harnesses, circuit boards — you name it, I've probably got a broken one. Working parts are rarer. I keep the good stuff in the back. What do you need?"
+          options:
+            - id: need_pump
+              label: "I need a pump regulator."
+              next: pump_regulator_talk
+            - id: need_electronics
+              label: "Any working electronics?"
+              next: electronics_talk
+            - id: need_weapons
+              label: "Anything that goes boom?"
+              next: weapons_talk
+        - id: water_plant
+          text: "*Rusty sets down his wrench and gives you his full attention.* The old water purification plant, east of the valley. Pre-war municipal facility. It could supply clean water to half the settlements in the region — if someone got it running again."
+          options:
+            - id: ask_problem
+              label: "What's stopping it?"
+              next: water_problem
+            - id: ask_why_care
+              label: "Why do you care about it?"
+              next: why_water
+            - id: offer_help
+              label: "I might be able to help with that."
+              next: offer_water_help
+        - id: cha_partnership
+          text: "*Rusty raises an eyebrow and sets down his tool.* Partners, huh? I've been burned before. But you've got a good handshake — figuratively speaking. Tell you what: bring me something worth my time and we'll talk about an arrangement. Preferred customer rates. First pick on new salvage."
+          options:
+            - id: accept_partnership
+              label: "Deal. What do you need first?"
+              next: partnership_first_job
+            - id: ask_rates
+              label: "What kind of rates are we talking?"
+              next: partnership_rates
+        - id: int_prosthetic
+          text: "*Rusty flexes the mechanical fingers with a whir of servos.* Good eye. Auto-Doc installation, Vault 34 medical bay — back before the vault went to hell. The servos need recalibrating every few months, but it's better than a hook. *He pauses.* You know your tech. That's rare out here."
+          options:
+            - id: int_deeper
+              label: "[INT 8] Vault 34 used Broomhandle actuators in their medical equipment. Those servos must draw serious power."
+              specialGate: { stat: int, min: 8 }
+              response: "Ha! Someone actually knows their Vault-Tec engineering. Yeah, I run a microfusion cell in the forearm housing. Gets about six months per cell. The real trick was adapting the neural interface — took me three tries and two electrical fires. But it works. Mostly. Don't ask about the thumb."
+            - id: ask_vault
+              label: "Vault 34? What happened there?"
+              next: vault_story
+        - id: rusty_cha_rude_response
+          text: "*Rusty's prosthetic hand clenches with an audible whir of servos. He stares at you for a very long moment.* 'Stump-hand.' You just called a man with a pneumatic grip that can crush a tin can... 'stump-hand.' In his own shop. Where he keeps the welding torch. *He breathes out slowly.* You've got five minutes to buy something or leave. And if you call me that again, I'll demonstrate exactly how much this 'stump' can grip."
+          options:
+            - id: cha_rude_browse
+              label: "Yeah yeah, show me the junk."
+              next: parts_inventory
+        - id: dumb_rusty
+          text: "*Rusty stares at you for a long moment.* ...That's... actually, yeah. That's pretty much it. Everything out here gets rusty eventually. Including me. You want to buy something or are you just here for the comedy?"
+          options:
+            - id: dumb_buy
+              label: "Me want shiny thing! Shiniest thing you got!"
+              specialGate: { stat: int, max: 3 }
+              response: "*Rusty sighs and rummages behind the counter.* Here. A chrome hubcap. Very shiny. Five caps. And it's yours. Just... please don't put it in your mouth."
+        - id: better_deal
+          text: "*Rusty scratches his chin.* A regular supplier, eh? Alright — I'll tell you what. You bring me three working components of any kind, and I'll bump you up to preferred rates. Twenty percent better than what I give the caravans. But the parts have to work. I test everything."
+          options:
+            - id: accept_deal
+              label: "You've got yourself a deal."
+              response: "Good. Don't disappoint me. First person in months who talks like they know what they're doing."
+        - id: specific_needs
+          text: "Right now? A pump regulator. Pre-war water pump component. The purification plant east of here needs one to get back online. I've been searching for months. If you find one out in the waste, bring it to me. I'll pay top caps."
+          options:
+            - id: have_regulator
+              label: "I might know where to find one."
+              next: regulator_lead
+            - id: ask_water_more
+              label: "Tell me more about this water plant."
+              next: water_plant
+        - id: price_talk
+          text: "Fair market rates. I'm not a charity, but I'm not a crook either. Working electronics: 15 to 50 caps depending on complexity. Scrap metal: 2 caps per pound. Pre-war components in good condition: negotiable, but generous."
+          options: []
+        - id: pump_regulator_talk
+          text: "*Rusty's eyes light up.* A pump regulator? Now you're speaking my language. I've been looking for one for months. The old water purification plant east of here — it could run again with the right parts. A pump regulator is the key component. If you find one, bring it straight to me. I'll make it worth your while."
+          options:
+            - id: ask_water_connection
+              label: "What's your connection to the water plant?"
+              next: why_water
+            - id: promise_search
+              label: "I'll keep an eye out."
+              questGrant: water_for_the_valley
+              response: "Do that. Clean water would change everything for the settlements around here. This isn't just business — it's survival."
+        - id: electronics_talk
+          text: "Got a few sensor modules, some intact wiring harnesses. A pre-war radio transceiver that mostly works. Nothing flashy, but all functional. Prices are on the board."
+          options: []
+        - id: weapons_talk
+          text: "*Rusty shakes his head.* I'm a mechanic, not a gun runner. You want weapons, go find Vera at the Dusty Spur. I deal in parts that build things, not break them."
+          options: []
+        - id: water_problem
+          text: "Three things. First, the main pump is dead — needs a regulator valve that I haven't been able to find. Second, the place is overrun with ferals — the radiation from the old reactor nearby draws 'em in. Third, nobody with the technical skill to actually run the plant has volunteered to go in there. It's a death trap right now."
+          options:
+            - id: int_solution
+              label: "[INT 7] A pump regulator, feral clearance, and a technician. That's a solvable problem with the right resources."
+              specialGate: { stat: int, min: 7 }
+              next: int_water_plan
+            - id: volunteer
+              label: "I could handle the ferals."
+              next: volunteer_response
+            - id: ask_reward
+              label: "What's in it for whoever fixes it?"
+              next: water_reward
+        - id: why_water
+          text: "Because I'm tired of watching people die of thirst and radiation sickness, that's why. *Rusty's voice is rough.* I grew up in this valley. My daughter's buried here. Clean water won't bring her back, but it might keep other people's kids alive. That's reason enough."
+          options:
+            - id: sympathize
+              label: "I'm sorry about your daughter."
+              next: daughter_memory
+            - id: practical
+              label: "Then let's make it happen. What do we need?"
+              next: water_problem
+        - id: offer_water_help
+          text: "*Rusty studies you carefully.* You serious? Because I've had half a dozen people say that and none of them came back. The plant is dangerous. You'd need to clear the ferals, find a pump regulator, and have the technical know-how to install it."
+          options:
+            - id: accept_quest
+              label: "I'm serious. Point me in the right direction."
+              questGrant: water_for_the_valley
+              factionDelta: { factionId: scrapyard, delta: 5 }
+              next: quest_accepted
+            - id: ask_details
+              label: "Tell me everything about the plant."
+              next: water_problem
+        - id: partnership_first_job
+          text: "Bring me a working pump regulator. The water purification plant needs one, and I've been searching for months. Find it, and you'll be my number-one customer from here on out."
+          options:
+            - id: accept_job
+              label: "Consider it done."
+              questGrant: water_for_the_valley
+              response: "I like your confidence. The plant's east of the valley. Watch out for ferals. And don't die — I hate losing customers."
+        - id: partnership_rates
+          text: "Preferred customers get twenty percent off my listed prices and first pick on new salvage before it hits the general inventory. In this economy, that's practically charity."
+          options: []
+        - id: vault_story
+          text: "Vault 34 was an armory vault. Enough weapons to supply a small army. Problem was, all those guns and not enough sense. Reactor went critical, place flooded with radiation. The survivors scattered. I was one of the lucky ones — got out early, before the worst of it."
+          options: []
+        - id: regulator_lead
+          text: "*Rusty leans forward.* You do? Where? I've checked every scrap pile and trading post in a fifty-mile radius. If you've got a lead on a working pump regulator, name your price."
+          options:
+            - id: negotiate_price
+              label: "Let's talk about it when I have it in hand."
+              response: "Fair enough. Just don't sit on it too long. People are dying of bad water while we haggle."
+        - id: int_water_plan
+          text: "*Rusty nods slowly, impressed.* You think like an engineer. Yeah — three problems, three solutions. The regulator's the hardest to find. The ferals can be handled with enough firepower. And the technician? *He taps his prosthetic hand on the workbench.* That'd be me. I just need someone to clear the way and bring the parts."
+          options:
+            - id: team_up
+              label: "Sounds like a plan. I'll handle the ferals and find the regulator. You handle the installation."
+              questGrant: water_for_the_valley
+              factionDelta: { factionId: scrapyard, delta: 5 }
+              karmaDelta: 3
+              response: "*Rusty extends his prosthetic hand.* Partner. First time I've felt hopeful in years. Don't let me down."
+        - id: volunteer_response
+          text: "Brave or foolish. Either way, the ferals aren't the only problem. You'd still need the pump regulator. But clearing the building would be a start. I'd owe you."
+          options: []
+        - id: water_reward
+          text: "Gratitude. Clean water. And the loyalty of every settlement in the valley that's been drinking irradiated runoff. Plus I'll give you the best rates this side of the wasteland on anything I've got. Tangible enough?"
+          options: []
+        - id: daughter_memory
+          text: "*Rusty is quiet for a moment.* Her name was Copper. Ironic, right? A mechanic's kid named after a metal. She was seven. Bad water got her. Slow and ugly. I built this scrapyard because fixing things is the only way I know how to cope."
+          options:
+            - id: honor_her
+              label: "We'll get that plant running. For Copper."
+              questGrant: water_for_the_valley
+              factionDelta: { factionId: scrapyard, delta: 8 }
+              karmaDelta: 5
+              response: "*Rusty's prosthetic hand clenches, servos whining.* ...Yeah. For Copper. Thank you. The plant's east of the valley. Come back when you're ready."
+        - id: quest_accepted
+          text: "The plant's about two miles east, past the dry riverbed. You'll see the water tower — can't miss it. The main entrance is sealed, but there's a service hatch on the north side. Watch for ferals inside. And the pump room is on sublevel two — that's where the regulator goes. Good luck."
+          options: []
+loot:
+  - id: scrap_metal
+    label: Scrap Metal
+    description: "Salvaged metal scraps. Not glamorous, but essential for repairs, crafting, and trade."
+    x: 6
+    y: 1
+  - id: circuit_board
+    label: Salvaged Circuit Board
+    description: "A salvaged circuit board, copper traces still gleaming. Valuable to anyone who works with electronics or energy systems."
+    x: 1
+    y: 5
+questHooks:
+  - water_for_the_valley

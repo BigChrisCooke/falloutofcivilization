@@ -1,0 +1,19 @@
+id: smugglers_tip
+name: "Smuggler's Tip"
+description: "Smuggler Vex at the Crossroads Market has information about a hidden Brotherhood bunker in the eastern mountains. She'll share the location — for a price, or a silver tongue."
+grantedBy: smuggler_vex
+objectives:
+  - id: find_bunker
+    description: "Locate the Brotherhood Bunker in the eastern mountains."
+    type: visit
+    target: brotherhood_bunker
+  - id: report_back
+    description: "Return to Smuggler Vex and tell her what you found."
+    type: talk
+    target: smuggler_vex
+rewards:
+  karma: 0
+  caps: 50
+mapMarker:
+  locationId: brotherhood_bunker
+  label: "Find the Brotherhood Bunker"

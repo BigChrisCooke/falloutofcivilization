@@ -1,0 +1,24 @@
+id: wake_the_spire
+name: Wake the Spire
+description: "The Caretaker Drone in the Solar Spire needs a replacement relay coil to restore power distribution. A stabilized fusion cell or equivalent conductor might work as a bypass."
+grantedBy: caretaker_drone
+objectives:
+  - id: find_component
+    description: "Find a compatible electromagnetic component — try the Gun Runner Depot or other pre-war facilities."
+    type: fetch
+    target: fusion_cell
+  - id: install_component
+    description: "Return to the Solar Spire and install the component in the relay housing."
+    type: talk
+    target: caretaker_drone
+rewards:
+  karma: 15
+  caps: 80
+  items:
+    - itemId: solar_battery
+      label: "Solar Battery"
+      quantity: 1
+      description: "A fully charged solar battery from the restored Spire. Stores enough energy to power small devices for months."
+mapMarker:
+  locationId: solar_spire
+  label: "Return to Solar Spire"

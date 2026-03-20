@@ -1,0 +1,229 @@
+id: ranger_station_delta
+name: Ranger Station Delta
+theme: military
+layout:
+  - [wall, wall, wall, wall, wall, wall]
+  - [wall, floor, desk, floor, crate, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, wall, exit, wall, wall, wall]
+spawnPoints:
+  - id: station_entrance
+    x: 2
+    y: 4
+exits:
+  - id: to_ranger_station
+    target: ranger_station
+    x: 2
+    y: 5
+interactables:
+  - id: map_table
+    type: information
+    label: Map Table
+    actions:
+      - id: examine_map
+        label: Examine
+        response: "A large table covered with hand-drawn maps of the region. Pins mark known settlements, raider camps, and danger zones. Red circles indicate areas of high radiation. Blue lines trace water sources. One section is labeled 'UNKNOWN — DO NOT PATROL ALONE' with three question marks. Jackson's handwriting is precise and military-neat. Ghost's annotations are smaller, more numerous, and considerably more paranoid."
+  - id: first_aid
+    type: medical
+    label: First Aid Station
+    actions:
+      - id: examine_first_aid
+        label: Examine
+        response: "A well-stocked first aid station mounted on the wall. Bandages, antiseptic, a few stimpaks, and a bottle of rad-away. Everything is organized and labeled — Jackson runs a tight ship. A logbook tracks every item used and restocked."
+      - id: use_first_aid
+        label: Use
+        response: "You help yourself to a bandage and some antiseptic. Jackson glances over but doesn't object — rangers share resources with allies. The supplies are basic but effective. Better than what most wasteland clinics offer."
+npcs:
+  - id: ranger_jackson
+    name: "Ranger Jackson"
+    disposition: friendly
+    factionId: rangers
+    x: 1
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A weathered man in a duster and wide-brimmed hat looks up from a map.* Ranger Jackson, Station Delta. If you've made it this far, you're either tough or lucky. Have a seat — water's in the barrel."
+          options:
+            - id: ask_rangers
+              label: "Tell me about the Rangers."
+              next: ranger_info
+            - id: ask_bounties
+              label: "I hear you've got bounty work."
+              next: bounty_work
+            - id: ask_threats
+              label: "What are the biggest threats in the region?"
+              next: regional_threats
+            - id: ask_station
+              label: "What is this place?"
+              next: station_info
+            - id: cha_respectful
+              label: "It's an honor, Ranger. Your reputation precedes you."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_honored
+            - id: cha_rude
+              label: "Nice hat. You compensating for something?"
+              specialGate: { stat: cha, max: 3 }
+              next: cha_hat_insult
+        - id: ranger_info
+          text: "Desert Rangers. We've been patrolling the wastes since before the NCR was a gleam in Tandi's eye. Merged with them officially, but out here? We operate our own way. Scout, report, and protect. No politics, no bureaucracy. Just the mission."
+          options:
+            - id: int_history
+              label: "The Ranger Unification Treaty was controversial. Do you consider yourselves NCR or independent?"
+              specialGate: { stat: int, min: 7 }
+              next: ranger_politics
+            - id: dumb_rangers
+              label: "So you're like cowboys? Pew pew?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_cowboy
+        - id: ranger_politics
+          text: "*Jackson sighs.* Officially? NCR. Practically? We do what needs doing, report what we see, and don't wait for authorization from some desk jockey in Shady Sands. The Treaty gives us resources. We give them eyes on the ground. It works, mostly."
+          options: []
+        - id: dumb_cowboy
+          text: "*Jackson stares at you for a long moment.* ...Yeah. We're like cowboys. Pew pew. *He pulls back his duster to reveal a sequoia revolver, a brush gun, and three combat knives.* Pew. Pew."
+          options: []
+        - id: bounty_work
+          text: "Always. The wasteland's full of things that need killing and people who won't do it themselves. Right now I've got three open bounties: a pack of feral ghouls in the old subway tunnels, a raider lieutenant who's been organizing attacks on the north road, and something... unusual near the reactor complex."
+          options:
+            - id: ask_ghouls
+              label: "Tell me about the ghouls."
+              next: ghoul_bounty
+            - id: ask_raider_lt
+              label: "Tell me about the raider lieutenant."
+              next: raider_bounty
+            - id: ask_reactor
+              label: "What's near the reactor?"
+              next: reactor_bounty
+            - id: cha_negotiate
+              label: "Three bounties at once? Sounds like you're understaffed. Maybe we can discuss premium rates."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_premium
+        - id: ghoul_bounty
+          text: "Ferals, maybe a dozen. Nested in the old subway station east of the valley. They've been wandering closer to the settlement roads at night. Standard extermination job. Twenty caps per ghoul, proof required."
+          options: []
+        - id: raider_bounty
+          text: "Name's Gristle. Yeah, I know. He's turned a scattered raider gang into something organized, and organized raiders are a hundred times worse than the usual rabble. Fifty caps and Ranger standing if you bring me his tags."
+          options:
+            - id: accept_bounty
+              label: "I'll take the bounty on Gristle."
+              questGrant: ranger_bounty
+              factionDelta: { factionId: rangers, delta: 2 }
+              response: "Good. Last sighting was at the Raider Overlook east of the valley. Watch your back out there — Gristle didn't get his name by being gentle."
+            - id: int_tactical_raider
+              label: "An organized raider lieutenant is a force multiplier. Do you have intel on his command structure?"
+              specialGate: { stat: int, min: 7 }
+              questGrant: ranger_bounty
+              factionDelta: { factionId: rangers, delta: 3 }
+              response: "Sharp thinking. He's got two lieutenants and about fifteen fighters. They rotate lookouts on a four-hour cycle. Best window is the shift change at dawn. I've got a rough layout of their camp if you want it."
+        - id: reactor_bounty
+          text: "*Jackson lowers his voice.* Something's been coming out of the old reactor complex at night. Not ghouls — Ghost has seen them and she says they move wrong. Faster. More coordinated. I don't know what they are, but they've killed two scavengers this month. I'll pay a hundred caps for answers and two hundred if you deal with the problem."
+          options:
+            - id: int_reactor_analysis
+              label: "A pre-war reactor with non-ghoul hostiles... could be automated security systems still active. Or something mutated beyond standard ghoulification."
+              specialGate: { stat: int, min: 7 }
+              response: "That's Ghost's theory too — she thinks it's robots. Old military security that never got the memo about the war ending. Whatever it is, it's dangerous. Go in prepared."
+            - id: dumb_reactor
+              label: "Spooky night monsters? I ain't afraid of no ghosts!"
+              specialGate: { stat: int, max: 3 }
+              response: "*Jackson looks at you with genuine concern.* Please don't die. I hate paperwork."
+        - id: cha_premium
+          text: "*Jackson chuckles.* Understaffed is putting it mildly. Ghost and I are running this station alone. Alright, negotiator — double rates on all bounties, plus a standing invitation at any Ranger station in the region. That fair enough for you?"
+          options: []
+        - id: regional_threats
+          text: "In order: raiders, radiation, wildlife, and whatever's in that reactor. The raiders are the most immediate problem — they're disrupting trade routes and getting bolder. Long-term, I'm worried about the reactor. If it's leaking, we could see a rad spike across the whole valley."
+          options: []
+        - id: station_info
+          text: "Forward observation post. Ghost and I monitor the southern approach to Frontier Valley. We track threats, maintain maps, and provide early warning for the settlements. Small operation, but we see more from here than an entire NCR battalion."
+          options: []
+        - id: cha_honored
+          text: "Appreciate that. Don't get many visitors who come with good manners and honest faces. You're welcome at Station Delta anytime. And if you're looking for work, I've got plenty."
+          options: []
+        - id: cha_hat_insult
+          text: "*Jackson adjusts his hat slowly, not breaking eye contact.* This hat has been through more firefights than you've had hot meals. It's earned its size. Now — did you come here for a reason, or just to practice being unpleasant?"
+          options: []
+
+  - id: ranger_ghost
+    name: "Ranger Ghost"
+    disposition: wary
+    factionId: rangers
+    x: 3
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A lean woman with sharp eyes and a sniper rifle across her lap glances at you without moving.* Ghost. I handle recon. If Jackson sent you to chat, make it quick — I've got a lot of wasteland to watch."
+          options:
+            - id: ask_name
+              label: "Ghost — is that a callsign?"
+              next: callsign
+            - id: ask_seen
+              label: "What have you seen from the watchtower?"
+              next: watchtower_intel
+            - id: ask_reactor
+              label: "Jackson mentioned something near the reactor. What did you see?"
+              next: reactor_sighting
+            - id: cha_respectful
+              label: "I won't waste your time. Just tell me what I need to know to survive out there."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_respect
+            - id: cha_pushy
+              label: "You don't talk much, do you? That must get boring."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_annoying
+        - id: callsign
+          text: "Earned it. I move quiet and I see everything. The rangers who trained me said I was like a ghost on patrol — there one second, gone the next. The name stuck. Better than my real one, anyway."
+          options:
+            - id: ask_real_name
+              label: "What's your real name?"
+              response: "Nice try. You earn that information. Maybe if you clear those raiders off the north road, I'll tell you. Maybe."
+        - id: watchtower_intel
+          text: "Plenty. Raider patrols on the north road — predictable, six-hour rotation. Kings courier routes are well-established but vulnerable at the ridge crossing. NCR is thinning their patrols, which means they're pulling resources elsewhere. And then there's the reactor."
+          options:
+            - id: ask_raider_patterns
+              label: "Tell me about the raider patrol patterns."
+              next: raider_patterns
+            - id: ask_reactor_intel
+              label: "What about the reactor?"
+              next: reactor_sighting
+        - id: raider_patterns
+          text: "Six-hour rotation, two-man patrols. They get sloppy around hour four — bored, tired. The shift change at dawn is your best window. Their camp is north of the highway interchange, and their lookout is on the ridge above. Take the lookout first and you'll have surprise."
+          options:
+            - id: int_sniper
+              label: "What's the range to their lookout position from the nearest concealed approach?"
+              specialGate: { stat: int, min: 7 }
+              response: "*Ghost's expression shifts to one of professional respect.* Three hundred meters from the dry wash on the western approach. Good sight lines if you've got a scoped weapon. I can mark it on your map if you want. You think like a ranger."
+        - id: reactor_sighting
+          text: "*Ghost's usual composure cracks slightly.* Two weeks ago. Moonless night. I was watching the southern approach through my scope. Saw movement near the reactor — three figures, moving fast. Too fast for ferals. Too coordinated. They moved in formation, like soldiers. Then they just... went back inside. Like something called them home."
+          options:
+            - id: int_analyze_reactor
+              label: "Formation movement suggests programmed behavior. Military robots, maybe sentry bots with degraded friend-or-foe protocols."
+              specialGate: { stat: int, min: 7 }
+              next: robot_theory
+            - id: ask_scared
+              label: "That spooked you."
+              next: ghost_spooked
+        - id: robot_theory
+          text: "That's my theory too. Pre-war military installation, automated security still running on whatever power the reactor provides. If the reactor's still hot after two hundred years, those robots could run indefinitely. That's not a raider problem you can solve with a gun — you'd need to shut down the power source."
+          options: []
+        - id: ghost_spooked
+          text: "I don't get spooked. I get... cautious. Whatever's in that reactor has killed two scavengers that I know of. Bodies were found with laser burns — precise, center mass. That's not a feral ghoul. That's something with targeting systems."
+          options: []
+        - id: cha_respect
+          text: "*Ghost studies you for a moment, then gives a curt nod.* Direct. I appreciate that. Here's what you need to know: don't travel the north road at night. Don't go near the reactor alone. And if you see something moving that shouldn't be, you run first and ask questions never. That's how you survive."
+          options: []
+        - id: cha_annoying
+          text: "I talk exactly as much as the situation requires. Right now, the situation requires very little. If you want conversation, Jackson's your man. If you want intel, ask a specific question. Otherwise, I've got a wasteland to watch."
+          options: []
+loot:
+  - id: ranger_badge
+    label: Ranger Service Badge
+    description: "A tarnished NCR Ranger service badge. The two-headed bear insignia is still visible. Carrying this says something about you."
+    ownedBy: rangers
+    x: 4
+    y: 3
+questHooks:
+  - ranger_bounty

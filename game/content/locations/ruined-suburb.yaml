@@ -1,0 +1,14 @@
+id: ruined_suburb
+name: Sunset Acres
+type: ruin
+regionId: frontier_valley
+position:
+  x: 22
+  y: 17
+interiorMapId: sunset_acres_interior
+factionTags: []
+questTags:
+  - exploration
+encounterFlags:
+  - dangerous
+description: The skeletal remains of a pre-war suburban neighborhood. Roofless houses, overgrown yards, and the occasional intact basement worth exploring.

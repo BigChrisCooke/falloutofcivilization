@@ -4,7 +4,7 @@ import type { GameState } from "../api.js";
 import { INTERIOR_ISO_METRICS } from "../iso.js";
 import { getCenteredWorldPosition, getHexMapSize, findTileAtWorldPoint } from "./hex_geometry.js";
 import { buildInteriorSceneModel } from "./interior_scene_model.js";
-import { resolveInteriorHoverTile, resolveInteriorInteractionTarget } from "./interior_input.js";
+import { resolveInteriorHover, resolveInteriorInteractionTarget } from "./interior_input.js";
 import { getDraggedWorldPosition, startPointerGesture, updatePointerGesture } from "./pointer_gesture.js";
 
 function createInteriorState(player = { x: 2, y: 2 }): GameState {
@@ -17,7 +17,9 @@ function createInteriorState(player = { x: 2, y: 2 }): GameState {
     playerCharacter: {
       name: "Courier",
       level: 1,
-      archetype: "Scout"
+      archetype: "Scout",
+      special: null,
+      karma: 0
     },
     worldState: {
       current_screen: "vault",
@@ -60,6 +62,10 @@ function createInteriorState(player = { x: 2, y: 2 }): GameState {
       discoveredLocationIds: ["vault_47"],
       discoveredTileKeys: ["2,2"]
     },
+    questState: { active: [], completed: [], definitions: [] },
+    inventory: [],
+    collectedItemIds: [],
+    collectedActionIds: [],
     factionStanding: {
       settlers: 1
     },
@@ -142,13 +148,13 @@ describe("interior map modules", () => {
       throw new Error("Expected interior interaction targets.");
     }
 
-    expect(resolveInteriorHoverTile(scene, adjacentTile.projected)).toBe("3,2");
+    expect(resolveInteriorHover(scene, adjacentTile.projected)).toEqual({ tileKey: "3,2", markerId: null });
     expect(resolveInteriorInteractionTarget(scene, adjacentTile.projected)).toEqual({
       kind: "tile",
       point: { x: 3, y: 2 },
       tileKey: "3,2"
     });
-    expect(resolveInteriorHoverTile(scene, exitTile.projected)).toBe("2,3");
+    expect(resolveInteriorHover(scene, exitTile.projected)).toEqual({ tileKey: "2,3", markerId: null });
     expect(resolveInteriorInteractionTarget(scene, exitTile.projected)).toEqual({
       kind: "tile",
       point: { x: 2, y: 3 },

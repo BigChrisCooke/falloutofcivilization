@@ -3,8 +3,8 @@ name: Dusty Spur Tavern
 type: tavern
 regionId: frontier_valley
 position:
-  x: 5
-  y: 3
+  x: 12
+  y: 8
 interiorMapId: dusty_tavern_interior
 factionTags:
   - traders

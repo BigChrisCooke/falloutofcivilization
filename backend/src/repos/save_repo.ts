@@ -38,4 +38,36 @@ export class SaveRepo {
   public findPlayerCharacter(saveId: string): PlayerCharacterRow | undefined {
     return this.db.prepare("SELECT * FROM player_characters WHERE save_id = ?").get(saveId) as PlayerCharacterRow | undefined;
   }
+
+  public updateSpecial(saveId: string, specialJson: string): void {
+    this.db
+      .prepare("UPDATE player_characters SET special_json = ? WHERE save_id = ?")
+      .run(specialJson, saveId);
+  }
+
+  public touchSave(saveId: string): void {
+    this.db
+      .prepare("UPDATE save_games SET updated_at = ? WHERE id = ?")
+      .run(Date.now(), saveId);
+  }
+
+  public deleteSave(saveId: string): void {
+    const transaction = this.db.transaction(() => {
+      this.db.prepare("DELETE FROM player_inventory WHERE save_id = ?").run(saveId);
+      this.db.prepare("DELETE FROM faction_standing WHERE save_id = ?").run(saveId);
+      this.db.prepare("DELETE FROM quest_state WHERE save_id = ?").run(saveId);
+      this.db.prepare("DELETE FROM map_discovery WHERE save_id = ?").run(saveId);
+      this.db.prepare("DELETE FROM world_state WHERE save_id = ?").run(saveId);
+      this.db.prepare("DELETE FROM player_characters WHERE save_id = ?").run(saveId);
+      this.db.prepare("DELETE FROM save_games WHERE id = ?").run(saveId);
+    });
+
+    transaction();
+  }
+
+  public updateKarma(saveId: string, karma: number): void {
+    this.db
+      .prepare("UPDATE player_characters SET karma = ? WHERE save_id = ?")
+      .run(karma, saveId);
+  }
 }

@@ -1,0 +1,26 @@
+id: ncr_raider_problem
+name: Raider Problem
+description: "Corporal Hayes mentioned raiders causing trouble north of Frontier Valley. Handle the situation and report back to earn NCR favor."
+grantedBy: corporal_hayes
+objectives:
+  - id: clear_raiders
+    description: "Clear out the raiders at the Raider Overlook east of the valley."
+    type: kill
+    target: raider_overlook
+  - id: report_hayes
+    description: "Report back to Corporal Hayes at NCR Outpost Alpha."
+    type: talk
+    target: corporal_hayes
+rewards:
+  karma: 15
+  factionDeltas:
+    ncr: 15
+  caps: 100
+  items:
+    - itemId: ncr_service_rifle
+      label: "NCR Service Rifle"
+      quantity: 1
+      description: "A standard-issue NCR service rifle. Well-maintained and reliable."
+mapMarker:
+  locationId: ncr_outpost
+  label: "Report to Corporal Hayes"

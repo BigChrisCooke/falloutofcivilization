@@ -1,20 +1,81 @@
 id: frontier_valley_overworld
 name: Frontier Valley Overworld
 theme: desert-dawn
-width: 12
-height: 8
+width: 40
+height: 25
 fogRevealRadius: 2
 layout:
-  - [sand, sand, scrub, scrub, road, road, road, scrub, rock, rock, mesa, mesa]
-  - [sand, scrub, scrub, road, road, road, scrub, scrub, rock, mesa, mesa, mesa]
-  - [sand, scrub, vault, road, road, scrub, scrub, rock, rock, mesa, mesa, ridge]
-  - [sand, scrub, road, road, road, road, scrub, scrub, rock, ridge, ridge, ridge]
-  - [sand, sand, road, scrub, scrub, scrub, scrub, rock, ridge, ridge, ridge, ridge]
-  - [sand, road, road, scrub, cave, scrub, scrub, rock, ridge, ridge, ridge, ridge]
-  - [sand, sand, road, scrub, scrub, scrub, scrub, rock, ridge, ridge, ridge, ridge]
-  - [sand, sand, scrub, scrub, scrub, scrub, scrub, rock, ridge, ridge, ridge, ridge]
+  # Row 0 - Far north mesa ridge
+  - [mesa, mesa, mesa, ridge, ridge, ridge, mesa, mesa, rock, rock, ridge, ridge, mesa, mesa, mesa, ridge, ridge, rock, rock, mesa, mesa, mesa, ridge, ridge, ridge, mesa, mesa, rock, rock, ridge, ridge, mesa, mesa, mesa, ridge, ridge, rock, rock, mesa, mesa]
+  # Row 1 - Northern highlands
+  - [mesa, mesa, ridge, ridge, rock, mesa, mesa, scrub, rock, rock, ridge, mesa, mesa, scrub, scrub, ridge, rock, rock, mesa, mesa, ridge, ridge, rock, mesa, mesa, scrub, rock, rock, ridge, mesa, mesa, mesa, rock, rock, ridge, ridge, mesa, mesa, mesa, mesa]
+  # Row 2 - Northern transition
+  - [mesa, ridge, rock, scrub, scrub, sand, sand, scrub, rock, ridge, mesa, mesa, scrub, scrub, sand, scrub, rock, rock, mesa, mesa, ridge, rock, scrub, scrub, sand, sand, rock, ridge, mesa, mesa, scrub, scrub, rock, ridge, mesa, mesa, rock, rock, mesa, mesa]
+  # Row 3 - Northern valley edge with Solar Spire
+  - [ridge, rock, scrub, scrub, sand, sand, sand, scrub, rock, rock, mesa, scrub, scrub, sand, sand, sand, scrub, rock, rock, mesa, rock, scrub, scrub, sand, sand, sand, road, scrub, rock, rock, scrub, sand, road, rock, rock, scrub, mesa, mesa, rock, ridge]
+  # Row 4 - Crashed vertibird area
+  - [rock, scrub, sand, sand, sand, scrub, sand, sand, scrub, rock, scrub, scrub, sand, sand, road, road, road, scrub, rock, rock, scrub, sand, sand, road, sand, sand, road, sand, scrub, rock, sand, road, road, scrub, rock, rock, mesa, mesa, rock, ridge]
+  # Row 5 - Vault area / northern valley
+  - [scrub, sand, sand, sand, vault, sand, sand, road, road, scrub, scrub, sand, sand, road, sand, sand, road, sand, scrub, rock, sand, sand, road, sand, sand, sand, road, sand, sand, scrub, road, road, scrub, sand, rock, rock, mesa, ridge, rock, rock]
+  # Row 6 - Kings Court area
+  - [sand, sand, scrub, sand, sand, sand, road, road, sand, scrub, sand, sand, road, sand, sand, scrub, road, sand, sand, scrub, sand, road, sand, sand, scrub, sand, road, sand, sand, road, road, sand, sand, scrub, rock, rock, rock, ridge, rock, rock]
+  # Row 7 - West valley with gas station
+  - [sand, sand, sand, sand, sand, sand, road, sand, sand, sand, sand, road, road, sand, sand, scrub, road, sand, sand, sand, road, road, scrub, sand, sand, sand, road, sand, sand, road, sand, sand, road, rock, rock, rock, rock, rock, ridge, ridge]
+  # Row 8 - Central road / tavern area
+  - [sand, sand, sand, scrub, sand, sand, road, sand, sand, sand, road, road, sand, sand, sand, sand, road, road, road, road, road, sand, sand, sand, sand, sand, road, sand, sand, road, sand, sand, road, road, rock, rock, rock, rock, ridge, ridge]
+  # Row 9 - Caravan waystation / central
+  - [sand, scrub, sand, sand, sand, road, road, sand, sand, sand, road, sand, sand, sand, sand, sand, road, sand, sand, sand, road, sand, sand, sand, sand, road, road, sand, sand, road, sand, sand, road, rock, rock, rock, rock, ridge, ridge, ridge]
+  # Row 10 - Crossroads market / Gun Runner area
+  - [sand, sand, sand, sand, road, road, sand, sand, scrub, sand, road, sand, sand, sand, sand, sand, road, sand, sand, sand, road, sand, sand, sand, road, road, sand, sand, sand, road, sand, sand, road, rock, rock, rock, ridge, ridge, ridge, ridge]
+  # Row 11 - Central south
+  - [sand, sand, scrub, road, road, sand, sand, sand, scrub, scrub, road, sand, sand, scrub, sand, sand, road, road, sand, sand, road, sand, sand, road, road, sand, sand, sand, sand, road, sand, road, road, rock, rock, rock, ridge, ridge, ridge, ridge]
+  # Row 12 - NCR outpost area / Ranger station
+  - [sand, scrub, road, road, sand, sand, scrub, sand, road, road, road, sand, sand, scrub, sand, sand, sand, road, sand, sand, road, sand, road, road, sand, sand, sand, scrub, road, road, road, road, rock, rock, rock, rock, rock, ridge, ridge, ridge]
+  # Row 13 - Scrapyard area
+  - [scrub, road, road, sand, sand, sand, scrub, scrub, road, sand, sand, sand, sand, sand, road, sand, sand, road, sand, sand, road, road, road, sand, sand, sand, sand, road, road, sand, sand, rock, rock, rock, rock, rock, ridge, ridge, ridge, ridge]
+  # Row 14 - Old Church / south valley
+  - [scrub, road, sand, sand, sand, sand, scrub, scrub, road, sand, sand, road, sand, sand, road, sand, sand, road, road, sand, sand, sand, road, sand, sand, sand, road, road, sand, sand, rock, rock, rock, rock, ridge, ridge, ridge, ridge, ridge, ridge]
+  # Row 15 - Pre-War Hospital area
+  - [sand, road, sand, sand, scrub, scrub, scrub, road, road, sand, sand, road, road, sand, sand, sand, sand, sand, road, sand, sand, sand, road, road, sand, sand, road, sand, sand, rock, rock, rock, rock, ridge, ridge, ridge, ridge, ridge, ridge, ridge]
+  # Row 16 - Southern caves / Bitter Cave
+  - [sand, road, road, sand, sand, scrub, road, road, sand, sand, sand, road, sand, sand, sand, scrub, sand, sand, road, road, sand, sand, road, sand, sand, road, road, sand, sand, rock, cave, rock, rock, rock, ridge, ridge, ridge, ridge, ridge, ridge]
+  # Row 17 - Ruined suburb / Powder Ganger area
+  - [sand, sand, road, sand, sand, road, road, sand, sand, sand, road, road, sand, sand, scrub, scrub, sand, sand, sand, road, sand, sand, road, sand, road, road, sand, sand, rock, rock, rock, rock, rock, ridge, ridge, ridge, ridge, ridge, ridge, ridge]
+  # Row 18 - Southern wastes / Dry Lake
+  - [sand, sand, road, sand, sand, road, sand, sand, water, water, road, sand, sand, scrub, sand, sand, sand, sand, sand, road, road, sand, road, road, road, sand, sand, rock, rock, rock, rock, rock, rock, road, rock, ridge, ridge, ridge, ridge, ridge]
+  # Row 19 - Mining camp area
+  - [sand, sand, road, road, sand, road, sand, water, water, water, road, sand, sand, sand, sand, sand, sand, scrub, sand, sand, road, sand, sand, sand, road, sand, rock, rock, rock, rock, rock, rock, rock, road, rock, ridge, ridge, ridge, ridge, ridge]
+  # Row 20 - Water purification area / Far south
+  - [sand, sand, sand, road, road, road, water, water, water, water, road, road, sand, sand, road, road, sand, sand, sand, sand, road, road, sand, sand, road, rock, rock, rock, rock, rock, rock, rock, road, road, rock, ridge, ridge, ridge, ridge, ridge]
+  # Row 21 - Southern marshes
+  - [sand, sand, sand, sand, road, water, water, water, water, water, water, road, road, road, road, sand, sand, sand, sand, sand, sand, road, road, road, road, rock, rock, rock, rock, rock, rock, road, road, rock, rock, ridge, ridge, ridge, ridge, ridge]
+  # Row 22 - Far south marshes
+  - [sand, sand, sand, sand, water, water, water, water, water, water, water, water, sand, sand, road, road, sand, sand, sand, sand, sand, sand, sand, road, rock, rock, rock, rock, rock, rock, road, road, rock, rock, rock, ridge, ridge, ridge, ridge, ridge]
+  # Row 23 - Southern edge
+  - [sand, sand, sand, water, water, water, water, water, water, water, water, water, water, sand, sand, road, road, sand, sand, sand, sand, sand, road, road, rock, rock, rock, rock, rock, road, road, rock, rock, rock, ridge, ridge, ridge, ridge, ridge, ridge]
+  # Row 24 - Far southern edge
+  - [sand, sand, water, water, water, water, water, water, water, water, water, water, water, water, sand, sand, road, road, sand, sand, sand, road, road, rock, rock, rock, rock, rock, road, road, rock, rock, rock, ridge, ridge, ridge, ridge, ridge, ridge, ridge]
 pointsOfInterest:
   - vault_47
   - dusty_tavern
   - bitter_cave
   - solar_spire
+  - ncr_outpost
+  - powder_ganger_camp
+  - kings_court
+  - gun_runner_depot
+  - caravan_waystation
+  - scrapyard
+  - abandoned_gas_station
+  - radio_tower
+  - prewar_hospital
+  - ranger_station
+  - ruined_suburb
+  - water_purification
+  - brotherhood_bunker
+  - crossroads_market
+  - crashed_vertibird
+  - mining_camp
+  - old_church
+  - raider_overlook
+  - dry_lake_bed

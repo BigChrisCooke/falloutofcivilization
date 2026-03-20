@@ -1,0 +1,15 @@
+id: crossroads_market
+name: Crossroads Market
+type: market
+regionId: frontier_valley
+position:
+  x: 16
+  y: 10
+interiorMapId: crossroads_market
+factionTags:
+  - traders
+questTags:
+  - trade
+encounterFlags:
+  - social-hub
+description: Where the north-south and east-west roads meet, a bustling open-air market has grown. Traders, scavengers, and con artists all converge here.

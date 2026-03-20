@@ -3,8 +3,8 @@ name: Bitter Hollow Cave
 type: cave
 regionId: frontier_valley
 position:
-  x: 7
-  y: 6
+  x: 30
+  y: 16
 interiorMapId: bitter_cave_interior
 factionTags:
   - raiders

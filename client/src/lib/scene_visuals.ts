@@ -74,7 +74,12 @@ export const INTERIOR_SURFACE_VISUALS: Record<string, HexTerrainVisual> = {
   cache: { fillColor: 0x9f6e4b, shadeColor: 0x6f4a32, ridgeColor: 0xf4dac7, edgeColor: 0x4f3424, fogTint: 0x171312 },
   metal: { fillColor: 0x6b7783, shadeColor: 0x47515a, ridgeColor: 0xd9e0e5, edgeColor: 0x343b42, fogTint: 0x171312 },
   console: { fillColor: 0x5a8ea1, shadeColor: 0x386071, ridgeColor: 0xcceefa, edgeColor: 0x26424f, fogTint: 0x171312 },
-  relay: { fillColor: 0x6582a5, shadeColor: 0x3c536d, ridgeColor: 0xd9e8ff, edgeColor: 0x29394c, fogTint: 0x171312 }
+  relay: { fillColor: 0x6582a5, shadeColor: 0x3c536d, ridgeColor: 0xd9e8ff, edgeColor: 0x29394c, fogTint: 0x171312 },
+  rug: { fillColor: 0x8b4a3a, shadeColor: 0x5e3028, ridgeColor: 0xd4a494, edgeColor: 0x3e2019, fogTint: 0x171312 },
+  pool: { fillColor: 0x2e7040, shadeColor: 0x1d4a2a, ridgeColor: 0x8fd4a0, edgeColor: 0x143620, fogTint: 0x171312 },
+  desk: { fillColor: 0x7a6350, shadeColor: 0x534337, ridgeColor: 0xd4c4b4, edgeColor: 0x3a3028, fogTint: 0x171312 },
+  crate: { fillColor: 0x8a7040, shadeColor: 0x5e4c2c, ridgeColor: 0xd8c898, edgeColor: 0x3e3420, fogTint: 0x171312 },
+  notice: { fillColor: 0xc4a050, shadeColor: 0x8a7038, ridgeColor: 0xf0e0a0, edgeColor: 0x604e28, fogTint: 0x171312 }
 };
 
 export function getHexTopPoints(metrics: IsoMetrics): number[] {
@@ -243,6 +248,24 @@ export function createLocationMarker(type: string): Container {
 
   badge.stroke({ color: visual.accentColor, width: 3, alpha: 0.55 });
   marker.addChild(halo, badge);
+
+  return marker;
+}
+
+export function createQuestMarker(): Container {
+  const marker = new Container();
+  const glow = new Graphics()
+    .circle(0, 0, 18)
+    .fill({ color: 0xf0c040, alpha: 0.15 });
+  const pin = new Graphics()
+    .poly([0, -22, 10, -6, 6, 2, 0, 18, -6, 2, -10, -6])
+    .fill(0xf0c040)
+    .stroke({ color: 0x5a4010, width: 2.5, alpha: 0.7 });
+  const dot = new Graphics()
+    .circle(0, -14, 3)
+    .fill(0x5a4010);
+
+  marker.addChild(glow, pin, dot);
 
   return marker;
 }

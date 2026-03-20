@@ -1,0 +1,14 @@
+id: dry_lake_bed
+name: Dry Lake Bed
+type: landmark
+regionId: frontier_valley
+position:
+  x: 8
+  y: 18
+interiorMapId: null
+factionTags: []
+questTags:
+  - exploration
+encounterFlags:
+  - open
+description: A vast expanse of cracked white earth where a lake once stood. On clear nights, you can see the old marina docks jutting from the dust like bones.

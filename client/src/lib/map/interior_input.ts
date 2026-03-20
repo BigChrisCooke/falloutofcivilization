@@ -5,7 +5,7 @@ function isWithinMarker(marker: InteriorMarkerNode, worldPoint: WorldPoint): boo
   const deltaX = worldPoint.x - marker.markerPosition.x;
   const deltaY = worldPoint.y - marker.markerPosition.y;
 
-  return deltaX * deltaX + deltaY * deltaY <= marker.hitRadius * marker.hitRadius;
+  return deltaX * deltaX + deltaY * deltaY < marker.hitRadius * marker.hitRadius;
 }
 
 function resolveExitMarkerTarget(scene: InteriorSceneModel, worldPoint: WorldPoint): InteriorInteractionTarget {
@@ -26,36 +26,100 @@ function resolveExitMarkerTarget(scene: InteriorSceneModel, worldPoint: WorldPoi
   return { kind: "none" };
 }
 
-export function resolveInteriorHoverTile(scene: InteriorSceneModel, worldPoint: WorldPoint): string | null {
-  const markerTarget = resolveExitMarkerTarget(scene, worldPoint);
+export function resolveInteriorHover(
+  scene: InteriorSceneModel,
+  worldPoint: WorldPoint
+): { tileKey: string | null; markerId: string | null } {
+  // Check interactive markers first (NPC, loot, interactable)
+  for (const marker of scene.markers) {
+    if (marker.kind === "npc" || marker.kind === "loot" || marker.kind === "interactable") {
+      if (isWithinMarker(marker, worldPoint)) {
+        return { tileKey: null, markerId: marker.id };
+      }
+    }
+  }
 
-  if (markerTarget.kind === "exit") {
-    return markerTarget.tileKey;
+  // Check exit markers
+  const exitTarget = resolveExitMarkerTarget(scene, worldPoint);
+  if (exitTarget.kind === "exit") {
+    return { tileKey: exitTarget.tileKey, markerId: null };
+  }
+
+  // Check player token hover (after markers so overlapping markers take priority)
+  const courierDx = worldPoint.x - scene.courier.anchor.x;
+  const courierDy = worldPoint.y - scene.courier.anchor.y;
+  if (courierDx * courierDx + courierDy * courierDy < 18 * 18) {
+    return { tileKey: null, markerId: "player" };
   }
 
   const tile = findTileAtWorldPoint(worldPoint, scene.tiles);
-
   if (!tile) {
-    return null;
+    return { tileKey: null, markerId: null };
   }
 
-  return tile.isReachable || (tile.isCurrent && tile.exitId) ? tile.key : null;
+  const tileKey = tile.isReachable || (tile.isCurrent && tile.exitId) ? tile.key : null;
+  return { tileKey, markerId: null };
+}
+
+/** Find an interactive marker (NPC/loot/interactable) sitting on the given grid tile. */
+function findMarkerOnTile(scene: InteriorSceneModel, tileX: number, tileY: number): InteriorInteractionTarget {
+  for (const marker of scene.markers) {
+    if (marker.point.x !== tileX || marker.point.y !== tileY) continue;
+    if (marker.kind === "npc") return { kind: "npc", npcId: marker.id };
+    if (marker.kind === "loot") return { kind: "loot", lootId: marker.id };
+    if (marker.kind === "interactable") return { kind: "interactable", interactableId: marker.id };
+  }
+  return { kind: "none" };
 }
 
 export function resolveInteriorInteractionTarget(
   scene: InteriorSceneModel,
   worldPoint: WorldPoint
 ): InteriorInteractionTarget {
-  const markerTarget = resolveExitMarkerTarget(scene, worldPoint);
+  // Check NPC, loot, interactable markers first (direct hit on sprite)
+  for (const marker of scene.markers) {
+    if (!isWithinMarker(marker, worldPoint)) {
+      continue;
+    }
 
-  if (markerTarget.kind !== "none") {
-    return markerTarget;
+    if (marker.kind === "npc") {
+      return { kind: "npc", npcId: marker.id };
+    }
+
+    if (marker.kind === "loot") {
+      return { kind: "loot", lootId: marker.id };
+    }
+
+    if (marker.kind === "interactable") {
+      return { kind: "interactable", interactableId: marker.id };
+    }
+  }
+
+  // Then exit markers
+  const exitTarget = resolveExitMarkerTarget(scene, worldPoint);
+  if (exitTarget.kind !== "none") {
+    return exitTarget;
+  }
+
+  // If click is on the player token, check if there's an interactive object on the same tile
+  const courierDx = worldPoint.x - scene.courier.anchor.x;
+  const courierDy = worldPoint.y - scene.courier.anchor.y;
+  if (courierDx * courierDx + courierDy * courierDy < 18 * 18) {
+    const sameCell = findMarkerOnTile(scene, scene.courier.point.x, scene.courier.point.y);
+    if (sameCell.kind !== "none") return sameCell;
+    return { kind: "player" };
   }
 
   const tile = findTileAtWorldPoint(worldPoint, scene.tiles);
 
   if (!tile) {
     return { kind: "none" };
+  }
+
+  // If clicking a tile, check for interactive objects on that tile
+  if (tile.isCurrent) {
+    const sameCell = findMarkerOnTile(scene, tile.point.x, tile.point.y);
+    if (sameCell.kind !== "none") return sameCell;
   }
 
   if (tile.isCurrent && tile.exitId) {

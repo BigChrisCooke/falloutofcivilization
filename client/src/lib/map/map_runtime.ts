@@ -17,6 +17,7 @@ import type { WorldPoint } from "./types.js";
 interface RuntimeScene {
   mapId: string;
   hoverTileKey: string | null;
+  hoveredMarkerId?: string | null;
 }
 
 export interface RetainedMapRuntimeAdapter<Scene extends RuntimeScene, Layers, RetainedNodes, InteractionTarget, Handlers> {
@@ -28,9 +29,9 @@ export interface RetainedMapRuntimeAdapter<Scene extends RuntimeScene, Layers, R
     previousScene: Scene | null,
     nextScene: Scene
   ) => RetainedNodes;
-  resolveHover: (scene: Scene, worldPoint: WorldPoint) => string | null;
+  resolveHover: (scene: Scene, worldPoint: WorldPoint) => { tileKey: string | null; markerId: string | null };
   resolveInteraction: (scene: Scene, worldPoint: WorldPoint) => InteractionTarget;
-  applyInteraction: (target: InteractionTarget, handlers: Handlers) => void;
+  applyInteraction: (target: InteractionTarget, handlers: Handlers, scene: Scene) => void;
   animate: (retainedNodes: RetainedNodes, scene: Scene, tick: number) => void;
   getCameraAnchor: (scene: Scene) => ProjectedPoint;
 }
@@ -42,7 +43,7 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
     .fill({ color: 0xffffff, alpha: 0.001 });
   private readonly pointerGesture = createPointerGesture();
   private readonly canvasPointerLeave = () => {
-    this.setHoverTile(null);
+    this.setHoverState(null, null);
   };
 
   private app: Application | null = null;
@@ -50,6 +51,7 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
   private retainedNodes: RetainedNodes | null = null;
   private scene: Scene | null = null;
   private hoverTileKey: string | null = null;
+  private hoveredMarkerId: string | null = null;
   private cameraInitialized = false;
   private pointerState: MapPointerGesture = createPointerGesture();
   private detachViewportObserver: (() => void) | null = null;
@@ -125,6 +127,7 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
     this.canvasHost = null;
     this.detachViewportObserver = null;
     this.hoverTileKey = null;
+    this.hoveredMarkerId = null;
     this.cameraInitialized = false;
     this.pointerState = clearPointerGesture();
     this.host.replaceChildren();
@@ -141,6 +144,7 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
 
     if (mapChanged) {
       this.hoverTileKey = null;
+      this.hoveredMarkerId = null;
     }
 
     const renderedScene = this.getRenderedScene(scene);
@@ -178,7 +182,7 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
         return;
       }
 
-      this.setHoverTile(null);
+      this.setHoverState(null, null);
       const draggedWorldPosition = getDraggedWorldPosition(this.pointerState, {
         x: event.global.x,
         y: event.global.y
@@ -201,7 +205,7 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
       const worldPoint = toWorldPoint({ x: screenX, y: screenY }, this.world.position);
       const target = this.adapter.resolveInteraction(this.getRenderedScene(this.scene), worldPoint);
 
-      this.adapter.applyInteraction(target, this.handlersRef.current);
+      this.adapter.applyInteraction(target, this.handlersRef.current, this.getRenderedScene(this.scene));
     };
 
     app.stage.on("pointerup", (event) => {
@@ -239,19 +243,24 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
     }
 
     const worldPoint = toWorldPoint(pointer, this.world.position);
-    const nextHoverTileKey = this.adapter.resolveHover(this.getRenderedScene(this.scene), worldPoint);
+    const { tileKey, markerId } = this.adapter.resolveHover(this.getRenderedScene(this.scene), worldPoint);
 
-    this.setHoverTile(nextHoverTileKey);
+    this.setHoverState(tileKey, markerId);
   }
 
-  private setHoverTile(hoverTileKey: string | null): void {
-    if (!this.scene || !this.layers || this.hoverTileKey === hoverTileKey) {
+  private setHoverState(hoverTileKey: string | null, hoveredMarkerId: string | null): void {
+    if (!this.scene || !this.layers) {
+      return;
+    }
+
+    if (this.hoverTileKey === hoverTileKey && this.hoveredMarkerId === hoveredMarkerId) {
       return;
     }
 
     const previousScene = this.getRenderedScene(this.scene);
 
     this.hoverTileKey = hoverTileKey;
+    this.hoveredMarkerId = hoveredMarkerId;
     const nextScene = this.getRenderedScene(this.scene);
 
     this.retainedNodes = this.adapter.syncScene(this.layers, this.retainedNodes, previousScene, nextScene);
@@ -276,7 +285,8 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
   private getRenderedScene(scene: Scene): Scene {
     return {
       ...scene,
-      hoverTileKey: this.hoverTileKey
+      hoverTileKey: this.hoverTileKey,
+      hoveredMarkerId: this.hoveredMarkerId
     };
   }
 }

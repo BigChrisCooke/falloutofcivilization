@@ -1,0 +1,70 @@
+id: sunset_acres_interior
+name: Sunset Acres
+theme: suburb
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, desk, wall]
+  - [wall, floor, floor, rug, rug, floor, wall]
+  - [wall, floor, cache, rug, rug, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, wall, wall, wall]
+spawnPoints:
+  - id: front_door
+    x: 3
+    y: 5
+exits:
+  - id: to_ruined_suburb
+    target: ruined_suburb
+    x: 3
+    y: 6
+interactables:
+  - id: mailbox
+    type: mailbox
+    label: Mailbox
+    actions:
+      - id: examine_mailbox
+        label: Examine
+        response: "A dented pre-war mailbox, the little red flag still raised after two centuries. The name 'HENDERSON' is stenciled on the side in faded paint."
+      - id: open_mailbox
+        label: Open Mailbox
+        response: "Inside you find a single envelope, yellowed with age but remarkably preserved. The letter reads: 'Dear Tom — Sarah's recital is Saturday at 3. Don't forget flowers this time. Mom says bring the casserole. Love, Linda.' The date is October 22, 2077. One day before the bombs fell. The Hendersons never made it to that recital."
+  - id: basement_hatch
+    type: hatch
+    label: Basement Hatch
+    actions:
+      - id: examine_hatch
+        label: Examine
+        response: "A heavy wooden trapdoor set into the kitchen floor, partially hidden beneath a collapsed shelf. The wood is swollen with moisture but the hinges still work. Something rattles below when you shift it."
+      - id: search_hatch
+        label: Search Below
+        response: "You pry open the hatch and descend into a cramped root cellar. Dusty canning jars line the walls — most are empty or spoiled beyond recognition. But tucked behind a false panel in the back wall, you find a small lockbox. Inside: a stack of pre-war currency, still crisp."
+        grant: { itemId: prewar_money, label: "Pre-War Money", description: "Faded pre-war dollar bills. Not worth the paper they're printed on — unless you find someone nostalgic enough to trade for them." }
+  - id: kitchen
+    type: kitchen
+    label: Kitchen Counter
+    actions:
+      - id: examine_kitchen
+        label: Examine
+        response: "The kitchen is frozen in time. A coffee mug sits on the counter, long since evaporated. The fridge door hangs open — everything inside turned to dust decades ago. A child's drawing is pinned to the fridge with a magnet: a house, a sun, two stick figures holding hands, and what might be a dog. Written in crayon at the bottom: 'MY FAMLY by Sarah H. age 6.'"
+      - id: read_note
+        label: Read Note on Counter
+        response: "A note written in hasty handwriting, pinned under the coffee mug: 'Tom — went to get Sarah from school. The sirens are going off. If you get home before us, go to the basement. Grab the emergency bag under the stairs. I love you. — Linda.' The note was never read by its intended recipient."
+npcs: []
+loot:
+  - id: teddy_bear
+    label: Teddy Bear
+    description: "A pre-war teddy bear, miraculously intact. One glass eye is missing and the fur is matted, but it's still huggable."
+    x: 2
+    y: 2
+  - id: canned_food
+    label: Canned Dog Food
+    description: "A can of pre-war dog food. The label features a disturbingly happy cartoon dog. In the wasteland, beggars can't be choosers."
+    x: 5
+    y: 1
+  - id: toy_car
+    label: Pre-War Toy Car
+    description: "A pre-war toy car. The paint is faded and one wheel is bent, but it still rolls. A tiny reminder of a world where kids played in yards instead of rubble."
+    x: 1
+    y: 5
+questHooks: []

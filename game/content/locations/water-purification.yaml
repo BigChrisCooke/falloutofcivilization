@@ -1,0 +1,15 @@
+id: water_purification
+name: Water Purification Plant
+type: facility
+regionId: frontier_valley
+position:
+  x: 14
+  y: 20
+interiorMapId: water_purification_interior
+factionTags:
+  - ncr
+questTags:
+  - faction
+encounterFlags:
+  - quest-hub
+description: A pre-war water treatment facility that the NCR is trying to restore. Clean water would change the balance of power in the valley.

@@ -1,10 +1,10 @@
 import { Container, Graphics } from "pixi.js";
 
 import { OVERWORLD_ISO_METRICS } from "../iso.js";
-import { createCourierToken, createLocationMarker, drawHexSurface, TERRAIN_VISUALS } from "../scene_visuals.js";
+import { createCourierToken, createLocationMarker, createQuestMarker, drawHexSurface, TERRAIN_VISUALS } from "../scene_visuals.js";
 
 import { flattenPolygon } from "./hex_geometry.js";
-import type { OverworldLocationNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
+import type { OverworldLocationNode, OverworldQuestMarkerNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
 
 export interface OverworldLayerContainers {
   terrain: Container;
@@ -19,6 +19,7 @@ export interface OverworldRetainedNodes {
   fogByKey: Map<string, Graphics>;
   feedbackByKey: Map<string, Graphics>;
   markerById: Map<string, Container>;
+  questMarkerById: Map<string, Container>;
   mist: Graphics | null;
   courier: Container | null;
 }
@@ -45,6 +46,7 @@ export function createOverworldRetainedNodes(): OverworldRetainedNodes {
     fogByKey: new Map(),
     feedbackByKey: new Map(),
     markerById: new Map(),
+    questMarkerById: new Map(),
     mist: null,
     courier: null
   };
@@ -259,6 +261,37 @@ function syncPropLayer(
   }
 }
 
+function syncQuestMarkerLayer(
+  layers: OverworldLayerContainers,
+  retainedNodes: OverworldRetainedNodes,
+  scene: OverworldSceneModel
+): void {
+  const nextIds = new Set(scene.questMarkers.map((m) => m.id));
+
+  for (const [id, marker] of retainedNodes.questMarkerById) {
+    if (nextIds.has(id)) {
+      continue;
+    }
+
+    layers.props.removeChild(marker);
+    marker.destroy({ children: true });
+    retainedNodes.questMarkerById.delete(id);
+  }
+
+  for (const questMarker of scene.questMarkers) {
+    let marker = retainedNodes.questMarkerById.get(questMarker.id);
+
+    if (!marker) {
+      marker = createQuestMarker();
+      retainedNodes.questMarkerById.set(questMarker.id, marker);
+      layers.props.addChild(marker);
+    }
+
+    marker.position.set(questMarker.markerPosition.x, questMarker.markerPosition.y);
+    marker.zIndex = questMarker.zIndex;
+  }
+}
+
 function syncActorLayer(
   layers: OverworldLayerContainers,
   retainedNodes: OverworldRetainedNodes,
@@ -284,6 +317,7 @@ export function syncOverworldScene(
   syncTerrainLayer(layers, nextRetainedNodes, previousScene, scene);
   syncFogLayer(layers, nextRetainedNodes, scene);
   syncPropLayer(layers, nextRetainedNodes, previousScene, scene);
+  syncQuestMarkerLayer(layers, nextRetainedNodes, scene);
   syncFeedbackLayer(layers, nextRetainedNodes, scene);
   syncActorLayer(layers, nextRetainedNodes, scene);
 

@@ -67,13 +67,6 @@ export function projectHex(point: GridPoint, metrics: IsoMetrics = OVERWORLD_ISO
   };
 }
 
-export function projectGridCell(point: GridPoint, metrics: IsoMetrics = INTERIOR_ISO_METRICS): ProjectedPoint {
-  return {
-    x: metrics.originX + point.x * metrics.columnStep,
-    y: metrics.originY + point.y * metrics.rowStep
-  };
-}
-
 export function getTileZIndex(point: GridPoint): number {
   return point.y * 100 + point.x;
 }

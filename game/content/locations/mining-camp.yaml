@@ -1,0 +1,14 @@
+id: mining_camp
+name: Pickaxe Mining Camp
+type: camp
+regionId: frontier_valley
+position:
+  x: 33
+  y: 19
+interiorMapId: null
+factionTags: []
+questTags:
+  - labor
+encounterFlags:
+  - neutral
+description: A rough mining operation digging into the eastern ridgeline. The workers are tight-lipped about what they're actually mining for.

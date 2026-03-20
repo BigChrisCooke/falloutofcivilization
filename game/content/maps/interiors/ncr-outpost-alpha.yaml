@@ -1,0 +1,208 @@
+id: ncr_outpost_alpha
+name: NCR Outpost Alpha
+theme: military
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall]
+  - [wall, floor, desk, floor, crate, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, desk, floor, floor, floor, crate, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, wall, wall, wall]
+spawnPoints:
+  - id: main_entrance
+    x: 3
+    y: 5
+exits:
+  - id: to_ncr_outpost
+    target: ncr_outpost
+    x: 3
+    y: 6
+interactables:
+  - id: supply_crate
+    type: container
+    label: NCR Supply Crate
+    actions:
+      - id: examine_crate
+        label: Examine
+        response: "A standard NCR military supply crate, stenciled with 'PROPERTY OF NCR — DO NOT REMOVE.' The lock has been pried open more than once. Inside you see ration tins, bandages, and a half-empty box of .308 rounds."
+  - id: radio_equipment
+    type: electronics
+    label: Radio Equipment
+    actions:
+      - id: examine_radio
+        label: Examine
+        response: "A pre-war military radio set, heavily modified with scavenged parts. The frequency dial is stuck on the NCR emergency band. A logbook next to it shows regular check-ins — the last entry reads 'Supply convoy three days overdue. Raiders suspected.'"
+      - id: use_radio
+        label: Use
+        response: "You toggle the transmitter. Static hisses, then a faint voice: '...Outpost Bravo, requesting resupply, over...' The signal fades. Wherever Bravo is, they're not having a good time either."
+npcs:
+  - id: corporal_hayes
+    name: "Corporal Hayes"
+    disposition: friendly
+    factionId: ncr
+    x: 3
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "At ease, traveler. Corporal Hayes, NCR 5th Battalion. We don't get many visitors out here — which means you're either lost or looking for work."
+          options:
+            - id: ask_work
+              label: "I'm looking for work. What's the situation?"
+              next: raider_problem
+            - id: ask_outpost
+              label: "What is this place?"
+              next: outpost_info
+            - id: ask_ncr
+              label: "Tell me about the NCR presence here."
+              next: ncr_presence
+            - id: cha_salute
+              label: "Corporal. It's good to see the Republic holding the line out here."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_respect
+            - id: cha_rude
+              label: "Great. More NCR grunts playing soldier."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_insult
+        - id: raider_problem
+          text: "Raiders. They've been hitting our supply convoys on the north road for weeks now. Three shipments lost. HQ won't authorize a patrol — says we're 'overextended.' Typical brass. I need someone unofficial to scout their camp and deal with the problem."
+          options:
+            - id: accept_quest
+              label: "Point me in the right direction. I'll handle it."
+              questGrant: ncr_raider_problem
+              factionDelta: { factionId: ncr, delta: 3 }
+              next: quest_accepted
+            - id: int_tactical
+              label: "Three convoys hit on the same road suggests they have a fixed observation post. Have you mapped their patrol patterns?"
+              specialGate: { stat: int, min: 7 }
+              next: int_analysis
+            - id: int_dumb
+              label: "Raiders bad? Me go punch raiders!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_accept
+            - id: cha_negotiate
+              label: "NCR has deep pockets. If I'm doing your battalion's job, I expect proper compensation."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_payment
+            - id: decline
+              label: "Not my problem, Corporal."
+              next: quest_declined
+        - id: quest_accepted
+          text: "Good. Their camp is north of the valley, past the old highway interchange. Watch yourself — they've got numbers and they're getting bolder. Report back when it's done and I'll make sure NCR remembers your service."
+          options: []
+        - id: int_analysis
+          text: "You've got a tactical mind. Yeah, we think they've got a lookout on the ridge above the highway. The camp itself is in the old rest stop. Maybe fifteen fighters, give or take. If you take out their lookout first, you'd have surprise on your side."
+          options:
+            - id: accept_after_intel
+              label: "Good intel. I'll take the job."
+              questGrant: ncr_raider_problem
+              factionDelta: { factionId: ncr, delta: 5 }
+              response: "Outstanding. With your head on your shoulders, those raiders don't stand a chance. Report back when it's done."
+            - id: decline_after_intel
+              label: "Useful information, but I'll pass for now."
+              response: "Your call. The offer stays open."
+        - id: dumb_accept
+          text: "...That's the spirit, I suppose. North. Go north. Hit the people who hit us. Try not to get killed."
+          options:
+            - id: dumb_confirm
+              label: "North! Punching! Got it!"
+              questGrant: ncr_raider_problem
+              factionDelta: { factionId: ncr, delta: 1 }
+              response: "Emperor protect us. Just... come back alive, okay?"
+        - id: cha_payment
+          text: "Ha. You've got nerve — I like that. Fine. Double rations, NCR scrip, and I'll put in a good word with the quartermaster. You drive a hard bargain."
+          options:
+            - id: accept_paid
+              label: "Now we're talking. Consider it done."
+              questGrant: ncr_raider_problem
+              factionDelta: { factionId: ncr, delta: 5 }
+              response: "Pleasure doing business. North of the valley, past the highway interchange. Happy hunting."
+        - id: quest_declined
+          text: "Can't say I'm not disappointed, but I understand. If you change your mind, you know where to find me. Those supply lines won't fix themselves."
+          options: []
+        - id: outpost_info
+          text: "NCR Outpost Alpha. Forward operating base for the 5th Battalion. We monitor the northern approach and keep supply lines open — or we try to, anyway. It's not much, but it's ours."
+          options:
+            - id: int_logistics
+              label: "Forward operating base with only two personnel? Your battalion must be critically understaffed."
+              specialGate: { stat: int, min: 7 }
+              response: "Perceptive. Yeah, we're spread thinner than pre-war paint. Most of the battalion got redeployed east. Torres and I are holding this post on a skeleton crew and a prayer."
+        - id: ncr_presence
+          text: "The Republic's trying to secure Frontier Valley. Good land, clean-ish water, defensible terrain. Problem is, everyone else wants it too. Raiders, independent factions, maybe worse. We're the first line of defense."
+          options: []
+        - id: cha_respect
+          text: "Appreciate that, truly. Most civilians just see the taxes and the patrols. They don't see the convoys we protect or the raiders we keep at bay. Good to meet someone who gets it. If you ever need NCR backing, you've got a friend here."
+          options: []
+        - id: cha_insult
+          text: "Playing soldier? Listen here — I've got friends who died keeping settlements safe. You can think whatever you want about the NCR, but show some respect for the people on the ground or find the door."
+          options: []
+
+  - id: private_torres
+    name: "Private Torres"
+    disposition: neutral
+    factionId: ncr
+    x: 4
+    y: 3
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Civilian on site. State your business. ...Sorry, habit. Torres, NCR infantry. Not much to do here except inventory and wait."
+          options:
+            - id: ask_life
+              label: "What's NCR life like out here?"
+              next: ncr_life
+            - id: ask_hayes
+              label: "What's the Corporal like?"
+              next: about_hayes
+            - id: ask_threats
+              label: "What are the biggest threats in the area?"
+              next: local_threats
+            - id: cha_friendly
+              label: "Must get lonely out here. Good to have some company, right?"
+              specialGate: { stat: cha, min: 7 }
+              next: cha_lonely
+            - id: cha_blunt
+              label: "You look bored out of your skull."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_bored
+        - id: ncr_life
+          text: "Long hours. Bad food. Lots of waiting for something to happen, then wishing it hadn't. But the pay's steady, the Republic takes care of its own, and I believe in what we're doing. Most days, anyway."
+          options:
+            - id: ask_homesick
+              label: "Do you miss home?"
+              next: homesick
+        - id: homesick
+          text: "The Hub. Born and raised. I miss the markets, the noise, the smell of brahmin grease in the morning. Out here it's just sand and silence. But someone's gotta hold the line."
+          options: []
+        - id: about_hayes
+          text: "Hayes is solid. Doesn't say much, but when he gives an order, you follow it. He's kept this outpost running on spit and stubbornness. I'd follow him into a deathclaw nest."
+          options: []
+        - id: local_threats
+          text: "Raiders to the north, obviously. Powder Gangers to the east — they're unpredictable. And I've heard rumors about something in the old reactor complex south of here. Probably nothing. Probably."
+          options:
+            - id: int_reactor
+              label: "A pre-war reactor would still have residual radiation. Has anyone done a survey?"
+              specialGate: { stat: int, min: 7 }
+              response: "Not that I know of. HQ doesn't have the resources. If you're the science type, might be worth checking out. Just bring a Geiger counter."
+            - id: dumb_threats
+              label: "Oooh, spooky reactor! Do ghosts live there?"
+              specialGate: { stat: int, max: 3 }
+              response: "Ghosts? No. Radiation? Yes. Ghouls? ...Maybe. Just don't go poking around unless you know what you're doing."
+        - id: cha_lonely
+          text: "*Torres smiles slightly.* Yeah. It is, actually. Hayes is good company but he's not exactly a conversationalist. It's nice to talk to someone who isn't giving me orders for once."
+          options: []
+        - id: cha_bored
+          text: "...Thanks for noticing. Yeah, it's not exactly exciting duty. But bored beats dead, so I'll take it."
+          options: []
+loot:
+  - id: ncr_field_manual
+    label: NCR Field Manual
+    description: "An NCR field manual. Practical survival information, patrol protocols, and radio frequencies. Standard issue for every NCR soldier."
+    ownedBy: ncr
+    x: 2
+    y: 3
+questHooks:
+  - ncr_raider_problem

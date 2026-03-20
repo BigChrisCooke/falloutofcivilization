@@ -1,0 +1,21 @@
+id: water_for_the_valley
+name: Water for the Valley
+description: "The Water Purification Plant could supply clean water to the whole valley, but it needs a working pump regulator. Merchant Ada at the Crossroads Market might know where to find one."
+grantedBy: merchant_ada
+objectives:
+  - id: find_regulator
+    description: "Find a pump regulator — try the Scrapyard or Gun Runner Depot."
+    type: fetch
+    target: pump_regulator
+  - id: deliver_regulator
+    description: "Deliver the pump regulator to the Water Purification Plant."
+    type: visit
+    target: water_purification
+rewards:
+  karma: 20
+  factionDeltas:
+    frontier-settlers: 15
+  caps: 100
+mapMarker:
+  locationId: water_purification
+  label: "Deliver the Regulator"

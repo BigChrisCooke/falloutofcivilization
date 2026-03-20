@@ -1,0 +1,14 @@
+id: scrapyard
+name: Rusty's Scrapyard
+type: scrapyard
+regionId: frontier_valley
+position:
+  x: 28
+  y: 13
+interiorMapId: scrapyard_interior
+factionTags: []
+questTags:
+  - salvage
+encounterFlags:
+  - loot
+description: Mountains of twisted metal and pre-war debris. Dangerous to navigate but full of salvageable parts for anyone brave enough to dig.

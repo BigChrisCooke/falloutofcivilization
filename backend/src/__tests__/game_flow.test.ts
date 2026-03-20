@@ -114,8 +114,8 @@ describe("game flow", () => {
     expect(initialStateResponse.status).toBe(200);
     expect(initialStateResponse.body.saveLoaded).toBe(true);
     expect(initialStateResponse.body.state.worldState.current_screen).toBe("overworld");
-    expect(initialStateResponse.body.state.worldState.player_x).toBe(2);
-    expect(initialStateResponse.body.state.worldState.player_y).toBe(2);
+    expect(initialStateResponse.body.state.worldState.player_x).toBe(4);
+    expect(initialStateResponse.body.state.worldState.player_y).toBe(5);
     expect(initialStateResponse.body.state.locations.length).toBeGreaterThanOrEqual(4);
     expect(initialStateResponse.body.state.mapDiscovery.discoveredLocationIds).toContain("vault_47");
     expect(initialStateResponse.body.state.mapDiscovery.discoveredTileKeys.length).toBeGreaterThan(1);
@@ -161,8 +161,8 @@ describe("game flow", () => {
 
     expect(vaultExitResponse.status).toBe(200);
     expect(vaultExitResponse.body.state.worldState.current_screen).toBe("overworld");
-    expect(vaultExitResponse.body.state.worldState.player_x).toBe(2);
-    expect(vaultExitResponse.body.state.worldState.player_y).toBe(2);
+    expect(vaultExitResponse.body.state.worldState.player_x).toBe(4);
+    expect(vaultExitResponse.body.state.worldState.player_y).toBe(5);
 
     const backToWorldResponse = await agent.post("/api/game/screen").send({
       screen: "overworld"
@@ -209,17 +209,17 @@ describe("game flow", () => {
     expect(locationResponse.body.state.worldState.current_screen).toBe("location");
     expect(locationResponse.body.state.currentLocation.id).toBe("dusty_tavern");
     expect(locationResponse.body.state.currentInteriorMap.id).toBe("dusty_tavern_interior");
-    expect(locationResponse.body.state.worldState.player_x).toBe(2);
-    expect(locationResponse.body.state.worldState.player_y).toBe(3);
+    expect(locationResponse.body.state.worldState.player_x).toBe(8);
+    expect(locationResponse.body.state.worldState.player_y).toBe(10);
 
     const tavernMoveResponse = await agent.post("/api/game/interior/move").send({
-      x: 2,
-      y: 2
+      x: 8,
+      y: 9
     });
 
     expect(tavernMoveResponse.status).toBe(200);
-    expect(tavernMoveResponse.body.state.worldState.player_x).toBe(2);
-    expect(tavernMoveResponse.body.state.worldState.player_y).toBe(2);
+    expect(tavernMoveResponse.body.state.worldState.player_x).toBe(8);
+    expect(tavernMoveResponse.body.state.worldState.player_y).toBe(9);
 
     const tavernExitBlockedResponse = await agent.post("/api/game/interior/exit").send({
       exitId: "to_frontier_valley"

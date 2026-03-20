@@ -9,28 +9,10 @@ import {
   toTileKey
 } from "../iso.js";
 import { deriveInteriorPlacements } from "../interior_layout.js";
+import { isPassableTile } from "../../../../game/src/tiles.js";
 
 import { getHexWorldPolygon } from "./hex_geometry.js";
 import type { InteriorMarkerNode, InteriorSceneModel, InteriorTileNode } from "./types.js";
-
-const PASSABLE_INTERIOR_TILES = new Set([
-  "floor",
-  "exit",
-  "stash",
-  "terminal",
-  "medbay",
-  "bar",
-  "table",
-  "stage",
-  "trap",
-  "cache",
-  "console",
-  "relay"
-]);
-
-function isPassableTile(tile: string): boolean {
-  return PASSABLE_INTERIOR_TILES.has(tile);
-}
 
 function getMarkerPosition(point: { x: number; y: number }) {
   const projected = projectHex(point, INTERIOR_ISO_METRICS);
@@ -47,7 +29,8 @@ function createMarkerNode(
   point: { x: number; y: number },
   label: string,
   zOffset: number,
-  isActionable: boolean
+  isActionable: boolean,
+  ownedBy?: string
 ): InteriorMarkerNode {
   return {
     id,
@@ -57,11 +40,12 @@ function createMarkerNode(
     markerPosition: getMarkerPosition(point),
     hitRadius: isActionable ? 18 : 14,
     isActionable,
-    zIndex: getTileZIndex(point) + zOffset
+    zIndex: getTileZIndex(point) + zOffset,
+    ownedBy
   };
 }
 
-export function buildInteriorSceneModel(state: GameState): InteriorSceneModel | null {
+export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set<string>): InteriorSceneModel | null {
   const map = state.currentInteriorMap;
   const playerX = state.worldState.player_x;
   const playerY = state.worldState.player_y;
@@ -100,7 +84,7 @@ export function buildInteriorSceneModel(state: GameState): InteriorSceneModel | 
         projected: projectHex(point, INTERIOR_ISO_METRICS),
         polygon: getHexWorldPolygon(point, INTERIOR_ISO_METRICS),
         isCurrent,
-        isReachable: isPassable && hexDistance(currentPoint, point) === 1,
+        isReachable: isPassable && !isCurrent,
         isPassable,
         exitId,
         zIndex: getTileZIndex(point)
@@ -108,13 +92,24 @@ export function buildInteriorSceneModel(state: GameState): InteriorSceneModel | 
     }
   }
 
+  const activeLoot = collectedLootIds
+    ? map.loot.filter((item) => !collectedLootIds.has(item.id))
+    : map.loot;
+
+  const activeLootPlacements = collectedLootIds
+    ? placements.loot.filter((p) => !collectedLootIds.has(p.id))
+    : placements.loot;
+
   const markers: InteriorMarkerNode[] = [
     ...map.exits.map((exit) =>
       createMarkerNode(exit.id, "exit", { x: exit.x, y: exit.y }, exit.target, 20, toTileKey({ x: exit.x, y: exit.y }) === currentTileKey)
     ),
-    ...placements.interactables.map((item) => createMarkerNode(item.id, "interactable", item.point, item.id, 30, false)),
-    ...placements.loot.map((item) => createMarkerNode(item.id, "loot", item.point, item.id, 32, false)),
-    ...placements.npcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, false))
+    ...placements.interactables.map((item) => createMarkerNode(item.id, "interactable", item.point, item.id, 30, true)),
+    ...activeLootPlacements.map((item) => {
+      const lootDef = activeLoot.find((l) => l.id === item.id);
+      return createMarkerNode(item.id, "loot", item.point, item.id, 32, true, lootDef?.ownedBy);
+    }),
+    ...placements.npcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, true))
   ].sort((left, right) => left.zIndex - right.zIndex);
 
   return {
@@ -124,6 +119,7 @@ export function buildInteriorSceneModel(state: GameState): InteriorSceneModel | 
     boardSize: getInteriorBoardSize(width, height),
     currentTileKey,
     hoverTileKey: null,
+    hoveredMarkerId: null,
     tiles: tiles.sort((left, right) => left.zIndex - right.zIndex),
     markers,
     courier: {

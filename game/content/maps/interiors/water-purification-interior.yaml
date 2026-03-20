@@ -1,0 +1,213 @@
+id: water_purification_interior
+name: Water Purification Plant
+theme: industrial
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall, wall]
+  - [wall, floor, console, floor, floor, console, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, metal, metal, floor, floor, metal, metal, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, wall, wall, wall, wall]
+spawnPoints:
+  - id: front_entrance
+    x: 3
+    y: 5
+exits:
+  - id: to_water_purification
+    target: water_purification
+    x: 3
+    y: 6
+interactables:
+  - id: purification_console
+    type: console
+    label: Purification Console
+    actions:
+      - id: examine_console
+        label: Examine
+        response: "A bank of dials, gauges, and flickering monitors. Most of the readouts are in the red. Water pressure is critically low and the filtration cycle has stalled at Stage 2 of 5. A warning light blinks: 'PUMP REGULATOR OFFLINE — MANUAL BYPASS NOT AVAILABLE.'"
+      - id: read_output_log
+        label: Read Output Log
+        response: "The last successful purification cycle was 47 days ago. Since then, output has dropped to 3% capacity. At this rate, the valley's water reserves will be exhausted within two weeks. Someone has scrawled in grease pencil: 'Torres — fix this or we're all dead.'"
+  - id: pipe_junction
+    type: console
+    label: Pipe Junction
+    actions:
+      - id: examine_pipes
+        label: Examine
+        response: "A tangle of corroded pipes converging at a central junction point. The pump regulator housing is cracked open and empty — the regulator itself is missing. Without it, water can't build enough pressure to reach the filtration stage. Rust-colored water drips steadily from a cracked seal."
+      - id: attempt_repair
+        label: Attempt Manual Repair
+        response: "You try to force the pipes into alignment by hand, but without the pump regulator the pressure just bleeds off. The junction shudders and groans. This needs the right part — brute force won't cut it."
+npcs:
+  # ── Engineer Torres ──────────────────────────────────────
+  - id: engineer_torres
+    name: "Engineer Torres"
+    disposition: neutral
+    factionId: ncr
+    x: 4
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A woman in a grease-stained NCR jumpsuit looks up from a clipboard, dark circles under her eyes.* Another visitor. If you're here about the water, take a number. If you're here to help, grab a wrench."
+          options:
+            - id: ask_water_crisis
+              label: "What's wrong with the water?"
+              next: water_crisis
+            - id: ask_parts
+              label: "What parts do you need?"
+              next: parts_needed
+            - id: ask_ncr_plans
+              label: "What are the NCR's plans for the valley?"
+              next: ncr_plans
+            - id: offer_help
+              label: "I want to help. What can I do?"
+              next: offer_help
+            - id: cha_ncr_politics
+              label: "You seem stressed. Is it just the water, or is NCR command giving you trouble too?"
+              specialGate: { stat: cha, min: 6 }
+              next: ncr_politics
+            - id: int_technical
+              label: "A Stage 2 filtration stall with zero pump pressure — that's a regulator failure, isn't it?"
+              specialGate: { stat: int, min: 7 }
+              next: technical_discussion
+            - id: cha_rude_torres
+              label: "Look lady, I don't care about your clipboard. Is there anything useful in here or not?"
+              specialGate: { stat: cha, max: 3 }
+              next: torres_cha_rude_response
+            - id: int_dumb_torres
+              label: "Water come from... sky? Why you need big building for sky water?"
+              specialGate: { stat: int, max: 3 }
+              next: torres_int_dumb_response
+        - id: water_crisis
+          text: "The pump regulator failed six weeks ago. Without it, we can't build enough pressure to push water through the filtration stages. The valley's running on reserves, and those reserves are almost gone. People are already rationing."
+          options:
+            - id: how_bad
+              label: "How long do we have?"
+              next: how_bad
+            - id: ask_parts_from_crisis
+              label: "Where can I find a replacement part?"
+              next: parts_needed
+            - id: int_water_analysis
+              label: "What's the contamination level of the unfiltered source water?"
+              specialGate: { stat: int, min: 6 }
+              response: "You know your hydrology. Source water is pulling 340 rads per liter — well above safe consumption. The pre-war filtration system can handle that, but only at full pressure. Without the regulator, we'd be pumping irradiated water straight to the settlements."
+        - id: how_bad
+          text: "Two weeks. Maybe less if the summer heat keeps up. After that, people start dying. The NCR will have to evacuate the valley, and everything we've built here — the farms, the settlements, the trade routes — all of it dries up. Literally."
+          options:
+            - id: back_to_parts
+              label: "Tell me about the replacement part."
+              next: parts_needed
+            - id: cha_reassure
+              label: "We'll figure this out, Torres. You're not alone in this."
+              specialGate: { stat: cha, min: 6 }
+              response: "*She exhales slowly.* Thanks. I've been running on stimpaks and coffee for three weeks. It's good to hear someone say that who actually means it."
+              factionDelta: { factionId: ncr, delta: 1 }
+        - id: parts_needed
+          text: "I need a pump regulator. Military-grade, pre-war manufacture. There might be one at the old scrapyard east of the valley — it was a maintenance depot before the war. But that place is picked clean on the surface. You'd have to dig deep."
+          options:
+            - id: accept_quest
+              label: "I'll find your regulator."
+              questGrant: water_for_the_valley
+              factionDelta: { factionId: ncr, delta: 3 }
+              next: quest_accepted
+            - id: int_scrapyard
+              label: "A pre-war maintenance depot would store regulators in the subsurface utility tunnels, not on the shop floor."
+              specialGate: { stat: int, min: 7 }
+              questGrant: water_for_the_valley
+              factionDelta: { factionId: ncr, delta: 5 }
+              next: smart_quest_accept
+            - id: decline_quest
+              label: "Sounds like an NCR problem, not mine."
+              next: quest_declined
+        - id: quest_accepted
+          text: "Thank you. Seriously. The scrapyard's dangerous — raiders use it as a staging ground. Be careful. Bring the regulator back here and I'll have this plant running inside a day."
+          options: []
+        - id: smart_quest_accept
+          text: "*Torres stares at you.* That's... exactly right. The subsurface access hatch is on the north side of the depot. Most scavengers never even notice it. You actually know what you're looking for — that gives me hope. Be careful out there."
+          options: []
+        - id: quest_declined
+          text: "It's everyone's problem when the water runs out. But I won't beg. The offer stands if you change your mind."
+          options: []
+        - id: install_regulator
+          text: "Wait — is that a pump regulator? Let me see it."
+          options:
+            - id: hand_over
+              label: "Here. One military-grade pump regulator, as requested."
+              inventoryGate: { itemId: pump_regulator }
+              consumeItem: true
+              response: "*Torres takes the regulator with trembling hands, turning it over carefully.* This is it. This is exactly what we need. Give me a few hours and the valley will have clean water again. You just saved a lot of lives. The NCR won't forget this."
+              factionDelta: { factionId: ncr, delta: 10 }
+              karmaDelta: 5
+        - id: ncr_plans
+          text: "Officially? Establish a permanent garrison, secure the water supply, extend the Long 15 trade route through the valley. Unofficially? Command is stretched thin. If this plant fails, they'll pull the garrison and write the valley off as a loss."
+          options:
+            - id: cha_deeper
+              label: "That sounds like you disagree with command's priorities."
+              specialGate: { stat: cha, min: 7 }
+              next: ncr_politics
+            - id: back_to_water
+              label: "Then fixing the water is the priority."
+              next: parts_needed
+        - id: ncr_politics
+          text: "*Torres lowers her voice.* Between you and me? Colonel Moore wants to pull resources from the valley to reinforce the dam. General Oliver thinks the valley is a distraction. I've been filing requisition orders for six weeks — nothing. They sent me here to fix a pre-war water plant with no parts, no backup, and no budget. That's NCR command for you."
+          options:
+            - id: cha_sympathize
+              label: "Sounds like you're fighting two battles — the plant and your own bureaucracy."
+              specialGate: { stat: cha, min: 7 }
+              response: "*She laughs bitterly.* That's the most accurate assessment of NCR engineering corps I've ever heard. If you're ever in Shady Sands, don't repeat that."
+              factionDelta: { factionId: ncr, delta: 2 }
+            - id: ask_about_parts
+              label: "Forget politics. Where do I find the regulator?"
+              next: parts_needed
+        - id: technical_discussion
+          text: "*Torres' eyes widen.* You actually understand this equipment? Yes — the regulator gasket failed first, then the regulator itself cracked under uneven pressure. The whole system is designed to cascade-fail safely, which means everything downstream just... stopped."
+          options:
+            - id: int_deeper
+              label: "A cascade-fail with intact secondary seals means the filtration membranes should still be good. You just need the regulator."
+              specialGate: { stat: int, min: 8 }
+              response: "That's exactly right. The membranes are fine — I checked them myself. One part. One part and this whole plant comes back online. It's maddening to be this close and not have it."
+              factionDelta: { factionId: ncr, delta: 3 }
+            - id: offer_from_technical
+              label: "I'll find you that regulator."
+              questGrant: water_for_the_valley
+              factionDelta: { factionId: ncr, delta: 5 }
+              next: smart_quest_accept
+        - id: torres_cha_rude_response
+          text: "*Torres' clipboard lowers slowly, her expression shifting from exhaustion to cold fury.* 'Lady?' I've been keeping this valley alive on three hours of sleep for six weeks. You want 'useful'? How about clean water so your insides don't glow in the dark? Now either help or get out of my plant."
+          options:
+            - id: cha_rude_parts
+              label: "Fine, fine. What's broken?"
+              next: parts_needed
+        - id: torres_int_dumb_response
+          text: "*Torres stares at you for a very long time. She opens her mouth. Closes it. Opens it again.* ...The water doesn't come from the sky here. It comes from underground. This building cleans it so it doesn't kill people. Do you... do you understand what 'kill' means? *She looks genuinely concerned for you.*"
+          options:
+            - id: int_dumb_followup
+              label: "Kill means... like, when you bonk something and it stops moving forever?"
+              specialGate: { stat: int, max: 3 }
+              response: "*Torres puts down her clipboard entirely.* Yes. Exactly like that. Dirty water bonks your insides. Please don't drink anything you find on the ground. Actually — please don't put anything you find on the ground in your mouth at all."
+        - id: offer_help
+          text: "Really? That's more than most people say. The plant needs a pump regulator — military-grade, pre-war. Without it, the valley runs dry in two weeks."
+          options:
+            - id: where_find
+              label: "Where do I look?"
+              next: parts_needed
+            - id: anything_else
+              label: "Anything else I can do in the meantime?"
+              response: "Keep an eye out for clean water sources. And if you run into anyone from NCR command, tell them Torres needs that requisition approved. Not that it'll help, but I'm running out of options."
+loot:
+  - id: pipe_wrench
+    label: Pipe Wrench
+    description: "A heavy pipe wrench, rusted but functional. Useful for repairs — and in a pinch, self-defense."
+    x: 1
+    y: 1
+  - id: ncr_field_manual
+    label: "NCR Field Manual"
+    description: "An NCR field manual. Practical survival information, patrol protocols, and radio frequencies. Could be useful — or valuable to the right buyer."
+    ownedBy: ncr
+    x: 6
+    y: 1
+questHooks:
+  - water_for_the_valley

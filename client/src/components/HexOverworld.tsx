@@ -5,11 +5,12 @@ import { overworldRuntimeAdapter } from "../lib/map/overworld_adapter.js";
 
 interface HexOverworldProps {
   state: GameState;
-  onTravel: (x: number, y: number) => void;
+  selectedQuestId?: string | null;
+  onTravel: (x: number, y: number) => Promise<void>;
   onEnterLocation: (locationId: string) => void;
 }
 
-export function HexOverworld({ state, onTravel, onEnterLocation }: HexOverworldProps) {
+export function HexOverworld({ state, selectedQuestId, onTravel, onEnterLocation }: HexOverworldProps) {
   const scene = buildOverworldSceneModel(state);
   const sceneHostRef = useRetainedMapRuntime(scene, overworldRuntimeAdapter, {
     onTravel,

@@ -16,7 +16,9 @@ function createOverworldState(player = { x: 1, y: 1 }): GameState {
     playerCharacter: {
       name: "Courier",
       level: 1,
-      archetype: "Scout"
+      archetype: "Scout",
+      special: null,
+      karma: 0
     },
     worldState: {
       current_screen: "overworld",
@@ -52,6 +54,10 @@ function createOverworldState(player = { x: 1, y: 1 }): GameState {
       discoveredLocationIds: ["vault_47", "dusty_tavern"],
       discoveredTileKeys: player.x === 2 ? ["0,0", "1,0", "2,0", "0,1", "1,1", "2,1", "1,2", "2,2"] : ["0,0", "1,0", "2,0", "0,1", "1,1", "2,1", "1,2"]
     },
+    questState: { active: [], completed: [], definitions: [] },
+    inventory: [],
+    collectedItemIds: [],
+    collectedActionIds: [],
     factionStanding: {
       settlers: 1
     },
@@ -90,7 +96,9 @@ function createInteriorState(player = { x: 2, y: 2 }): GameState {
     playerCharacter: {
       name: "Courier",
       level: 1,
-      archetype: "Scout"
+      archetype: "Scout",
+      special: null,
+      karma: 0
     },
     worldState: {
       current_screen: "vault",
@@ -133,6 +141,10 @@ function createInteriorState(player = { x: 2, y: 2 }): GameState {
       discoveredLocationIds: ["vault_47"],
       discoveredTileKeys: ["2,2"]
     },
+    questState: { active: [], completed: [], definitions: [] },
+    inventory: [],
+    collectedItemIds: [],
+    collectedActionIds: [],
     factionStanding: {
       settlers: 1
     },

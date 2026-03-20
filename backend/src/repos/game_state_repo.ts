@@ -45,11 +45,12 @@ export class GameStateRepo {
         );
 
       this.db
-        .prepare("INSERT INTO quest_state (save_id, active_quests_json, completed_quests_json, updated_at) VALUES (?, ?, ?, ?)")
+        .prepare("INSERT INTO quest_state (save_id, active_quests_json, completed_quests_json, collected_actions_json, updated_at) VALUES (?, ?, ?, ?, ?)")
         .run(
           questState.save_id,
           questState.active_quests_json,
           questState.completed_quests_json,
+          questState.collected_actions_json,
           questState.updated_at
         );
 
@@ -106,6 +107,27 @@ export class GameStateRepo {
         mapDiscovery.updated_at,
         mapDiscovery.save_id
       );
+  }
+
+  public updateQuestState(questState: QuestStateRow): void {
+    this.db
+      .prepare(
+        "UPDATE quest_state SET active_quests_json = ?, completed_quests_json = ?, dialogue_state_json = ?, collected_actions_json = ?, updated_at = ? WHERE save_id = ?"
+      )
+      .run(
+        questState.active_quests_json,
+        questState.completed_quests_json,
+        questState.dialogue_state_json,
+        questState.collected_actions_json,
+        questState.updated_at,
+        questState.save_id
+      );
+  }
+
+  public updateFactionStanding(factionStanding: FactionStandingRow): void {
+    this.db
+      .prepare("UPDATE faction_standing SET standings_json = ?, updated_at = ? WHERE save_id = ?")
+      .run(factionStanding.standings_json, factionStanding.updated_at, factionStanding.save_id);
   }
 
   public updateExplorationState(worldState: WorldStateRow, mapDiscovery: MapDiscoveryRow): void {

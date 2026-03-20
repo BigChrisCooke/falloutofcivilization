@@ -1,0 +1,21 @@
+id: brotherhood_lost_tech
+name: Lost Technology
+description: "Scribe Ibsen of the Brotherhood of Steel believes a pre-war holotape with vital schematics is hidden somewhere in the Crashed Vertibird wreckage. Recover it before scavengers strip the site clean."
+grantedBy: scribe_ibsen
+objectives:
+  - id: search_vertibird
+    description: "Search the Crashed Vertibird wreckage for the holotape."
+    type: fetch
+    target: crashed_vertibird
+  - id: return_holotape
+    description: "Return the holotape to Scribe Ibsen at the Brotherhood Bunker."
+    type: talk
+    target: scribe_ibsen
+rewards:
+  karma: 10
+  factionDeltas:
+    brotherhood-of-steel: 15
+  caps: 75
+mapMarker:
+  locationId: crashed_vertibird
+  label: "Search the Vertibird"

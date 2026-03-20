@@ -1,0 +1,21 @@
+id: kings_missing_courier
+name: The Missing Courier
+description: "Rex from The Kings says a courier went missing between here and the Freeside outpost. Find the courier — or at least his satchel — and The Kings will remember."
+grantedBy: the_king
+objectives:
+  - id: find_courier
+    description: "Search for the missing courier near the Caravan Waystation."
+    type: visit
+    target: caravan_waystation
+  - id: return_satchel
+    description: "Return the courier's satchel to The King at Kings' Court."
+    type: talk
+    target: the_king
+rewards:
+  karma: 10
+  factionDeltas:
+    kings: 15
+  caps: 60
+mapMarker:
+  locationId: kings_court
+  label: "Return to The King"

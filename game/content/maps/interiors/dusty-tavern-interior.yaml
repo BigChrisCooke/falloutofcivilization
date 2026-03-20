@@ -1,33 +1,744 @@
 id: dusty_tavern_interior
-name: Dusty Spur Tavern Interior
-theme: tavern
+name: The Dusty Spur Tavern
+theme: wasteland_tavern
 layout:
-  - [wall, wall, wall, wall, wall, wall]
-  - [wall, bar, floor, floor, table, wall]
-  - [wall, floor, floor, stage, floor, wall]
-  - [wall, wall, exit, wall, wall, wall]
+  - [wall, wall, wall, wall, wall, wall, wall, wall, wall, wall]
+  - [wall, bar, bar, bar, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, table, floor, floor, wall]
+  - [wall, floor, table, floor, rug, rug, floor, floor, notice, wall]
+  - [wall, floor, floor, floor, rug, rug, floor, table, floor, wall]
+  - [wall, floor, floor, pool, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, console, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, cache, floor, floor, floor, floor, floor, floor, cache, wall]
+  - [wall, wall, wall, wall, wall, wall, wall, wall, floor, wall]
+  - [wall, wall, wall, wall, wall, wall, wall, wall, exit, wall]
 spawnPoints:
   - id: front_door
-    x: 2
-    y: 3
+    x: 8
+    y: 10
 exits:
   - id: to_frontier_valley
     target: dusty_tavern
-    x: 2
-    y: 3
+    x: 8
+    y: 11
 interactables:
   - id: bar
     type: vendor
     label: Bar Counter
-  - id: stage
-    type: ambience
-    label: Makeshift Stage
+    actions:
+      - id: examine_bar
+        label: Examine
+        response: "A long wooden bar, scarred with knife marks and burn rings. Bottles of various dubious liquids line the shelf behind it. A hand-painted sign reads: 'NO TABS. NO EXCEPTIONS. NO CRYING.'"
+      - id: buy_drinks
+        label: Buy Drinks
+        response: "Mina slides a murky glass across the bar. 'That'll be 5 caps. Don't ask what's in it.' It tastes like rust and regret. Not bad, actually."
+  - id: pool_table
+    type: pool
+    label: Pool Table
+    actions:
+      - id: examine_pool
+        label: Examine
+        response: "A pre-war pool table, remarkably intact. The felt is patched in three places and the 8-ball has been replaced with a painted rock. Someone has carved 'KINGS RULE' into the side rail."
+      - id: play_pool
+        label: Play Pool
+        response: "You rack the balls and take a shot. The cue ball wobbles on the uneven surface and sinks into a pocket. The dog watches you with what seems like pity. You decide to quit while you're behind."
+      - id: steal_felt
+        label: Steal Felt
+        steal: { itemId: pool_felt, label: "Pool Table Felt", description: "A square of green felt from a pool table. Soft, durable, and almost certainly stolen.", ownedBy: dusty_spur_tavern }
+  - id: jukebox
+    type: jukebox
+    label: Jukebox
+    actions:
+      - id: examine_jukebox
+        label: Examine
+        response: "A Radiation King jukebox, miraculously still functional. The song list is limited to three tracks, all by 'The Inkspots.' A faded sticker warns: 'DO NOT KICK — MINA MEANS IT.'"
+      - id: play_music
+        label: Play Music
+        response: "*'I Don't Want to Set the World on Fire' crackles through the speakers. A few patrons nod along. Even the Legion scout taps his foot before catching himself.* The wasteland feels a little lighter."
+      - id: steal_caps
+        label: Steal Caps
+        steal: { itemId: caps, label: "Caps", description: "Bottle caps — the universally accepted currency of the wasteland.", ownedBy: dusty_spur_tavern, quantity: 15 }
+  - id: notice_board
+    type: notice_board
+    label: Notice Board
+    actions:
+      - id: examine_board
+        label: Examine
+        response: "A cork board pinned with scraps of paper, most sun-bleached and illegible. A few are recent: a missing caravan notice, a bounty on someone called 'Gristle,' a scrawled warning about the old reactor, and a faded poster advertising Sunset Sarsaparilla."
+      - id: read_bounty
+        label: Read the Bounty Notice
+        response: "'WANTED: Raider lieutenant known as GRISTLE. Organizing attacks on the north road. 50 caps and Ranger standing for proof of elimination. Report to Ranger Station Delta. — Ranger Jackson.' The paper is crisp. Recent."
+      - id: read_caravan
+        label: Read the Caravan Notice
+        response: "'MISSING: Kings courier, last seen on the east road past the old gas station, two days ago. Any information to Rex at the Dusty Spur. — The Kings.' Someone has added in pencil: 'Check the ridge.'"
+      - id: read_reactor
+        label: Read the Reactor Warning
+        response: "'DO NOT APPROACH THE REACTOR COMPLEX AT NIGHT. Something is coming out of there. Not ghouls. Worse. Two scavengers dead this month. — Anonymous.' The handwriting is shaky."
 npcs:
+  # ── Old Timer ──────────────────────────────────────────────
+  - id: old_timer
+    name: "Old Timer"
+    disposition: friendly
+    x: 8
+    y: 8
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Whoa there — easy now. You hit your head real hard out there. Can you hear me alright?"
+          options:
+            - id: q1_muscle
+              label: "Yeah I'm fine. I was more of a fighter before..."
+              next: fighter_response
+            - id: q1_brains
+              label: "My head's spinning. I'm more of a thinker normally..."
+              next: thinker_response
+            - id: q2_quick
+              label: "I'm quick on my feet — usually dodge what I can't fight."
+              next: agile_response
+            - id: q2_tough
+              label: "I take hits. Always have. Built like a brahmin, they say."
+              next: tough_response
+            - id: q3_charmer
+              label: "I can talk my way out of most situations."
+              next: charmer_response
+            - id: q3_loner
+              label: "I prefer to work alone. Keep my own counsel."
+              next: loner_response
+            - id: open_creation
+              label: "So... who am I, exactly?"
+              next: identity_response
+        - id: fighter_response
+          text: "Figured. You've got the look of someone who's taken a few hits and kept swinging. I'll keep that in mind."
+          options:
+            - id: ask_more
+              label: "What happened to me?"
+              next: what_happened
+            - id: ask_where
+              label: "Where am I?"
+              next: where_am_i
+        - id: thinker_response
+          text: "Smart. Thinkers last longer out in the waste than brawlers, usually. Assuming they keep their nose out of trouble."
+          options:
+            - id: ask_more
+              label: "What happened to me?"
+              next: what_happened
+            - id: ask_where
+              label: "Where am I?"
+              next: where_am_i
+        - id: agile_response
+          text: "Agile type. Good. Fast hands and quick feet have saved more wasteland lives than any gun."
+          options:
+            - id: ask_more
+              label: "What happened to me?"
+              next: what_happened
+            - id: ask_where
+              label: "Where am I?"
+              next: where_am_i
+        - id: tough_response
+          text: "Ha! Durable stock then. The wasteland needs more of that."
+          options:
+            - id: ask_more
+              label: "What happened to me?"
+              next: what_happened
+            - id: ask_where
+              label: "Where am I?"
+              next: where_am_i
+        - id: charmer_response
+          text: "The silver tongue. Rare as clean water out here. You'll find plenty of use for that skill."
+          options:
+            - id: ask_more
+              label: "What happened to me?"
+              next: what_happened
+            - id: ask_where
+              label: "Where am I?"
+              next: where_am_i
+        - id: loner_response
+          text: "A lone wolf. Harder road, but there's something to be said for not depending on anyone."
+          options:
+            - id: ask_more
+              label: "What happened to me?"
+              next: what_happened
+            - id: ask_where
+              label: "Where am I?"
+              next: where_am_i
+        - id: identity_response
+          text: "That's the question, ain't it? Let me grab you a drink while you figure that out."
+          options:
+            - id: ask_more
+              label: "What happened to me?"
+              next: what_happened
+            - id: ask_where
+              label: "Where am I?"
+              next: where_am_i
+        - id: what_happened
+          text: "Found you face-down outside. Looked like radscorpions got the better of you. Mina patched you up. You're lucky to be breathing."
+          options:
+            - id: thanks
+              label: "Thanks for saving me."
+              response: "Don't thank me — thank Mina. She's the one with the stimpaks."
+            - id: int_check
+              label: "Radscorpion venom has a half-life of six hours. I should be fine by now."
+              specialGate: { stat: int, min: 7 }
+              response: "Well, well. A brain that still works after a head wound. You'll fit right in — most folks around here can barely count to ten."
+            - id: dumb_response
+              label: "Bug... hurt me? Me hit bug next time."
+              specialGate: { stat: int, max: 3 }
+              response: "...Right. Well, at least you're enthusiastic. Just try not to eat anything that glows, alright?"
+        - id: where_am_i
+          text: "The Dusty Spur Tavern, Frontier Valley. Last watering hole before the badlands. Talk to Mina if you want the full picture — she knows more than the rest of us put together."
+          options:
+            - id: cha_thanks
+              label: "You've been incredibly kind. I won't forget this."
+              specialGate: { stat: cha, min: 7 }
+              response: "Ha! Careful with that charm, kid. Out here people will either love you or rob you for it. Now go talk to Mina."
+            - id: cha_rude
+              label: "Great. A dump in the middle of nowhere."
+              specialGate: { stat: cha, max: 3 }
+              response: "...You're welcome for saving your life, by the way. Go talk to Mina before I change my mind about helping."
+            - id: neutral_thanks
+              label: "Thanks. I'll look around."
+              response: "You do that. And talk to Mina — she runs this place."
+
+  # ── Mina ───────────────────────────────────────────────────
   - id: mina
     name: Mina
     disposition: friendly
+    factionId: dusty_spur_tavern
+    x: 2
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Well now, a new face in the Dusty Spur. Name's Mina. I run this place — or what's left of it."
+          options:
+            - id: thank_mina
+              label: "The Old Timer said I should thank you — for patching me up."
+              grantItems:
+                - { itemId: stimpak, label: "Stimpak" }
+              next: mina_thanks
+            - id: ask_rumors
+              label: "Heard any rumors?"
+              next: rumors
+            - id: ask_world
+              label: "What happened to the world?"
+              next: world_info
+            - id: ask_mechanics
+              label: "How do I get around?"
+              next: mechanics_info
+            - id: ask_objectives
+              label: "What should I be doing?"
+              next: objectives_info
+            - id: ask_faction
+              label: "What's the Dusty Spur Tavern faction?"
+              next: faction_info
+            - id: cha_flirt
+              label: "Name's not the only nice thing in here."
+              specialGate: { stat: cha, min: 7 }
+              next: flirt_response
+            - id: cha_rude
+              label: "Looks like a dump."
+              specialGate: { stat: cha, max: 3 }
+              next: rude_response
+        - id: rumors
+          text: "Rumors? Honey, I hear everything in this bar. Word is there's a caravan that went missing on the east road — Kings courier, hasn't been seen in days. And someone's been poking around the old water treatment plant. Could be scavengers, could be trouble. Keep your ears open out there."
+          options: []
+        - id: mina_thanks
+          text: "Oh, that old fool told you? It was nothing — just a stimpak and some clean bandages. Here, take this spare. You'll need it more than me out there. *She slides a stimpak across the bar.*"
+          options: []
+        - id: world_info
+          text: "The bombs fell about two hundred years back. Nobody agrees on who launched first. The NCR's rebuilding. The Legion pushes east. Raiders fill the cracks. You're in Frontier Valley — last stop before the badlands."
+          options:
+            - id: int_history
+              label: "Two hundred years — that puts pre-war collapse around 2077. Nuclear winter would've lasted decades."
+              specialGate: { stat: int, min: 7 }
+              next: smart_history
+            - id: dumb_bombs
+              label: "Boom booms made everything all gone-gone?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_history
+            - id: ask_ncr
+              label: "Tell me more about the NCR."
+              next: ncr_info
+            - id: ask_legion
+              label: "And the Legion?"
+              next: legion_info
+        - id: smart_history
+          text: "Well aren't you a walking encyclopedia. Yeah, that's about right. The Enclave had continuity-of-government bunkers. The NCR rebuilt from Vault dwellers and wastelanders. Most everyone else... didn't make it."
+          options: []
+        - id: dumb_history
+          text: "...Yeah, sweetie. The boom booms made everything all gone-gone. But some people are trying to fix it. That's what matters."
+          options: []
+        - id: ncr_info
+          text: "New California Republic. They mean well, mostly. Taxes, bureaucracy, and soldiers. Could be worse — could be the Legion."
+          options: []
+        - id: legion_info
+          text: "Caesar's Legion. Slavers with delusions of Rome. Stay clear of them unless you've got a death wish or very thick skin."
+          options: []
+        - id: mechanics_info
+          text: "Tap a hex tile to walk there. One step at a time — distance matters in the waste. The gold tile is the exit. Your SPECIAL stats affect what dialogue options you get and how you handle yourself out there."
+          options:
+            - id: ask_special
+              label: "SPECIAL stats?"
+              next: special_info
+        - id: special_info
+          text: "Strength, Perception, Endurance, Charisma, Intelligence, Agility, Luck. Everyone's got 'em. They shape who you are and how people respond to you. High Charisma opens doors. High Intelligence lets you see through lies. Low stats... well, they make things interesting."
+          options: []
+        - id: objectives_info
+          text: "Survive. Find other settlements. The rumor board's got work. Watch your faction standings — make friends and enemies carefully."
+          options:
+            - id: int_strategic
+              label: "What's the optimal faction alliance for this region?"
+              specialGate: { stat: int, min: 7 }
+              response: "Ha! No one's ever asked me that before. NCR's the safe bet — they've got numbers. The Kings are loyal if you earn it. Gun Runners sell to everyone. Steer clear of the Powder Gangers and the Legion unless you've got a plan."
+            - id: dumb_survive
+              label: "What's a survive?"
+              specialGate: { stat: int, max: 3 }
+              response: "...It means don't die, honey. Just... don't die."
+        - id: faction_info
+          text: "Neutral ground. Everyone's welcome as long as they behave. Your standing with us reflects how you treat the people in this bar."
+          options: []
+        - id: flirt_response
+          text: "Ha! Smooth talker. Buy a drink first, then we'll see about the compliments. Now — what do you actually need?"
+          options: []
+        - id: rude_response
+          text: "And you look like something the radroaches dragged in, but I'm too polite to say so. Now — do you want help or not?"
+          options: []
+
+  # ── Corporal Hayes (NCR) ───────────────────────────────────
+  - id: ncr_trooper
+    name: "Corporal Hayes"
+    disposition: neutral
+    factionId: ncr
+    x: 4
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Civilian. Frontier Valley's under NCR protection. Keep your nose clean."
+          options:
+            - id: ncr_about
+              label: "Tell me about the NCR."
+              next: ncr_about
+            - id: ncr_quests
+              label: "Any work for a capable person?"
+              next: ncr_work
+            - id: ncr_attitude
+              label: "How do you feel about this place?"
+              next: ncr_attitude
+            - id: cha_salute
+              label: "Corporal. Appreciate what the NCR does out here. Truly."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_salute
+            - id: cha_hostile
+              label: "Protection? More like occupation."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_hostile
+        - id: ncr_about
+          text: "New California Republic. Largest government left standing. We protect settlements, maintain the Long 15, and push back the Legion. Not everyone appreciates what that costs."
+          options:
+            - id: int_politics
+              label: "Republic implies elected officials. How's voter turnout in a post-apocalyptic democracy?"
+              specialGate: { stat: int, min: 7 }
+              response: "...You'd be surprised. President Kimball's got about 60% approval. People care when their vote means the difference between a garrison or no garrison."
+            - id: dumb_ncr
+              label: "You got a flag? I like flags."
+              specialGate: { stat: int, max: 3 }
+              response: "...Yeah, we've got a flag. Two-headed bear. It's... look, the important thing is we keep people safe."
+        - id: ncr_work
+          text: "There's a raider gang making trouble north of the valley. Unofficial work — the brass won't sanction a patrol for it. Handle the problem, and I'll make sure the NCR remembers your name."
+          options:
+            - id: accept_raider
+              label: "I'll handle it. Consider it done."
+              questGrant: ncr_raider_problem
+              factionDelta: { factionId: ncr, delta: 2 }
+              next: raider_accepted
+            - id: cha_negotiate
+              label: "I'll do it — but I expect fair compensation, Corporal."
+              specialGate: { stat: cha, min: 7 }
+              questGrant: ncr_raider_problem
+              factionDelta: { factionId: ncr, delta: 5 }
+              next: raider_negotiate
+            - id: dumb_accept
+              label: "Me smash bad guys! Where bad guys?"
+              specialGate: { stat: int, max: 3 }
+              questGrant: ncr_raider_problem
+              next: raider_dumb
+            - id: decline_raider
+              label: "Not interested in doing your dirty work."
+              next: raider_declined
+        - id: raider_accepted
+          text: "Good. They're camped north of here. Watch yourself — they're not pushovers. Report back when it's done."
+          options: []
+        - id: raider_negotiate
+          text: "Ha. Fair enough — I like someone who knows their worth. Double rations and NCR standing when you report back. You've got a deal."
+          options: []
+        - id: raider_dumb
+          text: "...North. The bad guys are north. Just... go north and hit things. Come back when the hitting is done."
+          options: []
+        - id: raider_declined
+          text: "Suit yourself. The offer stands if you change your mind."
+          options: []
+        - id: ncr_attitude
+          text: "Good neutral ground. Keeps the factions talking instead of shooting. Mina runs a tight ship."
+          options: []
+        - id: cha_salute
+          text: "At ease. It's rare someone says that without wanting something. You ever need NCR backing, you come find me."
+          options: []
+        - id: cha_hostile
+          text: "Watch your mouth, civilian. We're the only thing between this bar and a Legion raiding party. Show some respect."
+          options: []
+
+  # ── Decanus Varro (Legion) ─────────────────────────────────
+  - id: legion_scout
+    name: "Decanus Varro"
+    disposition: hostile
+    factionId: caesar_legion
+    x: 5
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Another soft-headed courier wandering the valley. Caesar's patience for these lands grows thin."
+          options:
+            - id: legion_about
+              label: "Tell me about Caesar's Legion."
+              next: legion_about
+            - id: legion_threat
+              label: "You don't scare me."
+              next: legion_threat
+            - id: legion_respect
+              label: "I respect Caesar's discipline."
+              next: legion_respect
+            - id: int_latin
+              label: "Decanus — that's a Roman rank for a squad of ten. How many men do you actually command?"
+              specialGate: { stat: int, min: 7 }
+              next: int_latin
+            - id: dumb_greeting
+              label: "You talk funny. Are you from... the place with the hats?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_greeting
+            - id: cha_diplomatic
+              label: "Caesar's ambition is impressive. I'd be interested to hear the Legion's perspective."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_diplomatic
+        - id: legion_about
+          text: "Caesar's Legion brings order where the NCR spreads only chaos and corruption. Strength and discipline are the only true currencies. You would do well to remember this."
+          options:
+            - id: ask_caesar
+              label: "What does Caesar actually want?"
+              next: caesar_goals
+        - id: caesar_goals
+          text: "Unity. One law. One people. The weak serve the strong, and the strong protect the whole. The NCR calls it tyranny. Caesar calls it civilization."
+          options: []
+        - id: legion_threat
+          text: "Bravado. The Legion has heard that before. From stronger people than you. They did not say it twice."
+          options: []
+        - id: legion_respect
+          text: "Hmph. Unusual for a courier. Perhaps there is more to you. We shall see."
+          options: []
+        - id: int_latin
+          text: "...You know your history. Eight, currently. Not that it matters — each of my men is worth twenty NCR conscripts. Your knowledge may serve you yet, courier."
+          options: []
+        - id: dumb_greeting
+          text: "...The place with the — *sighs deeply* — Caesar's Legion comes from the East. We wear armor, not hats. Though I suppose that distinction is lost on you."
+          options: []
+        - id: cha_diplomatic
+          text: "A diplomat. Rare in these lands. Caesar respects those who listen before they judge. Perhaps you will see the truth of the Legion for yourself. Speak to me again when you are ready to hear more."
+          options: []
+
+  # ── Vera — Gun Runner Rep ──────────────────────────────────
+  - id: gun_runner
+    name: "Vera — Gun Runner Rep"
+    disposition: neutral
+    factionId: gun_runners
+    x: 6
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Looking to buy, sell, or just drinking? I'm open for all three."
+          options:
+            - id: gr_sell
+              label: "What do you buy?"
+              next: gr_sell
+            - id: gr_info
+              label: "What do you know about the local situation?"
+              next: gr_info
+            - id: gr_faction
+              label: "The Gun Runners don't pick sides?"
+              next: gr_faction
+            - id: cha_deal
+              label: "I like a woman who knows the value of a good deal. Maybe we can work something out."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_deal
+            - id: cha_blunt
+              label: "Sell me something useful or stop talking."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_blunt
+        - id: gr_sell
+          text: "Weapons, ammo, and working parts. Condition matters. Bring me junk and I'll give you junk caps."
+          options:
+            - id: int_tech
+              label: "Do you deal in energy weapons? Laser or plasma — I can tell the difference."
+              specialGate: { stat: int, min: 7 }
+              response: "Oh, a connoisseur. We get plasma pistols from time to time. Laser rifles too, when the Brotherhood isn't hoarding them. Come back with caps and I'll see what I've got."
+            - id: dumb_buy
+              label: "You have... boom stick? Big boom?"
+              specialGate: { stat: int, max: 3 }
+              response: "...Yes. I have 'boom sticks.' Several, in fact. Come back when you have caps and I'll find something you can point in the right direction."
+        - id: gr_info
+          text: "Powder Gangers are getting bold east of here. NCR's stretched thin. Good time to sell guns — bad time to walk unarmed."
+          options: []
+        - id: gr_faction
+          text: "We pick the side of the cap. Both the NCR and the Legion need weapons. We supply both. That's business, not politics."
+          options:
+            - id: int_economics
+              label: "Selling to both sides of a conflict doubles your revenue but also makes you a target for both."
+              specialGate: { stat: int, min: 7 }
+              response: "That's why Gun Runners travel in packs and hire good guards. You're not wrong — but the margins are worth the risk."
+        - id: cha_deal
+          text: "Ha! Flattery won't get you a discount, but it might get you first pick on new inventory. Keep that charm coming and we'll do good business."
+          options: []
+        - id: cha_blunt
+          text: "Charming. Tell you what — I'll sell you whatever you want at full price. How's that for useful?"
+          options: []
+
+  # ── Rex (The Kings) ────────────────────────────────────────
+  - id: kings_member
+    name: "Rex (The Kings)"
+    disposition: friendly
+    factionId: the_kings
+    x: 7
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Hey, friend. New blood in the valley. The King says everyone deserves a fair shake — I'm inclined to agree."
+          options:
+            - id: kings_about
+              label: "Who are The Kings?"
+              next: kings_about
+            - id: kings_quests
+              label: "Anything you need help with?"
+              next: kings_work
+            - id: kings_attitude
+              label: "What do you think of the Legion over there?"
+              next: kings_attitude
+            - id: cha_cool
+              label: "The King's got good taste in representatives. You seem like good people."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_cool
+            - id: cha_dismissive
+              label: "Elvis impersonators? In the apocalypse? Seriously?"
+              specialGate: { stat: cha, max: 3 }
+              next: cha_dismissive
+        - id: kings_about
+          text: "Born in Freeside, came out this way when the heat got too much. We take care of our own and don't start trouble. The Elvis thing is — look, it's complicated, but it works for us."
+          options:
+            - id: int_elvis
+              label: "Elvis Presley — pre-war entertainer, 1935 to 1977. The cultural persistence of his image is fascinating."
+              specialGate: { stat: int, min: 7 }
+              response: "...Wow. You know your history. Most people don't even know he was a real person. The King found a holotape in a school building and, well, the rest is history. Or performance. Both?"
+            - id: dumb_elvis
+              label: "Who's Elvis? Is he here? Can I meet him?"
+              specialGate: { stat: int, max: 3 }
+              response: "He's... well, he's been dead for about 250 years, friend. But his spirit lives on! In us! Through the power of rock and roll! ...You don't know what that means either, do you?"
+        - id: kings_work
+          text: "Actually, yeah. There's a courier gone missing between here and the Freeside outpost. Last seen two days ago. If you find him — or his satchel — The Kings won't forget."
+          options:
+            - id: accept_courier
+              label: "I'll keep an eye out. Where was he last seen?"
+              questGrant: kings_missing_courier
+              factionDelta: { factionId: the_kings, delta: 2 }
+              next: courier_accepted
+            - id: cha_promise
+              label: "You've got my word. I'll find your man — or what happened to him."
+              specialGate: { stat: cha, min: 7 }
+              questGrant: kings_missing_courier
+              factionDelta: { factionId: the_kings, delta: 5 }
+              next: courier_promise
+            - id: dumb_accept
+              label: "Me find lost mail man! Me good at finding stuff!"
+              specialGate: { stat: int, max: 3 }
+              questGrant: kings_missing_courier
+              next: courier_dumb
+            - id: decline_courier
+              label: "Not my problem."
+              next: courier_declined
+        - id: courier_accepted
+          text: "Last spotted on the road east of here, past the old gas station. Be careful — the route's not safe."
+          options: []
+        - id: courier_promise
+          text: "I believe you. Something about the way you carry yourself. East road, past the old gas station. And... thank you."
+          options: []
+        - id: courier_dumb
+          text: "That's... the spirit! East road, past the big building with the broken sign. Just follow the road. Can you follow a road? ...Good enough."
+          options: []
+        - id: courier_declined
+          text: "Fair enough. The offer's open if you change your mind."
+          options: []
+        - id: kings_attitude
+          text: "I think he should drink his drink and stay on his side of the bar. We both know that won't last, but for now — drinks."
+          options: []
+        - id: cha_cool
+          text: "Hey, thanks! The King always says you can tell a person's character by how they treat strangers. You're alright in my book."
+          options: []
+        - id: cha_dismissive
+          text: "Hey, don't knock it till you try it. The hair alone is worth the lifestyle. ...Okay, I can see you're not convinced. But we're good people, I promise."
+          options: []
+
+  # ── Boxcars (Powder Gangers) ───────────────────────────────
+  - id: powder_ganger
+    name: "Boxcars"
+    disposition: hostile
+    factionId: powder_gangers
+    x: 8
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Don't look at me. I'm just drinking."
+          options:
+            - id: pg_who
+              label: "You look like trouble."
+              next: pg_trouble
+            - id: pg_friendly
+              label: "No trouble here. Just curious."
+              next: pg_curious
+            - id: pg_ncr
+              label: "Is it true the NCR locked you up?"
+              next: pg_ncr
+            - id: cha_smooth
+              label: "Relax. I'm not NCR and I'm not looking for a fight. Can I buy you a drink?"
+              specialGate: { stat: cha, min: 7 }
+              next: cha_smooth
+            - id: cha_provoke
+              label: "Powder Gangers, right? You people blow things up real good."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_provoke
+        - id: pg_trouble
+          text: "And you look like someone who's gonna have a bad day real soon if you keep talking. Drink up or move on."
+          options:
+            - id: int_analyze
+              label: "The defensive posture, the shaking hands — you're not a threat, you're scared. What happened?"
+              specialGate: { stat: int, min: 7 }
+              next: scared_response
+        - id: scared_response
+          text: "...Keep your voice down. Look, the Gangers are getting organized. That's not always a good thing for guys like me who just wanted out of prison. I'm in over my head."
+          options: []
+        - id: pg_curious
+          text: "...Fine. We're Powder Gangers. We run east of here. Don't cross our territory and we got no problem."
+          options:
+            - id: dumb_powder
+              label: "Why do they call you Powder Gangers? Do you make baby powder?"
+              specialGate: { stat: int, max: 3 }
+              response: "...Baby powder. Yeah, sure. That's exactly what we make. Baby powder. Now leave me alone."
+        - id: pg_ncr
+          text: "Worked us half to death on a railroad. Some of us got tired of it. That's all you need to know."
+          options: []
+        - id: cha_smooth
+          text: "*Boxcars eyes you suspiciously, then relaxes slightly.* ...Fine. One drink. But I ain't telling you nothing about the gang's operations. Just... it's been a rough week."
+          options: []
+        - id: cha_provoke
+          text: "*Boxcars stands up abruptly.* Say that again. Go ahead. I dare you. ...Nah, forget it. Mina'd throw us both out. Just stay out of my face."
+          options: []
+
+  # ── Scavenge (dog) ─────────────────────────────────────────
+  - id: dog
+    name: "Scavenge"
+    disposition: friendly
+    x: 5
+    y: 6
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*The dog wags its tail and sniffs your hand.*"
+          options:
+            - id: pet_dog
+              label: "Pet the dog."
+              next: pet_response
+            - id: examine_dog
+              label: "Examine the dog."
+              next: examine_response
+            - id: feed_dog
+              label: "Feed the dog."
+              next: feed_response
+            - id: int_dog
+              label: "Check the dog for parasites and injuries."
+              specialGate: { stat: int, min: 7 }
+              next: int_examine
+            - id: dumb_dog
+              label: "PUPPY! ME LOVE PUPPY!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_puppy
+        - id: pet_response
+          text: "*Scavenge leans into your hand and closes his eyes. For a moment the wasteland doesn't seem quite so bad.*"
+          options:
+            - id: more_pets
+              label: "Keep petting."
+              response: "*Scavenge rolls onto his back. Maximum wasteland happiness achieved.*"
+        - id: examine_response
+          text: "A scraggly-eared mutt, lean but bright-eyed. Collar reads 'Scavenge'. Someone loved this dog once. Maybe still does."
+          options: []
+        - id: feed_response
+          text: "*Scavenge sniffs hopefully... you don't have any food. He looks at you with quiet dignity and lies back down.*"
+          options: []
+        - id: int_examine
+          text: "You check behind the ears and along the belly. No ticks, no mange. Someone's been taking care of this dog. The muscle tone suggests regular exercise — probably a working scavenger dog. Hence the name."
+          options: []
+        - id: dumb_puppy
+          text: "*Scavenge is startled by the volume but then starts licking your face enthusiastically. You have made a friend for life. Neither of you fully understands the situation, but that's okay.*"
+          options: []
 loot:
+  - id: sunset_sarsaparilla
+    label: Sunset Sarsaparilla
+    description: "A bottle of Sunset Sarsaparilla. The label promises 'That special blend of 17 herbs and spices.' It's flat and warm, but it's still sarsaparilla."
+    ownedBy: dusty_spur_tavern
+    x: 1
+    y: 3
+  - id: nuka_cola
+    label: Nuka-Cola
+    description: "A bottle of Nuka-Cola. Still faintly glowing after two centuries. The caffeine alone could restart a heart."
+    ownedBy: dusty_spur_tavern
+    x: 3
+    y: 3
+  - id: whiskey
+    label: Rotgut Whiskey
+    description: "A bottle of locally distilled rotgut. The label is handwritten and just says 'WHISKEY' in aggressive capitals."
+    ownedBy: dusty_spur_tavern
+    x: 8
+    y: 1
+  - id: brahmin_milk
+    label: Brahmin Milk
+    description: "A bottle of brahmin milk. Surprisingly fresh. Don't think too hard about the two-headed cow it came from."
+    ownedBy: dusty_spur_tavern
+    x: 1
+    y: 4
+  - id: dog_turd
+    label: Fresh Dog Turd
+    description: "A fresh pile of wasteland dog droppings. Why would anyone pick this up? ...Why did YOU pick this up?"
+    x: 6
+    y: 6
   - id: rumor_note
     label: Crumpled Rumor Note
+    description: "A scrap of paper in shaky handwriting: 'The gas station on the east road — back room still has tools. Repair kit behind the counter, untouched.' Below that, in different ink: 'Radio Tower Bravo is broadcasting again. Old signal — Enclave frequency. There's a REPEATER hidden in the ridge southeast of the valley, behind the old drainage pipe at the base of the cliff face. If someone is answering those signals, that repeater is how they're listening. Ghost doesn't know about it. Nobody does. Keep it that way.'"
+    x: 1
+    y: 9
+  - id: travelers_cap
+    label: "Traveler's Cap"
+    description: "A dusty traveler's cap. It's been through a lot — faded, frayed, but still keeps the sun off. Every wastelander needs one."
+    ownedBy: dusty_spur_tavern
+    x: 8
+    y: 9
 questHooks:
   - rumor_board

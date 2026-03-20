@@ -3,8 +3,8 @@ name: Vault 47
 type: vault
 regionId: frontier_valley
 position:
-  x: 2
-  y: 2
+  x: 4
+  y: 5
 interiorMapId: vault_47_home
 factionTags:
   - vault-dwellers

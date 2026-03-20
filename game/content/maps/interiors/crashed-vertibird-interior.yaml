@@ -1,0 +1,181 @@
+id: crashed_vertibird_interior
+name: Crashed Vertibird Wreckage
+theme: wreck
+layout:
+  - [wall, metal, metal, metal, metal, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, wall, exit, exit, wall, wall]
+spawnPoints:
+  - id: wreck_entrance
+    x: 2
+    y: 3
+exits:
+  - id: to_crashed_vertibird
+    target: crashed_vertibird
+    x: 2
+    y: 4
+  - id: to_crashed_vertibird_alt
+    target: crashed_vertibird
+    x: 3
+    y: 4
+interactables:
+  - id: cockpit_console
+    type: terminal
+    label: Cockpit Console
+    actions:
+      - id: examine_console
+        label: Examine
+        response: "A cracked instrument panel, half-buried in dirt. Most of the displays are shattered, but a faint green glow pulses from one surviving terminal. Pre-war military designation stamps are barely legible: 'VB-02 VERTIBIRD — USAF CLASSIFIED.'"
+      - id: data_recovery
+        label: Attempt Data Recovery
+        response: "The encryption is military-grade. Without advanced technical knowledge, the data is inaccessible. The terminal flickers and displays a single word: 'LOCKED.'"
+      - id: data_recovery_int
+        label: "[INT 7] Bypass the encryption"
+        specialGate: { stat: int, min: 7 }
+        response: "You reroute the power bus through the backup capacitor and brute-force the decryption key. Flight logs scroll past — the vertibird was carrying classified cargo from a Brotherhood outpost when it was shot down. The last entry reads: 'Gyroscope package intact. Do not let it fall into enemy hands.' Interesting."
+  - id: cargo_bay
+    type: crate
+    label: Cargo Bay
+    actions:
+      - id: search_cargo
+        label: Search
+        response: "The cargo bay is twisted but mostly intact. Military crates are scattered among the wreckage. Most are empty or crushed, but one reinforced container still has its seal intact."
+      - id: pry_open
+        label: Pry Open the Sealed Container
+        grant: { itemId: vertibird_gyroscope, label: "Vertibird Gyroscope" }
+      - id: examine_markings
+        label: Examine the Crate Markings
+        response: "Stamped in faded stencil: 'PROPERTY OF BOS — LOST HILLS CHAPTER. PRIORITY TRANSPORT. AUTHORIZED PERSONNEL ONLY.' Whatever this was, the Brotherhood wanted it badly."
+npcs:
+  # ── Tinker ──────────────────────────────────────────────────
+  - id: tinker
+    name: "Tinker"
+    disposition: neutral
+    x: 3
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A wiry figure looks up from a tangle of wires, goggles pushed up on their forehead.* Huh? Oh — another scavenger. Thought I had this wreck to myself. Name's Tinker."
+          options:
+            - id: ask_wreck
+              label: "What is this place?"
+              next: about_wreck
+            - id: ask_found
+              label: "Find anything good in here?"
+              next: what_found
+            - id: ask_trade
+              label: "Interested in trading information?"
+              next: trade_intel
+            - id: int_technical
+              label: "[INT 7] That's a VB-02 airframe. Pre-war tiltrotor design. What's the engine status?"
+              specialGate: { stat: int, min: 7 }
+              next: technical_talk
+            - id: dumb_greeting
+              label: "Big bird fall down go boom?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_response
+            - id: cha_friendly
+              label: "No claim-jumping here. Plenty of wreck for both of us."
+              specialGate: { stat: cha, min: 6 }
+              next: friendly_response
+        - id: about_wreck
+          text: "Pre-war military aircraft. A vertibird — the Enclave used 'em, Brotherhood too. This one's been here a while. Hull's still mostly intact, which means nobody's stripped it yet. Lucky us."
+          options:
+            - id: ask_brotherhood
+              label: "You think the Brotherhood will come looking for it?"
+              next: brotherhood_concern
+            - id: ask_danger
+              label: "Is it safe in here? Radiation?"
+              next: radiation_check
+        - id: what_found
+          text: "*Tinker grins and holds up a handful of wiring.* Copper wire, mostly. Some intact servos. The real prize would be the flight computer or the gyroscope, but those are locked down tight in the cockpit and cargo bay."
+          options:
+            - id: ask_gyroscope
+              label: "Tell me more about the gyroscope."
+              next: gyroscope_info
+            - id: ask_computer
+              label: "What about the flight computer?"
+              next: computer_info
+        - id: trade_intel
+          text: "*Tinker narrows their eyes.* Depends on what you've got. I know things about this valley that most people don't. Old pre-war sites, hidden caches. What's it worth to you?"
+          options:
+            - id: cha_negotiate
+              label: "[CHA 6] I've got information too. How about a fair exchange?"
+              specialGate: { stat: cha, min: 6 }
+              next: fair_trade
+            - id: offer_caps
+              label: "I can pay in caps."
+              next: caps_offer
+            - id: threaten
+              label: "How about you tell me for free?"
+              next: threaten_response
+        - id: technical_talk
+          text: "*Tinker's eyes widen.* You know your aircraft! The port engine's completely gone — took the whole nacelle off on impact. Starboard's intact but the fuel line ruptured. The real engineering marvel is the gyroscopic stabilization system. Military-grade, self-correcting. Brotherhood would pay a fortune for one in working condition."
+          options:
+            - id: int_deeper
+              label: "[INT 8] A self-correcting gyroscope would need rare-earth magnets. Those alone would be worth the trip."
+              specialGate: { stat: int, min: 8 }
+              response: "Now you're talking my language! Yeah, neodymium magnets in the stabilizer housing. Pre-war manufacturing — can't replicate it. The Brotherhood's been searching for intact vertibird components for years. There's a standing bounty. *Tinker lowers their voice.* That's what the Brotherhood lost tech program is all about."
+            - id: ask_more_tech
+              label: "Could you repair it?"
+              next: repair_talk
+        - id: dumb_response
+          text: "*Tinker stares at you for a long moment.* ...Yeah. Big bird fall down go boom. That's... that's exactly what happened. You're not going to touch anything in here, are you? Please don't touch anything."
+          options:
+            - id: dumb_promise
+              label: "Me no touch! ...What that shiny thing?"
+              specialGate: { stat: int, max: 3 }
+              response: "NO! Don't — *sigh* — that's a capacitor. It'll shock you. Just... stand over there and look at the wall. The wall is safe."
+        - id: friendly_response
+          text: "Ha, appreciate that. Most scavengers I meet would sooner crack my skull than share. Alright — you seem decent. I'll tell you what I know, and maybe we both walk out of here richer."
+          options:
+            - id: ask_wreck_friendly
+              label: "So what's the story with this vertibird?"
+              next: about_wreck
+            - id: ask_found_friendly
+              label: "What have you found so far?"
+              next: what_found
+        - id: brotherhood_concern
+          text: "Probably. The Brotherhood doesn't forget its toys. There's a whole program — 'lost tech recovery' they call it. If this bird was carrying anything classified, they'll send a patrol eventually. Might want to grab what you can before that happens."
+          options: []
+        - id: radiation_check
+          text: "Hull's shielded well enough. Pre-war military spec. The real danger is structural — some of these bulkheads could give way if you lean on them wrong. Watch your step around the cockpit."
+          options: []
+        - id: gyroscope_info
+          text: "Military navigation component. Keeps the bird stable in flight. The Brotherhood would trade serious hardware for a working one. Should be somewhere in the cargo bay, if the impact didn't smash it to pieces."
+          options: []
+        - id: computer_info
+          text: "Encrypted, naturally. Military-grade lockout. You'd need serious technical chops to crack it. Might have flight logs, mission data — the kind of stuff that tells you where this bird came from and what it was carrying."
+          options: []
+        - id: fair_trade
+          text: "Now that's the kind of deal I like. Alright — here's one for free: there's an old Brotherhood cache about two clicks north of here, half-buried under a collapsed overpass. Most people walk right past it. Your turn."
+          options:
+            - id: share_info
+              label: "I heard there's a scrapyard south that trades in pre-war parts."
+              response: "Rusty's place? Yeah, I've heard of it. Good to know it's still operating. Thanks — that's useful. Maybe I'll swing by after I finish here."
+        - id: caps_offer
+          text: "Caps work. Twenty caps and I'll tell you about a Brotherhood dead drop nearby. Fifty and I'll mark three scavenge sites on your map. Your call."
+          options: []
+        - id: threaten_response
+          text: "*Tinker takes a step back, hand moving to a holstered wrench.* Easy now. Violence in a confined space full of unstable wreckage? Neither of us walks away from that. Let's keep this civil."
+          options: []
+        - id: repair_talk
+          text: "Me? Ha. I'm good with wires and small electronics. A full vertibird rebuild? That's Brotherhood Elder level engineering. You'd need a dedicated facility, a team of mechanics, and about a thousand parts we don't have. But salvaging the components? That I can do."
+          options: []
+loot:
+  - id: encrypted_holotape
+    label: Encrypted Holotape
+    description: "A holotape sealed with military-grade encryption. The casing is stamped with 'CLASSIFIED — EYES ONLY.' Whatever this contains, someone went to great lengths to protect it."
+    x: 1
+    y: 1
+  - id: military_ration
+    label: Military Ration
+    description: "A military Meal Ready to Eat, still vacuum-sealed. The US Army built these to survive anything — including the apocalypse, apparently."
+    x: 4
+    y: 1
+questHooks:
+  - brotherhood_lost_tech

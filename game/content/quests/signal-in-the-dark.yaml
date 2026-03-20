@@ -1,0 +1,19 @@
+id: signal_in_the_dark
+name: Signal in the Dark
+description: "Ghost, the mysterious radio operator at Tower Bravo, has been contacting Enclave remnants via encrypted broadcast. A return signal from the southeast suggests someone — or something — is heading toward the valley. Scout the source and report back."
+grantedBy: ghost
+objectives:
+  - id: find_repeater
+    description: "Locate the hidden repeater station southeast of the valley."
+    type: visit
+    target: radio_tower
+  - id: report_findings
+    description: "Return to Ghost at Radio Tower Bravo with your findings."
+    type: talk
+    target: ghost
+rewards:
+  karma: 5
+  caps: 40
+mapMarker:
+  locationId: radio_tower
+  label: "Investigate the Signal"

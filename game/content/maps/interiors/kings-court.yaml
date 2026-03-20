@@ -1,0 +1,262 @@
+id: kings_court
+name: "The King's Court"
+theme: wasteland_tavern
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, desk, floor, floor, desk, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, crate, floor, floor, crate, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, exit, wall, wall, wall]
+spawnPoints:
+  - id: theater_entrance
+    x: 3
+    y: 6
+exits:
+  - id: to_kings_court
+    target: kings_court
+    x: 3
+    y: 7
+  - id: to_kings_court_2
+    target: kings_court
+    x: 4
+    y: 7
+interactables:
+  - id: jukebox
+    type: jukebox
+    label: Jukebox
+    actions:
+      - id: play_music
+        label: Play Music
+        response: "*'Hound Dog' crackles through ancient speakers, filling the old theater with the sound of a world long dead. Several Kings start tapping their feet. One breaks into a spontaneous hip swivel. The King nods approvingly from his throne.* The Court comes alive."
+      - id: examine_jukebox
+        label: Examine
+        response: "A Radiation King deluxe jukebox, lovingly maintained. Someone has hand-painted a golden crown on its side. The song selection is exclusively pre-war rock and roll — mostly Elvis, some Buddy Holly, a bit of Chuck Berry. A handwritten note taped to the front reads: 'The King's personal collection. Treat with respect or answer to Pacer.'"
+  - id: stage
+    type: furniture
+    label: Theater Stage
+    actions:
+      - id: examine_stage
+        label: Examine
+        response: "The old theater stage, still mostly intact. Faded velvet curtains hang on either side. Scorch marks on the boards tell stories of enthusiastic performances gone slightly wrong. A microphone stand holds center stage — it doesn't work, but nobody seems to mind. The Kings use this for announcements, talent shows, and the occasional dramatic reading."
+  - id: throne
+    type: furniture
+    label: "The King's Chair"
+    actions:
+      - id: examine_throne
+        label: Examine
+        response: "A salvaged movie theater seat, elevated on a platform of stacked cinder blocks and draped in pre-war fabric. It's been modified with armrests from a car, padded with brahmin leather, and painted gold. It's ridiculous and magnificent in equal measure. A brass plaque on the front reads simply: 'THE KING.'"
+npcs:
+  - id: the_king
+    name: "The King"
+    disposition: friendly
+    factionId: kings
+    x: 3
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A man in a perfectly maintained leather jacket and impeccable pompadour looks up from his throne.* Well, well. A new face in the Court. Welcome, friend. I'm The King. And before you ask — yes, that's my real title. Around here, it means something."
+          options:
+            - id: ask_kings
+              label: "Who are the Kings?"
+              next: about_kings
+            - id: ask_courier
+              label: "I heard you're looking for a missing courier."
+              next: missing_courier
+            - id: ask_territory
+              label: "What's your territory like?"
+              next: territory_info
+            - id: ask_beliefs
+              label: "What do the Kings stand for?"
+              next: kings_philosophy
+            - id: cha_impressed
+              label: "I've heard of you. They say The King is the most charismatic leader in the wasteland. I can see why."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_flattery
+            - id: cha_rude
+              label: "You named yourself 'The King'? Bit much, don't you think?"
+              specialGate: { stat: cha, max: 3 }
+              next: cha_disrespect
+        - id: about_kings
+          text: "We're a family. Started in Freeside — found an old building full of holotapes about a man called Elvis. The way he carried himself, the way people loved him... we figured the wasteland could use some of that. Style. Dignity. A code."
+          options:
+            - id: int_elvis
+              label: "Elvis Aaron Presley, 1935-1977. You've modeled an entire social structure on a pre-war entertainer. That's actually a fascinating case of cultural transmission through artifact preservation."
+              specialGate: { stat: int, min: 7 }
+              next: int_culture
+            - id: dumb_elvis
+              label: "So you're all named King? That must get confusing at dinner."
+              specialGate: { stat: int, max: 3 }
+              next: dumb_names
+            - id: ask_code
+              label: "What's the code?"
+              next: kings_code
+        - id: int_culture
+          text: "*The King raises an eyebrow, then slowly grins.* Well now. I don't get many academics in here. You're right — we took something old and made it new. Gave people an identity when the wasteland tried to take everything. That holotape saved more lives than any gun."
+          options: []
+        - id: dumb_names
+          text: "*The King stares at you for a long moment.* ...No. I'm The King. They're the Kings. It's a group name. Like... you know what, never mind. Just know we're the good guys. Mostly."
+          options: []
+        - id: kings_code
+          text: "Simple. Take care of your own. Don't start fights, but finish them. Style matters — how you carry yourself tells people who you are. And never, ever let someone disrespect the music."
+          options: []
+        - id: missing_courier
+          text: "*The King's expression darkens.* Yeah. One of our boys. Name's Danny. Ran the courier route between here and the eastern settlements. Three days overdue. Danny's reliable — if he's late, something went wrong."
+          options:
+            - id: accept_courier_quest
+              label: "I'll find him. Where was he last seen?"
+              questGrant: kings_missing_courier
+              factionDelta: { factionId: kings, delta: 3 }
+              next: courier_details
+            - id: cha_promise
+              label: "You have my word. I'll bring Danny home — or find out what happened to him."
+              specialGate: { stat: cha, min: 7 }
+              questGrant: kings_missing_courier
+              factionDelta: { factionId: kings, delta: 5 }
+              next: courier_promise
+            - id: int_investigate
+              label: "Three days overdue on a known route. That narrows the search area significantly. Was he carrying anything valuable?"
+              specialGate: { stat: int, min: 7 }
+              next: courier_intel
+            - id: dumb_help
+              label: "Danny lost? Me find Danny! Me good finder!"
+              specialGate: { stat: int, max: 3 }
+              questGrant: kings_missing_courier
+              factionDelta: { factionId: kings, delta: 1 }
+              next: courier_dumb
+            - id: decline_courier
+              label: "Sorry, I've got my own problems."
+              next: courier_declined
+        - id: courier_details
+          text: "East road, past the old gas station. He usually makes the run in a day and a half. Pacer's been wanting to send a search party, but I can't spare the manpower — not with raiders getting bold. Find Danny, and the Kings owe you one."
+          options: []
+        - id: courier_promise
+          text: "*The King studies your face, then nods slowly.* I believe you. There's something about you — you've got the look of someone who keeps their promises. East road, past the old gas station. Bring my boy home."
+          options: []
+        - id: courier_intel
+          text: "Sharp. He was carrying dispatches — nothing worth killing over, but raiders don't always know that before they attack. The route passes through open ground between two ridge lines. Perfect ambush country. If something happened, that's where it went down."
+          options:
+            - id: accept_after_intel
+              label: "I'll check the ridgeline approach. Consider it done."
+              questGrant: kings_missing_courier
+              factionDelta: { factionId: kings, delta: 5 }
+              response: "A plan and a brain. I like that combination. Good luck out there."
+        - id: courier_dumb
+          text: "...Enthusiasm counts for something, I suppose. East road. Past the big building. Follow the road. And please — try not to get lost yourself."
+          options: []
+        - id: courier_declined
+          text: "I understand. Everyone's got their own burdens. But if you change your mind, the door's always open. The Kings remember their friends."
+          options: []
+        - id: territory_info
+          text: "We hold a few blocks around the Court and run courier routes to the settlements. It's not much by NCR standards, but it's ours. We earned it by being fair and standing up for the little people. Not everyone appreciates that."
+          options: []
+        - id: kings_philosophy
+          text: "Freedom. Dignity. The right to walk down the street without someone in a uniform telling you what to do. The NCR wants order. The Legion wants obedience. We just want people to be able to live their lives with some style."
+          options: []
+        - id: cha_flattery
+          text: "*The King adjusts his collar and grins.* Well now, I see you've got some style yourself. Charisma recognizes charisma, friend. You're welcome in the Court anytime. In fact, I might have some work for someone with your particular... social gifts."
+          options: []
+        - id: cha_disrespect
+          text: "*Pacer takes a step forward, but The King waves him off.* Easy. Everyone's entitled to their opinion — even wrong ones. I earned this name. Stick around long enough and you'll see why."
+          options: []
+
+  - id: pacer
+    name: "Pacer"
+    disposition: wary
+    factionId: kings
+    x: 6
+    y: 2
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A heavyset man with slicked-back hair cracks his knuckles.* You're in the King's Court. Show respect or the door's that way. Your choice."
+          options:
+            - id: ask_role
+              label: "What's your role here?"
+              next: pacer_role
+            - id: ask_trouble
+              label: "Is there trouble I should know about?"
+              next: pacer_trouble_general
+            - id: ask_trouble_courier
+              label: "I heard about Danny. What's going on?"
+              questGate: { questId: kings_missing_courier }
+              next: pacer_trouble
+            - id: cha_disarm
+              label: "Easy, friend. I come in peace. The King's reputation precedes him — I'm here out of respect."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_calm
+            - id: cha_aggressive
+              label: "You don't scare me, pompadour."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_threat
+        - id: pacer_role
+          text: "I keep the King safe. I keep the Court safe. And I keep an eye on anyone who walks through that door uninvited. That includes you. Nothing personal — it's just business."
+          options: []
+        - id: pacer_trouble_general
+          text: "There's always trouble. NCR keeps pushing into our territory. Raiders keep testing our routes. If you're looking to help, talk to the King. If you're looking to cause problems... don't."
+          options: []
+        - id: pacer_trouble
+          text: "There's always trouble. NCR keeps pushing into our territory. Raiders keep testing our routes. And now Danny's gone missing. If you're looking to help, talk to the King. If you're looking to cause problems... don't."
+          options: []
+        - id: cha_calm
+          text: "*Pacer relaxes slightly, though his eyes stay sharp.* Alright. You talk smooth — I'll give you that. Just remember: smooth talkers are a dime a dozen out here. Actions are what count. Prove yourself to the King and we're square."
+          options: []
+        - id: cha_threat
+          text: "*Pacer's jaw tightens.* You've got guts. I'll give you that. But guts spill easy. Watch your tone in the Court, outsider. Last warning."
+          options: []
+
+  - id: rex
+    name: "Rex"
+    disposition: friendly
+    factionId: kings
+    x: 4
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A cyberdog with a partially exposed brain case wags its mechanical tail. Its eyes glow a soft blue as it regards you with surprising intelligence. A collar tag reads 'REX — PROPERTY OF THE KING.'*"
+          options:
+            - id: pet_rex
+              label: "Pet Rex carefully."
+              next: pet_response
+            - id: examine_rex
+              label: "Examine Rex's cybernetics."
+              next: examine_response
+            - id: int_analyze
+              label: "Pre-war military cyberdog, probably a K-9000 variant. The neural interface looks custom. Fascinating."
+              specialGate: { stat: int, min: 7 }
+              next: int_tech
+            - id: dumb_rex
+              label: "ROBOT PUPPY! Can I keep him?!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_puppy
+        - id: pet_response
+          text: "*Rex leans into your hand. His tail wags faster, producing a faint mechanical whirring. He barks once — a sound that's half organic, half synthesized. Then he nudges your hand toward the east wall and whines.*"
+          options:
+            - id: follow_nudge
+              label: "Look in the direction Rex is indicating."
+              response: "Rex is pointing toward the east road — the same direction Danny took on his courier run. Smart dog. He knows something's wrong and wants someone to do something about it."
+        - id: examine_response
+          text: "Rex is a pre-war cyberdog — organic brain in a mechanical body. His eyes track movement with unsettling precision, and his jaw could probably bite through sheet metal. Despite the hardware, there's genuine warmth in those glowing eyes. He's loyal to the King and seems to understand far more than a normal dog should."
+          options: []
+        - id: int_tech
+          text: "*Rex tilts his head at you, as if recognizing someone who understands what he is.* The neural interface is indeed custom work — someone with real skill maintained this dog. The brain case shows signs of multiple surgeries. Rex has been around a long time and had several caretakers who clearly loved him. *Rex barks approvingly.*"
+          options: []
+        - id: dumb_puppy
+          text: "*Rex backs away slightly from the volume, then cautiously sniffs your outstretched hand. Pacer glares at you from across the room.* 'That's the King's dog, genius. You can't keep him.' *Rex, seemingly unfazed by the exchange, licks your fingers anyway.*"
+          options: []
+loot:
+  - id: kings_jacket
+    label: "King's Gang Jacket"
+    description: "A leather jacket with the Kings' gang insignia. Worn with pride by members of the Kings. Makes a statement, whether you intend it or not."
+    ownedBy: kings
+    x: 2
+    y: 5
+questHooks:
+  - kings_missing_courier

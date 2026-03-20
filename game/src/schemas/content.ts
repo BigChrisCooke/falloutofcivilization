@@ -1,5 +1,84 @@
 import { z } from "zod";
 
+// --- SPECIAL stat names ---
+
+export const specialStatNames = ["str", "per", "end", "cha", "int", "agl", "lck"] as const;
+export const specialStatEnum = z.enum(specialStatNames);
+
+// --- Dialogue tree schemas ---
+
+export const specialGateSchema = z.object({
+  stat: specialStatEnum,
+  min: z.number().int().optional(),
+  max: z.number().int().optional()
+});
+
+export const grantItemSchema = z.object({
+  itemId: z.string().min(1),
+  label: z.string().min(1),
+  quantity: z.number().int().min(1).default(1)
+});
+
+export const dialogueOptionSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  response: z.string().min(1).optional(),
+  next: z.string().min(1).optional(),
+  specialGate: specialGateSchema.optional(),
+  questGate: z.object({ questId: z.string().min(1) }).optional(),
+  inventoryGate: z.object({ itemId: z.string().min(1) }).optional(),
+  consumeItem: z.boolean().optional(),
+  questGrant: z.string().min(1).optional(),
+  questComplete: z.string().min(1).optional(),
+  factionDelta: z.object({
+    factionId: z.string().min(1),
+    delta: z.number().int()
+  }).optional(),
+  karmaDelta: z.number().int().optional(),
+  grantItems: z.array(grantItemSchema).optional(),
+  returnToRoot: z.boolean().optional()
+});
+
+export const dialogueNodeSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().min(1),
+  options: z.array(dialogueOptionSchema).default([])
+});
+
+export const dialogueTreeSchema = z.object({
+  rootNodeId: z.string().min(1),
+  nodes: z.array(dialogueNodeSchema).min(1)
+});
+
+// --- Quest definition schema ---
+
+export const questObjectiveSchema = z.object({
+  id: z.string().min(1),
+  description: z.string().min(1),
+  type: z.enum(["talk", "fetch", "kill", "visit"]),
+  target: z.string().min(1)
+});
+
+export const questSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  grantedBy: z.string().min(1).optional(),
+  objectives: z.array(questObjectiveSchema).min(1),
+  rewards: z.object({
+    karma: z.number().int().optional(),
+    factionDeltas: z.record(z.number().int()).optional(),
+    items: z.array(grantItemSchema.extend({ description: z.string().optional() })).optional(),
+    caps: z.number().int().optional()
+  }).optional(),
+  mapMarker: z.object({
+    locationId: z.string().min(1),
+    label: z.string().min(1)
+  }).optional()
+});
+
+// --- World content schemas ---
+
 export const regionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -39,7 +118,7 @@ export const overworldMapSchema = z.object({
 export const interiorMapSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  theme: z.string().min(1),
+  theme: z.enum(["vault", "cave", "wasteland_tavern", "prewar-reactor", "military", "workshop", "market", "ruins", "church", "camp", "wreck", "industrial", "radio_station", "suburb", "hospital"]),
   layout: z.array(z.array(z.string().min(1))).min(1),
   spawnPoints: z.array(
     z.object({
@@ -60,25 +139,60 @@ export const interiorMapSchema = z.object({
     z.object({
       id: z.string().min(1),
       type: z.string().min(1),
-      label: z.string().min(1)
+      label: z.string().min(1),
+      actions: z.array(
+        z.object({
+          id: z.string().min(1),
+          label: z.string().min(1),
+          response: z.string().min(1).optional(),
+          steal: z.object({
+            itemId: z.string().min(1),
+            label: z.string().min(1),
+            ownedBy: z.string().min(1).optional(),
+            quantity: z.number().int().min(1).default(1),
+            description: z.string().optional()
+          }).optional(),
+          grant: z.object({
+            itemId: z.string().min(1),
+            label: z.string().min(1),
+            quantity: z.number().int().min(1).default(1),
+            description: z.string().optional()
+          }).optional()
+        })
+      ).optional()
     })
   ).default([]),
   npcs: z.array(
     z.object({
       id: z.string().min(1),
       name: z.string().min(1),
-      disposition: z.string().min(1)
+      disposition: z.enum(["friendly", "neutral", "hostile", "wary"]),
+      factionId: z.string().min(1).optional(),
+      x: z.number().int().optional(),
+      y: z.number().int().optional(),
+      dialogue: dialogueTreeSchema.optional()
     })
   ).default([]),
   loot: z.array(
     z.object({
       id: z.string().min(1),
-      label: z.string().min(1)
+      label: z.string().min(1),
+      ownedBy: z.string().min(1).optional(),
+      description: z.string().optional(),
+      x: z.number().int().optional(),
+      y: z.number().int().optional()
     })
   ).default([]),
   questHooks: z.array(z.string()).default([])
 });
 
+export type SpecialStat = z.infer<typeof specialStatEnum>;
+export type SpecialGate = z.infer<typeof specialGateSchema>;
+export type DialogueOption = z.infer<typeof dialogueOptionSchema>;
+export type DialogueNode = z.infer<typeof dialogueNodeSchema>;
+export type DialogueTree = z.infer<typeof dialogueTreeSchema>;
+export type QuestObjective = z.infer<typeof questObjectiveSchema>;
+export type QuestDefinition = z.infer<typeof questSchema>;
 export type RegionDefinition = z.infer<typeof regionSchema>;
 export type LocationDefinition = z.infer<typeof locationSchema>;
 export type OverworldMapDefinition = z.infer<typeof overworldMapSchema>;

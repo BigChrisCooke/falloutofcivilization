@@ -1,0 +1,238 @@
+id: brotherhood_bunker
+name: Brotherhood Bunker
+theme: vault
+layout:
+  - [metal, metal, metal, metal, metal, metal, metal]
+  - [metal, floor, floor, floor, floor, terminal, metal]
+  - [metal, floor, floor, floor, floor, floor, metal]
+  - [metal, desk, floor, floor, floor, desk, metal]
+  - [metal, floor, floor, floor, floor, floor, metal]
+  - [metal, floor, crate, floor, crate, floor, metal]
+  - [metal, metal, metal, exit, metal, metal, metal]
+spawnPoints:
+  - id: bunker_entrance
+    x: 3
+    y: 5
+exits:
+  - id: to_brotherhood_bunker
+    target: brotherhood_bunker
+    x: 3
+    y: 6
+interactables:
+  - id: terminal
+    type: electronics
+    label: Research Terminal
+    actions:
+      - id: examine_terminal
+        label: Examine
+        response: "A pre-war military terminal, its green phosphor screen flickering with scrolling data. The Brotherhood has repurposed it to catalog recovered technology. The login screen shows 'WELCOME, SCRIBE — ENTER CREDENTIALS.' The keyboard is worn smooth from years of use."
+      - id: access_terminal
+        label: Access
+        response: "The terminal is password-locked. Without the proper Brotherhood credentials or some serious hacking skills, you're not getting in. The screen flashes 'ACCESS DENIED' and emits a warning beep. Somewhere deeper in the bunker, you hear footsteps pause."
+  - id: weapon_rack
+    type: display
+    label: Weapon Rack
+    actions:
+      - id: examine_rack
+        label: Examine
+        response: "A locked weapons rack holding Brotherhood standard-issue equipment: two laser rifles, a plasma pistol, and a set of power armor gauntlets being repaired. Everything is meticulously maintained. A sign reads 'AUTHORIZED PERSONNEL ONLY — VIOLATORS WILL BE DEALT WITH.' The lock is military-grade."
+npcs:
+  - id: paladin_ramos
+    name: "Paladin Ramos"
+    disposition: wary
+    factionId: brotherhood
+    x: 3
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A powerfully built man in a Brotherhood flight suit rises from behind a desk, hand resting on a holstered laser pistol.* You shouldn't be here. State your name, your business, and how you found this location. You have thirty seconds."
+          options:
+            - id: honest_answer
+              label: "I'm a traveler. I found the ventilation shaft by accident."
+              next: skeptical_response
+            - id: cha_diplomatic
+              label: "Paladin. I come with respect for the Brotherhood's mission. I believe we can help each other."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_impressed
+            - id: cha_blunt
+              label: "Relax, tin man. I'm not here to steal your toys."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_hostile
+            - id: int_knowledgeable
+              label: "Paladin-rank — that puts you at least ten years in the Brotherhood. Your bunker's ventilation system uses pre-war Poseidon Energy filters. Impressive maintenance."
+              specialGate: { stat: int, min: 7 }
+              next: int_recognition
+            - id: dumb_greeting
+              label: "Ooh, cool underground place! Is this a vault? I like vaults!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_response
+        - id: skeptical_response
+          text: "By accident. Right. Nobody stumbles onto a Brotherhood installation by accident. But you're here now, and killing you would create more problems than it solves. So here's how this works: you can talk, you can look, but you don't touch anything. Clear?"
+          options:
+            - id: ask_brotherhood
+              label: "What exactly does the Brotherhood do?"
+              next: brotherhood_mission
+            - id: ask_artifact
+              label: "I've heard you're looking for something specific."
+              next: artifact_search
+        - id: cha_impressed
+          text: "*Ramos studies you for a long moment, then slowly removes his hand from the pistol.* Mutual benefit. That's not a phrase most wastelanders use with us. Alright, diplomat — I'm listening. But understand this: one wrong move and you leave here in a box."
+          options:
+            - id: ask_brotherhood
+              label: "Tell me about the Brotherhood's purpose."
+              next: brotherhood_mission
+            - id: ask_cooperation
+              label: "What could the Brotherhood use help with?"
+              next: artifact_search
+        - id: cha_hostile
+          text: "*Ramos's eyes go cold.* 'Tin man.' That's what you're going with? I've killed Enclave soldiers with my bare hands. I've held the line against super mutant hordes. And you walk into my bunker and call me 'tin man.' You're alive because I choose it. Remember that."
+          options:
+            - id: apologize
+              label: "Bad joke. I apologize."
+              next: reluctant_thaw
+        - id: reluctant_thaw
+          text: "*A long pause.* ...Apology accepted. Barely. Don't waste my time. What do you want?"
+          options:
+            - id: ask_brotherhood
+              label: "What does the Brotherhood do out here?"
+              next: brotherhood_mission
+        - id: int_recognition
+          text: "*Ramos blinks, then something shifts in his expression — the first crack in his armor of suspicion.* Poseidon Energy filtration systems. You know your pre-war tech. That's... unusual for a wastelander. Who taught you?"
+          options:
+            - id: self_taught
+              label: "Books. Holotapes. The wasteland's full of libraries if you know where to look."
+              next: int_respect
+            - id: ask_tech
+              label: "I know a lot of things. Maybe we can trade knowledge."
+              next: int_respect
+        - id: int_respect
+          text: "A scholar. Ibsen would like you — he's our Scribe, and he's always complaining that nobody appreciates the finer points of pre-war engineering. *Ramos finally sits back down.* Alright. You've earned a conversation. What do you want to know?"
+          options:
+            - id: ask_brotherhood
+              label: "Tell me about the Brotherhood."
+              next: brotherhood_mission
+            - id: ask_artifact
+              label: "I've heard rumors you're searching for something."
+              next: artifact_search
+        - id: dumb_response
+          text: "*Ramos stares at you with a mixture of disbelief and something that might be pity.* ...It's not a vault. It's a Brotherhood of Steel forward operations bunker. We collect and preserve pre-war technology. And you're trespassing. Can you understand that much?"
+          options:
+            - id: dumb_understand
+              label: "You collect old stuff? Me find old stuff sometimes! We trade?"
+              response: "*Ramos pinches the bridge of his nose.* Ibsen, deal with this one. I don't have the patience."
+        - id: brotherhood_mission
+          text: "The Brotherhood of Steel preserves dangerous pre-war technology — weapons, power systems, biological agents. Left in the wrong hands, these things could destroy what's left of humanity. We collect, secure, and study. That's our sacred duty."
+          options:
+            - id: int_codex
+              label: "The Codex — your founding document. Does it still hold up two centuries later? The world's changed."
+              specialGate: { stat: int, min: 7 }
+              response: "That's a question that's gotten more than one Knight stripped of rank. The Codex is... interpreted differently by different chapters. Our Elder believes in adaptation. Others call that heresy. Careful where you ask that question."
+        - id: artifact_search
+          text: "*Ramos hesitates, then makes a decision.* We're looking for a pre-war signal processor. Military grade, from a communications installation somewhere in this region. Our records indicate it could restore long-range communications across the wasteland. That's worth more than any weapon."
+          options:
+            - id: offer_help_artifact
+              label: "I might be able to help. I've been exploring the region."
+              response: "If you locate the processor — or any pre-war military communications hardware — bring it here. The Brotherhood would be... grateful. And Brotherhood gratitude comes with tangible benefits."
+              factionDelta: { factionId: brotherhood, delta: 2 }
+            - id: int_spire_connection
+              label: "A signal processor for long-range comms... that sounds like it could be related to the old communications spire north of the valley."
+              specialGate: { stat: int, min: 7 }
+              response: "*Ramos leans forward.* The Spire. Yes. That's exactly where we believe it is. But the facility is locked down — pre-war security systems still active. If you can get inside and retrieve the processor, name your price. Within reason."
+              factionDelta: { factionId: brotherhood, delta: 3 }
+
+  - id: scribe_ibsen
+    name: "Scribe Ibsen"
+    disposition: friendly
+    factionId: brotherhood
+    x: 5
+    y: 3
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A thin man in a worn lab coat looks up from a disassembled circuit board, magnifying goggles making his eyes comically large.* Oh! A visitor! Ramos didn't shoot you — that's a good sign. I'm Scribe Ibsen. Welcome to my humble workshop."
+          options:
+            - id: ask_work
+              label: "What are you working on?"
+              next: current_project
+            - id: ask_preservation
+              label: "Tell me about tech preservation."
+              next: preservation_talk
+            - id: ask_artifact
+              label: "The Paladin mentioned you're looking for something specific."
+              next: artifact_details
+            - id: ask_brotherhood_life
+              label: "What's life like in the Brotherhood?"
+              next: brotherhood_life
+            - id: int_tech_talk
+              label: "Is that a Wattz Electronics circuit board? The capacitor array looks like a C-series power regulator."
+              specialGate: { stat: int, min: 7 }
+              next: int_nerd_out
+            - id: dumb_shiny
+              label: "Oooh, shiny bits! Can I touch?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_touch
+        - id: current_project
+          text: "Trying to reverse-engineer a pre-war water purification controller. If I can crack it, we could build new purifiers from scrap parts. Clean water for settlements, no more dependence on old tech. It's slow going, but every circuit tells a story."
+          options:
+            - id: int_help
+              label: "Have you tried bypassing the encryption on the ROM chip? Pre-war Wattz boards usually have a debug mode you can access through pin 7."
+              specialGate: { stat: int, min: 7 }
+              response: "*Ibsen's eyes go wide behind his goggles.* Pin 7! I've been going through the main bus like an idiot! Hold on — *he grabs a probe and starts testing* — yes! Yes, there's a response! You just saved me weeks of work! Who ARE you?!"
+        - id: preservation_talk
+          text: "The Brotherhood's core mission: preserve pre-war knowledge so humanity doesn't have to reinvent the wheel. Or the nuclear reactor. Or the laser rifle. We catalog, restore, and protect. Some say we hoard — I say we curate. There's a difference."
+          options:
+            - id: ask_sharing
+              label: "But do you share that knowledge?"
+              next: sharing_debate
+        - id: sharing_debate
+          text: "*Ibsen shifts uncomfortably.* That's... a sore subject. Officially, dangerous tech stays locked down. But knowledge of water purifiers? Medical equipment? I think that should be shared freely. Not everyone in the Brotherhood agrees with me. Ramos calls me an idealist. I call him a pessimist. We're probably both right."
+          options: []
+        - id: artifact_details
+          text: "The signal processor! Yes! It's from a pre-war military communications array. Our records suggest it's in the old Spire facility north of the valley. But there's something else too — a holotape with schematics we believe is in a crashed Vertibird east of here. If you could retrieve it, the Brotherhood would be in your debt."
+          options:
+            - id: accept_holotape_quest
+              label: "I'll look for the holotape at the Vertibird crash."
+              questGrant: brotherhood_lost_tech
+              factionDelta: { factionId: brotherhood, delta: 3 }
+              next: quest_accepted
+            - id: int_implications
+              label: "Cross-continental communications would fundamentally shift the power balance. The NCR would want access too."
+              specialGate: { stat: int, min: 7 }
+              questGrant: brotherhood_lost_tech
+              factionDelta: { factionId: brotherhood, delta: 5 }
+              next: quest_accepted
+            - id: decline_quest
+              label: "Not interested. Sounds like Brotherhood business."
+              response: "*Ibsen's face falls.* I understand. It is a lot to ask. But if you change your mind, we'll be here. We're always here."
+        - id: quest_accepted
+          text: "*Ibsen's face lights up like a pre-war Christmas tree.* Really?! The Vertibird crash site is northeast of the valley — look for it in the rocky area near the highland ridge. Be careful though — scavengers have been spotted in that area. Bring the holotape back here and I'll make sure you're properly compensated."
+          options: []
+        - id: brotherhood_life
+          text: "Structured. Disciplined. A lot of reading, which I love. Not much variety in food, which I don't. But there's purpose here — real, tangible purpose. Every circuit I restore, every schematic I decode, I'm pulling humanity one step back from the brink."
+          options:
+            - id: cha_relate
+              label: "That's genuinely inspiring. It's rare to meet someone with that kind of dedication."
+              specialGate: { stat: cha, min: 7 }
+              response: "*Ibsen beams.* You really think so? Ramos says I get too excited about circuit boards. But I think excitement is underrated! If you can't get passionate about saving human knowledge, what can you get passionate about?"
+        - id: int_nerd_out
+          text: "*Ibsen nearly drops his goggles.* A C-SERIES! You can IDENTIFY that?! Oh, this is the best day I've had since we found that intact Pip-Boy last month! Please, sit down, tell me everything you know! Do you have experience with Robco systems too? What about Poseidon Energy controllers?!"
+          options:
+            - id: nerd_continue
+              label: "I know a thing or two. Let's talk shop."
+              response: "*What follows is a two-hour conversation about pre-war electronics that would bore anyone else to tears. But for two tech enthusiasts in a bunker under the wasteland, it's pure magic.* Ibsen declares you an honorary Scribe, which Ramos later informs you has no official standing whatsoever."
+              factionDelta: { factionId: brotherhood, delta: 3 }
+        - id: dumb_touch
+          text: "*Ibsen frantically pushes your hand away.* NO! No touching! This is a two-hundred-year-old circuit board! It's irreplaceable! *He clutches the board protectively.* Ramos! RAMOS! The visitor is touching my things!"
+          options: []
+loot:
+  - id: holotape_fragment
+    label: Holotape Fragment
+    description: "A damaged holotape. Most of the data is corrupted, but fragments of text are still readable. Someone didn't want this found."
+    x: 1
+    y: 5
+questHooks:
+  - brotherhood_lost_tech
+  - wake_the_spire

@@ -1,0 +1,29 @@
+id: save_vault_47
+name: Save Vault 47
+description: "Overseer Hale says the vault's systems are failing. A makeshift repair kit from a pre-war facility could buy months of power and clean water. The Abandoned Gas Station east of the valley might have what you need."
+grantedBy: overseer_hale
+objectives:
+  - id: find_repair_kit
+    description: "Find a repair kit — try the Abandoned Gas Station to the east."
+    type: fetch
+    target: makeshift_repair_kit
+  - id: return_to_hale
+    description: "Bring the repair kit back to Overseer Hale in Vault 47."
+    type: talk
+    target: overseer_hale
+rewards:
+  karma: 20
+  factionDeltas:
+    vault-dwellers: 15
+  caps: 50
+  items:
+    - itemId: vault_tec_jumpsuit
+      label: "Vault-Tec Jumpsuit"
+      quantity: 1
+      description: "A fresh Vault-Tec jumpsuit from the Overseer's personal reserve. Better condition than anything you've worn since waking up."
+    - itemId: stimpak
+      label: "Stimpak"
+      quantity: 3
+mapMarker:
+  locationId: abandoned_gas_station
+  label: "Search the Gas Station"

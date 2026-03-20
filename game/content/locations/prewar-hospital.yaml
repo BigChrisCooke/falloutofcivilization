@@ -1,0 +1,14 @@
+id: prewar_hospital
+name: St. Mercy General Hospital
+type: ruin
+regionId: frontier_valley
+position:
+  x: 18
+  y: 15
+interiorMapId: st_mercy_hospital_interior
+factionTags: []
+questTags:
+  - salvage
+encounterFlags:
+  - dangerous
+description: A crumbling pre-war hospital. Most floors have collapsed, but the pharmacy and surgical wing might still have medical supplies — if the ferals haven't moved in.

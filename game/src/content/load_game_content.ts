@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import yaml from "js-yaml";
@@ -8,10 +8,12 @@ import {
   interiorMapSchema,
   locationSchema,
   overworldMapSchema,
+  questSchema,
   regionSchema,
   type InteriorMapDefinition,
   type LocationDefinition,
   type OverworldMapDefinition,
+  type QuestDefinition,
   type RegionDefinition
 } from "../schemas/content.js";
 
@@ -21,6 +23,7 @@ export interface GameContentBundle {
   locations: LocationDefinition[];
   overworldMaps: OverworldMapDefinition[];
   interiorMaps: InteriorMapDefinition[];
+  quests: QuestDefinition[];
 }
 
 function loadYamlFile<T>(filePath: string, parser: { parse: (value: unknown) => T }): T {
@@ -52,13 +55,23 @@ export function getDefaultContentRoot(): string {
   return path.resolve(import.meta.dirname, "..", "..", "content");
 }
 
+function loadDirectoryIfExists<T>(directoryPath: string, parser: { parse: (value: unknown) => T }): T[] {
+  if (!existsSync(directoryPath)) {
+    return [];
+  }
+
+  return loadDirectory(directoryPath, parser);
+}
+
 export function loadGameContent(contentRoot = getDefaultContentRoot()): GameContentBundle {
   const regions = loadDirectory(path.join(contentRoot, "world"), regionSchema);
   const locations = loadDirectory(path.join(contentRoot, "locations"), locationSchema);
   const overworldMaps = loadDirectory(path.join(contentRoot, "maps", "overworld"), overworldMapSchema);
   const interiorMaps = loadDirectory(path.join(contentRoot, "maps", "interiors"), interiorMapSchema);
+  const quests = loadDirectoryIfExists(path.join(contentRoot, "quests"), questSchema);
 
   const regionIds = new Set(regions.map((region) => region.id));
+  const questIds = new Set(quests.map((quest) => quest.id));
   const interiorMapIds = new Set(interiorMaps.map((map) => map.id));
   const overworldMapIds = new Set(overworldMaps.map((map) => map.id));
   const locationIds = new Set(locations.map((location) => location.id));
@@ -140,12 +153,85 @@ export function loadGameContent(contentRoot = getDefaultContentRoot()): GameCont
     }
   }
 
+  for (const interiorMap of interiorMaps) {
+    const mapHeight = interiorMap.layout.length;
+
+    function isWithinLayout(label: string, x: number, y: number) {
+      const rowWidth = interiorMap.layout[y]?.length ?? 0;
+
+      if (x < 0 || y < 0 || y >= mapHeight || x >= rowWidth) {
+        throw new Error(
+          `Interior map ${interiorMap.id} ${label} at (${x}, ${y}) is outside layout bounds (${rowWidth}x${mapHeight})`
+        );
+      }
+    }
+
+    for (const spawn of interiorMap.spawnPoints) {
+      isWithinLayout(`spawn "${spawn.id}"`, spawn.x, spawn.y);
+    }
+
+    for (const exit of interiorMap.exits) {
+      isWithinLayout(`exit "${exit.id}"`, exit.x, exit.y);
+    }
+
+    for (const npc of interiorMap.npcs) {
+      if (npc.x !== undefined && npc.y !== undefined) {
+        isWithinLayout(`npc "${npc.id}"`, npc.x, npc.y);
+      }
+    }
+
+    for (const loot of interiorMap.loot) {
+      if (loot.x !== undefined && loot.y !== undefined) {
+        isWithinLayout(`loot "${loot.id}"`, loot.x, loot.y);
+      }
+    }
+
+    for (const npc of interiorMap.npcs) {
+      if (!npc.dialogue) {
+        continue;
+      }
+
+      const nodeIds = new Set(npc.dialogue.nodes.map((node) => node.id));
+
+      if (!nodeIds.has(npc.dialogue.rootNodeId)) {
+        throw new Error(
+          `Interior map ${interiorMap.id} npc "${npc.id}" dialogue rootNodeId "${npc.dialogue.rootNodeId}" does not match any node`
+        );
+      }
+
+      for (const node of npc.dialogue.nodes) {
+        for (const option of node.options) {
+          if (option.next && !nodeIds.has(option.next)) {
+            throw new Error(
+              `Interior map ${interiorMap.id} npc "${npc.id}" dialogue option "${option.id}" references missing node "${option.next}"`
+            );
+          }
+
+          if (option.questGrant && !questIds.has(option.questGrant)) {
+            throw new Error(
+              `Interior map ${interiorMap.id} npc "${npc.id}" dialogue option "${option.id}" grants unknown quest "${option.questGrant}"`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  for (const quest of quests) {
+    if (quest.mapMarker && !locationIds.has(quest.mapMarker.locationId)) {
+      throw new Error(
+        `Quest ${quest.id} mapMarker references missing location "${quest.mapMarker.locationId}"`
+      );
+    }
+  }
+
   return {
     contentRoot,
     regions,
     locations,
     overworldMaps,
-    interiorMaps
+    interiorMaps,
+    quests
   };
 }
 

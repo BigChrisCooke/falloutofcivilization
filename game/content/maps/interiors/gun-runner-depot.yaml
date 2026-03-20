@@ -1,0 +1,196 @@
+id: gun_runner_depot
+name: Gun Runner Depot
+theme: workshop
+layout:
+  - [metal, metal, metal, metal, metal, metal, metal, metal]
+  - [metal, floor, floor, counter, counter, floor, floor, metal]
+  - [metal, floor, floor, floor, floor, floor, floor, metal]
+  - [metal, crate, floor, floor, floor, floor, crate, metal]
+  - [metal, floor, floor, floor, floor, floor, floor, metal]
+  - [metal, metal, metal, exit, metal, metal, metal, metal]
+spawnPoints:
+  - id: front_entrance
+    x: 3
+    y: 4
+exits:
+  - id: to_gun_runner_depot
+    target: gun_runner_depot
+    x: 3
+    y: 5
+interactables:
+  - id: workbench
+    type: crafting
+    label: Workbench
+    actions:
+      - id: examine_workbench
+        label: Examine
+        response: "A professional-grade weapons workbench, covered in oil stains and metal shavings. Precision tools line the pegboard behind it — files, calipers, a micro-welder. This is where Gun Runner quality comes from. A half-assembled rifle sits in the vise, its receiver carefully machined."
+      - id: use_workbench
+        label: Use
+        response: "You run your hands over the tools. Without proper training, you'd probably just ruin a perfectly good weapon. The Apprentice glances over nervously. Better leave this to the professionals."
+  - id: weapon_display
+    type: display
+    label: Weapon Display Case
+    actions:
+      - id: examine_display
+        label: Examine
+        response: "A reinforced glass case displays the depot's finest work: a chromed .44 magnum with an ivory grip, a brush gun with hand-carved stock, and something that looks like a laser rifle crossed with a toaster. A small placard reads: 'LOOK DON'T TOUCH — WE MEAN IT.'"
+npcs:
+  - id: isaac
+    name: "Isaac"
+    disposition: friendly
+    factionId: gun_runners
+    x: 2
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "Welcome to the Gun Runner Depot. Isaac's the name, arms dealing's the game. If it shoots, stabs, or explodes, we either sell it or can build it."
+          options:
+            - id: ask_weapons
+              label: "What have you got for sale?"
+              next: weapons_stock
+            - id: ask_prewar
+              label: "You deal in pre-war tech?"
+              next: prewar_tech
+            - id: ask_faction
+              label: "Tell me about the Gun Runners."
+              next: gun_runner_info
+            - id: ask_area
+              label: "What do you know about the local situation?"
+              next: local_intel
+            - id: cha_charm
+              label: "A man who knows his craft. I respect that. Maybe we can work out something special."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_deal
+            - id: cha_blunt
+              label: "Just show me the guns. Skip the sales pitch."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_rude
+        - id: weapons_stock
+          text: "Standard inventory: 9mm pistols, hunting rifles, combat shotguns. Ammo for all of the above. We get specialty items from time to time — energy weapons, explosives. Premium goods for premium caps."
+          options:
+            - id: int_specs
+              label: "What's the muzzle velocity on your hunting rifles? And are the receivers forged or cast?"
+              specialGate: { stat: int, min: 7 }
+              next: int_technical
+            - id: dumb_guns
+              label: "Which one makes the biggest boom?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_boom
+            - id: ask_energy
+              label: "Tell me about the energy weapons."
+              next: energy_weapons
+        - id: int_technical
+          text: "Now that's a question I don't hear often. Forged receivers, hand-fitted. 2,800 feet per second with our match-grade .308 loads. You know your weapons — I might have some special inventory in the back for a discerning customer."
+          options:
+            - id: special_inventory
+              label: "I'd like to see what you've got."
+              response: "Come back when you've got caps. I'll show you things that'll make a Brotherhood Paladin weep with envy."
+        - id: dumb_boom
+          text: "...The biggest boom. Right. That'd be the grenade launcher, but I'm not sure I should sell you one. Tell you what — start with something that won't blow your own feet off. How about a nice baseball bat?"
+          options: []
+        - id: energy_weapons
+          text: "Laser pistols, the occasional plasma rifle. Hard to source and harder to maintain. The Brotherhood hoards the good stuff, but we've got our own supply chain. Why — you in the market?"
+          options:
+            - id: ask_fusion_cells
+              label: "Actually, I'm looking for fusion cells specifically."
+              next: fusion_cells
+        - id: fusion_cells
+          text: "Fusion cells? I might have a few kicking around. They're not cheap — pre-war power cells never are. But I've got one in particular that's military-grade, high-output. Might be useful if someone was trying to, say, power up old pre-war infrastructure."
+          options:
+            - id: int_spire
+              label: "High-output fusion cell... that sounds like it could jump-start a dormant reactor. Say, a pre-war communications spire?"
+              specialGate: { stat: int, min: 7 }
+              next: spire_connection
+            - id: ask_price
+              label: "What's your price?"
+              next: fusion_price
+        - id: spire_connection
+          text: "*Isaac leans forward, interested.* You know about the Spire? Smart. Yeah, a cell like this could theoretically kick that old relay tower back to life. Whether you should is another question. But the cell's yours if you've got the caps. Check the back shelf."
+          options: []
+        - id: fusion_price
+          text: "For you? Let's call it a fair trade. Bring me something interesting — salvaged tech, weapon parts, anything I can't get from the usual caravans — and the fusion cell is yours. It's on the back shelf if you want to take a look."
+          options: []
+        - id: prewar_tech
+          text: "When we can get it. Energy weapons, power armor components, circuitry. The real money is in pre-war military hardware. Problem is, the Brotherhood thinks they've got dibs on all of it. We... disagree."
+          options:
+            - id: int_brotherhood
+              label: "The Brotherhood's Codex technically claims all pre-war tech. How do you navigate that legally?"
+              specialGate: { stat: int, min: 7 }
+              response: "Legally? Ha! There's no 'legally' in the wasteland. We navigate it with good guards, discreet suppliers, and the fact that even Paladins need ammunition. Mutually assured commerce, I call it."
+        - id: gun_runner_info
+          text: "Oldest weapons manufacturer in the NCR. Started in the Boneyard, back when that meant something. We sell to everyone — NCR, independents, even the occasional Brotherhood requisition. Business is business."
+          options: []
+        - id: local_intel
+          text: "Raiders are bold, NCR is stretched thin, and there's something going on at the old reactor complex that's making the mole rats extra aggressive. Oh, and some faction called the Kings is trying to set up a courier service. Bold move in raider territory."
+          options: []
+        - id: cha_deal
+          text: "A smooth operator, huh? I like that. Tell you what — you bring me business or interesting salvage, and I'll make sure you get first pick of new inventory. Craftsman's honor."
+          options: []
+        - id: cha_rude
+          text: "All business. Fine by me — saves us both time. What are you looking for?"
+          options:
+            - id: rude_browse
+              label: "Just browsing."
+              response: "Browse away. Just don't touch the display case. Last person who did that lost two fingers. Not from a booby trap — I just have very strong opinions about fingerprints on glass."
+
+  - id: apprentice
+    name: "Apprentice"
+    disposition: neutral
+    x: 2
+    y: 3
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*The young apprentice looks up from filing a gun barrel, metal shavings dusting their apron.* Oh, hey! Sorry, didn't see you come in. I'm still learning the trade."
+          options:
+            - id: ask_learning
+              label: "How long have you been apprenticing?"
+              next: learning
+            - id: ask_isaac
+              label: "What's Isaac like as a teacher?"
+              next: about_isaac
+            - id: ask_advice
+              label: "Any tips for someone new to the wasteland?"
+              next: wasteland_tips
+            - id: cha_encourage
+              label: "Keep at it. The wasteland needs good craftspeople."
+              specialGate: { stat: cha, min: 7 }
+              next: encouraged
+            - id: int_observe
+              label: "Your filing angle is off by about three degrees. You'll get a burr on the rifling."
+              specialGate: { stat: int, min: 7 }
+              next: corrected
+        - id: learning
+          text: "Six months now. Isaac says I've got steady hands but I need to learn patience. Apparently you can't rush a trigger assembly. Who knew? ...Everyone. Everyone knew that. I learned it the hard way."
+          options:
+            - id: ask_accident
+              label: "The hard way?"
+              response: "Let's just say there's a bullet hole in the ceiling and Isaac didn't talk to me for three days. We've all got our learning moments."
+        - id: about_isaac
+          text: "Tough but fair. He's forgotten more about weapons than most people will ever know. Doesn't suffer fools, but if you show genuine interest, he'll teach you everything. I'm lucky to be here."
+          options: []
+        - id: wasteland_tips
+          text: "Keep your weapon clean, your water sealed, and never trust a quiet road. Oh, and if you hear buzzing, run. Cazadores. Just... run."
+          options:
+            - id: dumb_cazador
+              label: "What's a cazza... cazzadoor... big bug?"
+              specialGate: { stat: int, max: 3 }
+              response: "Yeah! Big bug! Very poisonous big bug! You see big orange bug, you run fast! ...Please tell me you'll remember that."
+        - id: encouraged
+          text: "*The apprentice beams.* Thanks! That actually means a lot. Most people just come in, buy ammo, and leave. Nice to be seen as more than furniture, you know?"
+          options: []
+        - id: corrected
+          text: "*The apprentice blinks, checks the angle, then looks back at you with wide eyes.* You're... you're right. How did you — Isaac, did you hear that? This person just caught something you missed! *Isaac grunts noncommittally from behind the counter.*"
+          options: []
+loot:
+  - id: fusion_cell
+    label: Military-Grade Fusion Cell
+    description: "A military-grade fusion cell. Higher output than civilian models — the kind of hardware that keeps energy weapons running hot."
+    x: 6
+    y: 3
+questHooks:
+  - wake_the_spire

@@ -1,0 +1,15 @@
+id: raider_overlook
+name: Raider Overlook
+type: camp
+regionId: frontier_valley
+position:
+  x: 29
+  y: 7
+interiorMapId: raider_overlook_interior
+factionTags:
+  - raiders
+questTags:
+  - danger
+encounterFlags:
+  - hostile
+description: A rocky outcrop where a raider gang keeps watch over the eastern road. Crude fortifications and a stolen NCR telescope give them a commanding view.

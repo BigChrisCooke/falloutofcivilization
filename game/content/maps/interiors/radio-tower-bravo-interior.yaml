@@ -1,0 +1,283 @@
+id: radio_tower_bravo_interior
+name: Radio Tower Bravo
+theme: radio_station
+layout:
+  - [wall, wall, wall, wall, wall, wall, wall]
+  - [wall, console, floor, floor, floor, console, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, crate, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, cache, wall]
+  - [wall, wall, wall, exit, wall, wall, wall]
+spawnPoints:
+  - id: tower_entrance
+    x: 3
+    y: 5
+exits:
+  - id: to_radio_tower
+    target: radio_tower
+    x: 3
+    y: 6
+interactables:
+  - id: broadcast_console
+    type: console
+    label: Broadcast Console
+    actions:
+      - id: examine_console
+        label: Examine
+        response: "A battered radio console with jury-rigged wiring and a mismatched power supply. The frequency dial is locked to 97.3 FM. A red 'TRANSMIT' light blinks steadily — someone has been broadcasting from here. Recently. The microphone is still warm."
+      - id: read_broadcast_log
+        label: Read Broadcast Log
+        response: "A handwritten log taped to the console: 'Day 1: Signal test. Nobody answers. Day 7: Adjusted antenna. Range should cover the valley now. Day 14: Someone responded. Couldn't make out the words. Day 21: They're coming. Not who I expected. Not who I wanted. Day 23: If you're reading this, DON'T RESPOND TO THE SIGNAL. They're listening.' The entries stop there."
+      - id: int_trace_signal
+        label: Trace the Signal Origin
+        specialGate: { stat: int, min: 7 }
+        response: "You analyze the waveform pattern on the oscilloscope. The signal isn't just broadcasting — it's receiving. A return signal is coming from somewhere southeast, beyond the valley border. The modulation pattern is pre-war military encryption, Enclave-standard. Whoever is on the other end has access to very old, very classified technology."
+  - id: antenna_junction
+    type: console
+    label: Antenna Junction Box
+    actions:
+      - id: examine_antenna
+        label: Examine
+        response: "A junction box where cables run up to the broadcast antenna on the roof. Someone replaced the original copper wiring with salvaged superconductor cable — military grade, probably Brotherhood or Enclave surplus. This antenna has ten times the range of a standard wasteland radio."
+      - id: int_boost_signal
+        label: Recalibrate Antenna Array
+        specialGate: { stat: int, min: 8 }
+        response: "You adjust the antenna alignment and recalibrate the gain stage. The signal strength doubles. For a brief moment, you pick up a fragment of the return transmission: '...Enclave Remnant Station Foxtrot... all units... convergence protocol...' Then static swallows it. Whatever this is, it's bigger than one radio tower."
+  - id: supply_cache
+    type: cache
+    label: Operator's Stash
+    actions:
+      - id: examine_stash
+        label: Examine
+        response: "A footlocker tucked behind the broadcast equipment. Inside: canned food, purified water, a bedroll, and a dog-eared copy of 'Tesla Science Magazine.' Whoever was living here left in a hurry — the food is still good and the bedroll is warm."
+      - id: take_tesla_magazine
+        label: Take Tesla Science Magazine
+        grant: { itemId: tesla_magazine, label: "Tesla Science Magazine" }
+      - id: take_emergency_stimpak
+        label: Take Emergency Stimpak
+        grant: { itemId: stimpak_radio, label: "Stimpak" }
+npcs:
+  # ── Ghost (the mysterious broadcaster) ─────────────────────
+  - id: ghost
+    name: "Ghost"
+    disposition: neutral
+    x: 2
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A gaunt figure in a patched duster sits in the corner, headphones around their neck and a 10mm pistol on the desk. Dark eyes watch you from beneath a wide-brimmed hat.* You found the tower. Either you're very curious or very lost. Which is it?"
+          options:
+            - id: curious
+              label: "Curious. I followed the signal."
+              next: followed_signal
+            - id: lost
+              label: "A little of both. What is this place?"
+              next: what_is_this
+            - id: direct
+              label: "Who are you and what are you broadcasting?"
+              next: who_are_you
+            - id: int_signal
+              label: "That's pre-war military encryption on your broadcast frequency. Who are you really talking to?"
+              specialGate: { stat: int, min: 7 }
+              next: smart_intro
+            - id: cha_disarm
+              label: "Easy. I'm not here to cause trouble. You look like you could use a friend."
+              specialGate: { stat: cha, min: 6 }
+              next: friendly_intro
+        - id: followed_signal
+          text: "*Ghost tenses.* You followed the signal. Then you're smarter than most wastelanders — or dumber. That signal wasn't meant for you. It wasn't meant for anyone in this valley."
+          options:
+            - id: who_was_it_for
+              label: "Then who was it for?"
+              next: signal_truth
+            - id: per_observe
+              label: "You're scared. Not of me — of whoever might have followed me here."
+              specialGate: { stat: per, min: 6 }
+              next: scared_response
+        - id: what_is_this
+          text: "Radio Tower Bravo. Pre-war emergency broadcast station. The NCR thinks it's dead. The Brotherhood never catalogued it. Which makes it perfect for someone who wants to talk without being overheard."
+          options:
+            - id: talk_to_who
+              label: "Talk to who?"
+              next: signal_truth
+            - id: int_tech
+              label: "The superconductor antenna cable says you've got access to military-grade salvage. That's not scavenger gear."
+              specialGate: { stat: int, min: 7 }
+              next: tech_question
+        - id: who_are_you
+          text: "*A long pause.* Call me Ghost. Everyone else does. As for what I'm broadcasting... a warning. To people who might still be listening. People who went underground a long time ago."
+          options:
+            - id: underground
+              label: "Underground? You mean vault dwellers?"
+              next: not_vaults
+            - id: warning_about_what
+              label: "A warning about what?"
+              next: why_reach
+        - id: smart_intro
+          text: "*Ghost's hand moves toward the pistol, then stops.* ...You recognized the encryption. That means you're either Brotherhood, Enclave, or someone who reads too many pre-war manuals. Which is it?"
+          options:
+            - id: none_of_above
+              label: "None of the above. Just well-read."
+              next: well_read_response
+            - id: int_deeper
+              label: "Enclave standard modulation, but the handshake protocol is modified. You're not talking to the Enclave — you're talking to someone who stole their equipment."
+              specialGate: { stat: int, min: 8 }
+              next: brilliant_deduction
+        - id: friendly_intro
+          text: "*Ghost studies your face for a long time, then exhales slowly.* A friend. Haven't had one of those in a while. Alright. Sit down. I'll tell you what I can — but you have to promise me something first."
+          options:
+            - id: promise_what
+              label: "What's the promise?"
+              next: the_promise
+            - id: cha_reassure
+              label: "I promise. Whatever it is."
+              specialGate: { stat: cha, min: 7 }
+              next: trust_earned
+        - id: signal_truth
+          text: "*Ghost lowers their voice.* There are people — remnants — scattered across the wasteland. Not raiders, not NCR, not Brotherhood. People from... before. From the old government. They went underground when things fell apart. I've been trying to reach them."
+          options:
+            - id: enclave
+              label: "You're talking about the Enclave."
+              next: enclave_talk
+            - id: why_reach
+              label: "Why are you trying to reach them?"
+              next: why_reach
+        - id: enclave_talk
+          text: "*Ghost flinches at the name.* Don't say that word too loud. The Brotherhood has long memories and longer grudges. Yes. Enclave remnants. Not the monsters from the stories — the ones who walked away. Scientists, engineers, doctors. People who chose exile over ideology."
+          options:
+            - id: trust_them
+              label: "Can you trust them?"
+              next: trust_question
+            - id: int_enclave
+              label: "The Enclave's Project Purity and FEV programs killed thousands. 'Walking away' doesn't erase that."
+              specialGate: { stat: int, min: 7 }
+              next: moral_question
+        - id: trust_question
+          text: "I don't know. That's the honest answer. Some of them are good people trying to atone. Others... might still believe in the old mission. That's why I'm careful. That's why the encryption."
+          options:
+            - id: help_ghost
+              label: "I can help you. What do you need?"
+              next: ghost_needs
+            - id: walk_away
+              label: "This sounds like it's above my pay grade."
+              response: "Smart. Forget you were here. Forget the signal. And whatever you do, don't answer if someone hails you on 97.3. *Ghost turns back to the console.* Safe travels."
+        - id: moral_question
+          text: "*Ghost's jaw tightens.* I know what they did. I know the body count. My father was Enclave — a meteorologist, not a soldier. He recorded weather patterns so the remnants could plan supply runs. When he died, his last words were: 'We were wrong. All of us. Make it right.' That's what I'm trying to do."
+          options:
+            - id: respect
+              label: "That takes courage. I respect that."
+              karmaDelta: 2
+              response: "*Ghost nods slowly.* Courage or stupidity. The wasteland doesn't always tell you which is which until it's too late."
+            - id: help_ghost_moral
+              label: "Then let me help you make it right."
+              next: ghost_needs
+        - id: why_reach
+          text: "Because they have knowledge. Pre-war science, engineering, medical research. Things that could rebuild the world instead of just surviving in the ruins. But they're scattered, hiding, dying of old age. If I don't find them soon, everything they know dies with them."
+          options:
+            - id: noble_cause
+              label: "That's a noble cause."
+              response: "Noble or not, it's all I've got. I've been at this for three years. Sometimes I wonder if anyone's still out there. Then the return signal comes, faint but real, and I keep going."
+            - id: help_from_why
+              label: "What can I do to help?"
+              next: ghost_needs
+        - id: not_vaults
+          text: "Not vaults. Something else. People who had access to government bunkers, military installations, research facilities. They went dark after the war — truly dark. No radio, no contact, nothing. Until recently."
+          options:
+            - id: what_changed
+              label: "What changed?"
+              next: signal_truth
+        - id: tech_question
+          text: "*Ghost narrows their eyes.* You know your hardware. The cable came from a Brotherhood patrol that didn't make it back. Don't give me that look — they were already dead when I found them. Deathclaw, from the claw marks. I salvaged what I could."
+          options:
+            - id: brotherhood_know
+              label: "Does the Brotherhood know you have their tech?"
+              response: "No, and I'd like to keep it that way. They're protective of pre-war technology to the point of violence. If Paladin Ramos found out I was using Brotherhood salvage to contact Enclave remnants... well, let's just say the conversation wouldn't be friendly."
+            - id: ask_purpose
+              label: "What's the purpose of all this?"
+              next: signal_truth
+        - id: well_read_response
+          text: "Well-read. In a wasteland where most people can barely read at all. Alright, I'll take that at face value. You want to know what I'm doing up here? I'm trying to save knowledge before it disappears forever."
+          options:
+            - id: explain_more
+              label: "Tell me more."
+              next: why_reach
+        - id: brilliant_deduction
+          text: "*Ghost stares at you.* ...In three years of broadcasting, no one has figured that out from a passive scan. You're right — the handshake is modified. I wrote it myself, based on my father's notes. It's designed to be recognized by Enclave-trained operators but rejected by standard military intercept. You are either the smartest person in this valley or the most dangerous."
+          options:
+            - id: smart_not_dangerous
+              label: "Smart. Definitely not dangerous."
+              response: "*A ghost of a smile.* That's exactly what a dangerous person would say. But I believe you. Mostly."
+              factionDelta: { factionId: old_world, delta: 3 }
+              next: ghost_needs
+            - id: both
+              label: "Can't I be both?"
+              response: "*Ghost actually laughs — a rusty, unused sound.* Fair point. Alright. If you're as smart as you seem, I could use your help."
+              next: ghost_needs
+        - id: the_promise
+          text: "If I tell you what I'm doing here, you don't tell the NCR. You don't tell the Brotherhood. You don't tell anyone. Some secrets are worth keeping. This is one of them."
+          options:
+            - id: promise_keep
+              label: "You have my word."
+              next: trust_earned
+            - id: cha_honest_promise
+              label: "I'll keep your secret — but only if it's not going to get innocent people killed."
+              specialGate: { stat: cha, min: 7 }
+              next: honest_promise
+        - id: honest_promise
+          text: "*Ghost considers this.* Fair. That's more honest than a blank promise, and I respect honesty. No — what I'm doing won't get innocent people killed. If anything, it might save some. Let me explain."
+          options:
+            - id: listen
+              label: "I'm listening."
+              next: signal_truth
+        - id: trust_earned
+          text: "Alright. *Ghost takes a deep breath.* I'm a radio operator. Self-taught, using my father's equipment. I've been trying to contact people from before the war — remnants of the old government who went underground. Not soldiers. Scientists. People with knowledge that could change everything."
+          options:
+            - id: continue_listening
+              label: "Go on."
+              next: why_reach
+        - id: scared_response
+          text: "*Ghost's composure cracks for just a moment.* ...Yeah. The last transmission — the return signal — it wasn't just an acknowledgment. It was a warning. Something is moving in the southeast. Something organized. And they picked up my signal too."
+          options:
+            - id: what_something
+              label: "What kind of something?"
+              response: "I don't know. Military discipline, encrypted communications, moving in formation. Could be Brotherhood. Could be Enclave true-believers. Could be something worse. All I know is they're heading this way, and I'm the one who led them here."
+              next: ghost_needs
+        - id: ghost_needs
+          text: "Here's where I am: the return signal is coming from southeast of the valley. I can't leave the tower — if I stop broadcasting, the remnants who are friendly lose their only point of contact. But someone needs to scout that southeastern signal. Find out who's coming."
+          options:
+            - id: volunteer
+              label: "I'll do it. Tell me what to look for."
+              questGrant: signal_in_the_dark
+              karmaDelta: 2
+              response: "Look for a repeater station — something boosting the return signal. It'll be disguised as salvage or ruins, but the antenna will give it away. If you find friendly remnants, tell them Ghost sent you. If you find hostiles... well, try not to die. And come back to tell me."
+            - id: cha_volunteer
+              label: "You've been carrying this alone for three years. Let me share the weight."
+              specialGate: { stat: cha, min: 7 }
+              questGrant: signal_in_the_dark
+              karmaDelta: 3
+              factionDelta: { factionId: old_world, delta: 3 }
+              response: "*Ghost's eyes glisten.* Three years. Three years of static and silence and hoping. Thank you. The repeater station should be southeast — look for a hidden antenna disguised as wreckage. And be careful. Whatever's out there, they've been hiding longer than I've been searching."
+            - id: need_time
+              label: "I need to think about it."
+              response: "Take your time. The signal's not going anywhere. Neither am I. Just... don't take too long. I have a bad feeling about what's coming."
+loot:
+  - id: pre_war_broadcast_log
+    label: "Pre-War Broadcast Log"
+    description: "A log of pre-war radio broadcasts from the day everything ended. Emergency alerts, military channels, and then... silence."
+    x: 5
+    y: 1
+  - id: faded_photograph
+    label: "Faded Photograph"
+    description: "A weathered photograph found near the broadcast console. Someone left it here deliberately — a memory anchored to this place."
+    x: 3
+    y: 3
+  - id: vacuum_tubes
+    label: "Vacuum Tubes"
+    description: "Pre-war vacuum tubes, still sealed in their original packaging. Essential components for maintaining older electronic equipment."
+    x: 1
+    y: 4
+questHooks:
+  - signal_in_the_dark

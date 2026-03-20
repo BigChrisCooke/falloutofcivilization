@@ -1,4 +1,4 @@
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Text } from "pixi.js";
 
 import { INTERIOR_ISO_METRICS } from "../iso.js";
 import { createCourierToken, createSceneMarker, drawHexSurface, INTERIOR_SURFACE_VISUALS } from "../scene_visuals.js";
@@ -19,6 +19,7 @@ export interface InteriorRetainedNodes {
   markerById: Map<string, Container>;
   glow: Graphics | null;
   courier: Container | null;
+  lootTooltip: Container | null;
 }
 
 function getMarkerColors(kind: string): { fillColor: number; accentColor: number } {
@@ -56,7 +57,8 @@ export function createInteriorRetainedNodes(): InteriorRetainedNodes {
     feedbackByKey: new Map(),
     markerById: new Map(),
     glow: null,
-    courier: null
+    courier: null,
+    lootTooltip: null
   };
 }
 
@@ -208,9 +210,14 @@ function syncPropLayer(
         marker.destroy({ children: true });
       }
 
-      const colors = getMarkerColors(sceneMarker.kind);
+      if (sceneMarker.kind === "npc") {
+        marker = createCourierToken();
+        marker.scale.set(0.72);
+      } else {
+        const colors = getMarkerColors(sceneMarker.kind);
+        marker = createSceneMarker(colors.fillColor, colors.accentColor);
+      }
 
-      marker = createSceneMarker(colors.fillColor, colors.accentColor);
       retainedNodes.markerById.set(sceneMarker.id, marker);
       layers.props.addChild(marker);
     }
@@ -233,6 +240,51 @@ function syncActorLayer(
   retainedNodes.courier.zIndex = scene.courier.zIndex;
 }
 
+function syncTooltipLayer(
+  layers: InteriorLayerContainers,
+  retainedNodes: InteriorRetainedNodes,
+  scene: InteriorSceneModel
+): void {
+  const hoveredMarker = scene.hoveredMarkerId
+    ? scene.markers.find((m) => m.id === scene.hoveredMarkerId && m.kind === "loot")
+    : null;
+
+  if (!hoveredMarker) {
+    if (retainedNodes.lootTooltip) {
+      layers.props.removeChild(retainedNodes.lootTooltip);
+      retainedNodes.lootTooltip.destroy({ children: true });
+      retainedNodes.lootTooltip = null;
+    }
+    return;
+  }
+
+  const isSteal = !!hoveredMarker.ownedBy;
+  const labelText = isSteal ? "Steal" : "Take";
+  const textColor = isSteal ? 0xe05555 : 0xf7bf67;
+
+  if (!retainedNodes.lootTooltip) {
+    retainedNodes.lootTooltip = new Container();
+    layers.props.addChild(retainedNodes.lootTooltip);
+  }
+
+  // Rebuild tooltip contents
+  retainedNodes.lootTooltip.removeChildren();
+
+  const bg = new Graphics()
+    .roundRect(-28, -12, 56, 24, 5)
+    .fill({ color: 0x000000, alpha: 0.85 });
+
+  const label = new Text({
+    text: labelText,
+    style: { fill: textColor, fontSize: 13, fontWeight: "bold", fontFamily: "inherit" }
+  });
+  label.anchor.set(0.5, 0.5);
+
+  retainedNodes.lootTooltip.addChild(bg, label);
+  retainedNodes.lootTooltip.position.set(hoveredMarker.markerPosition.x, hoveredMarker.markerPosition.y - 26);
+  retainedNodes.lootTooltip.zIndex = hoveredMarker.zIndex + 50;
+}
+
 export function syncInteriorScene(
   layers: InteriorLayerContainers,
   retainedNodes: InteriorRetainedNodes | null,
@@ -245,6 +297,7 @@ export function syncInteriorScene(
   syncPropLayer(layers, nextRetainedNodes, previousScene, scene);
   syncFeedbackLayer(layers, nextRetainedNodes, scene);
   syncActorLayer(layers, nextRetainedNodes, scene);
+  syncTooltipLayer(layers, nextRetainedNodes, scene);
 
   return nextRetainedNodes;
 }
