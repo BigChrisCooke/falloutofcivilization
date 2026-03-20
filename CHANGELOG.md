@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-20
+
+[FEATURE] Post-quest dialogue — all 13 quest-granting NPCs across 11 interiors now have updated greetings after quest completion via `conditionalRoots` system
+[FEATURE] Selected quest highlights its target location on the overworld (larger, brighter marker; other markers dim)
+[IMPROVEMENT] Double-door exits now show a single "Leave" button instead of two
+[IMPROVEMENT] Interactables support explicit x,y positioning to guarantee placement on specific tiles
+[FIX] Renamed duplicate NPC "Rex (The Kings)" in Dusty Spur Tavern to "Frankie" to avoid confusion with the cyberdog Rex at King's Court
+
 ## [0.2.0] - 2026-03-20
 
 [FEATURE] Quest completion system — quests grant karma, caps, items, and faction standing on completion with yellow flash notification

@@ -190,7 +190,7 @@ loot:
   - id: fusion_cell
     label: Military-Grade Fusion Cell
     description: "A military-grade fusion cell. Higher output than civilian models — the kind of hardware that keeps energy weapons running hot."
-    x: 6
+    x: 5
     y: 3
 questHooks:
   - wake_the_spire

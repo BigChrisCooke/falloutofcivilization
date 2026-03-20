@@ -47,6 +47,10 @@ export const dialogueNodeSchema = z.object({
 
 export const dialogueTreeSchema = z.object({
   rootNodeId: z.string().min(1),
+  conditionalRoots: z.array(z.object({
+    questCompleted: z.string().min(1),
+    nodeId: z.string().min(1)
+  })).optional(),
   nodes: z.array(dialogueNodeSchema).min(1)
 });
 
@@ -140,6 +144,8 @@ export const interiorMapSchema = z.object({
       id: z.string().min(1),
       type: z.string().min(1),
       label: z.string().min(1),
+      x: z.number().int().optional(),
+      y: z.number().int().optional(),
       actions: z.array(
         z.object({
           id: z.string().min(1),

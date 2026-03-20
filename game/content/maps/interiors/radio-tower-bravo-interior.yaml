@@ -66,7 +66,22 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: signal_in_the_dark
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Ghost looks up from the console, and for the first time, there's something like peace behind those dark eyes.* You came back. The signal — you found the repeater. The remnants are responding. Real people, real voices. You changed everything."
+          options:
+            - id: post_ask_remnants
+              label: "What are the remnants saying?"
+              response: "They're scared, but hopeful. A doctor in the southeast. An engineer who knows pre-war water systems. A teacher who memorized entire textbooks. They're coming out of hiding, slowly. Because of you."
+            - id: post_ask_ghost
+              label: "How are you holding up?"
+              response: "*Ghost actually smiles — thin, uncertain, like a muscle that hasn't been used in years.* Three years of static and silence. Then you walked in. I'm holding up better than I have in a long time. The signal's not just noise anymore — it's a lifeline."
+            - id: post_ask_danger
+              label: "Is the threat from the southeast still out there?"
+              response: "Maybe. But now we're not alone. The remnants are sharing intel, coordinating. Whatever's coming, we'll see it first. That's your doing. Ghost doesn't forget."
         - id: greeting
           text: "*A gaunt figure in a patched duster sits in the corner, headphones around their neck and a 10mm pistol on the desk. Dark eyes watch you from beneath a wide-brimmed hat.* You found the tower. Either you're very curious or very lost. Which is it?"
           options:
@@ -267,12 +282,12 @@ loot:
   - id: pre_war_broadcast_log
     label: "Pre-War Broadcast Log"
     description: "A log of pre-war radio broadcasts from the day everything ended. Emergency alerts, military channels, and then... silence."
-    x: 5
+    x: 4
     y: 1
   - id: faded_photograph
     label: "Faded Photograph"
     description: "A weathered photograph found near the broadcast console. Someone left it here deliberately — a memory anchored to this place."
-    x: 3
+    x: 4
     y: 3
   - id: vacuum_tubes
     label: "Vacuum Tubes"

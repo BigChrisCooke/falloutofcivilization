@@ -249,8 +249,9 @@ export class DialogueService {
 
     // Navigate to next node
     if (option.returnToRoot) {
-      this.setCurrentNodeId(saveId, npcId, dialogue, dialogue.rootNodeId);
-      const rootNode = dialogue.nodes.find((n) => n.id === dialogue.rootNodeId);
+      const effectiveRoot = this.getEffectiveRootNodeId(saveId, dialogue);
+      this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
+      const rootNode = dialogue.nodes.find((n) => n.id === effectiveRoot);
 
       if (rootNode) {
         result.nextNode = this.filterNode(rootNode, dialogue, special, updatedNpcState.selected, saveId);
@@ -274,9 +275,10 @@ export class DialogueService {
       return null;
     }
 
-    this.setCurrentNodeId(saveId, npcId, dialogue, dialogue.rootNodeId);
+    const effectiveRoot = this.getEffectiveRootNodeId(saveId, dialogue);
+    this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
     const npcState = this.getNpcState(saveId, npcId, dialogue);
-    const rootNode = dialogue.nodes.find((n) => n.id === dialogue.rootNodeId);
+    const rootNode = dialogue.nodes.find((n) => n.id === effectiveRoot);
 
     if (!rootNode) {
       return null;
@@ -332,21 +334,39 @@ export class DialogueService {
     });
   }
 
+  private getEffectiveRootNodeId(saveId: string, dialogue: DialogueTree): string {
+    if (dialogue.conditionalRoots && dialogue.conditionalRoots.length > 0) {
+      const questState = this.gameStateRepo.getQuestState(saveId);
+      const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+
+      for (const condition of dialogue.conditionalRoots) {
+        if (completed.includes(condition.questCompleted)) {
+          return condition.nodeId;
+        }
+      }
+    }
+
+    return dialogue.rootNodeId;
+  }
+
   private getNpcState(saveId: string, npcId: string, dialogue: DialogueTree): DialogueNpcState {
     const stateMap = this.getDialogueStateMap(saveId);
-    return resolveNpcState(stateMap[npcId], dialogue.rootNodeId);
+    const rootNodeId = this.getEffectiveRootNodeId(saveId, dialogue);
+    return resolveNpcState(stateMap[npcId], rootNodeId);
   }
 
   private setCurrentNodeId(saveId: string, npcId: string, dialogue: DialogueTree, nodeId: string): void {
     const stateMap = this.getDialogueStateMap(saveId);
-    const current = resolveNpcState(stateMap[npcId], dialogue.rootNodeId);
+    const rootNodeId = this.getEffectiveRootNodeId(saveId, dialogue);
+    const current = resolveNpcState(stateMap[npcId], rootNodeId);
     stateMap[npcId] = { ...current, nodeId };
     this.saveDialogueStateMap(saveId, stateMap);
   }
 
   private markOptionSelected(saveId: string, npcId: string, dialogue: DialogueTree, optionId: string): void {
     const stateMap = this.getDialogueStateMap(saveId);
-    const current = resolveNpcState(stateMap[npcId], dialogue.rootNodeId);
+    const rootNodeId = this.getEffectiveRootNodeId(saveId, dialogue);
+    const current = resolveNpcState(stateMap[npcId], rootNodeId);
 
     if (!current.selected.includes(optionId)) {
       current.selected.push(optionId);
@@ -427,7 +447,8 @@ export class DialogueService {
     selectedOptionIds: string[],
     saveId?: string
   ): FilteredDialogueNode {
-    const isRoot = node.id === dialogue.rootNodeId;
+    const effectiveRoot = saveId ? this.getEffectiveRootNodeId(saveId, dialogue) : dialogue.rootNodeId;
+    const isRoot = node.id === effectiveRoot;
     const filteredOptions = node.options
       .filter((option) =>
         this.passesGate(option, special) &&

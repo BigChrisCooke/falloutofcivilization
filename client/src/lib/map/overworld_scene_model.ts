@@ -19,7 +19,7 @@ function getPrimaryEnterableLocation(locations: LocationSummary[]): LocationSumm
   return locations.find((location) => location.interiorMapId) ?? null;
 }
 
-export function buildOverworldSceneModel(state: GameState): OverworldSceneModel | null {
+export function buildOverworldSceneModel(state: GameState, selectedQuestId?: string | null): OverworldSceneModel | null {
   const overworldMap = state.overworldMap;
   const playerX = state.worldState.player_x;
   const playerY = state.worldState.player_y;
@@ -119,7 +119,8 @@ export function buildOverworldSceneModel(state: GameState): OverworldSceneModel 
         x: markerAnchor.x - 22,
         y: markerAnchor.y - 28
       },
-      zIndex: getTileZIndex(targetLocation.position) + 70
+      zIndex: getTileZIndex(targetLocation.position) + 70,
+      isSelected: quest.id === selectedQuestId
     });
   }
 

@@ -49,7 +49,22 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: water_for_the_valley
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Torres looks up from the console — and for the first time, the dark circles under her eyes are offset by a genuine smile.* The plant's running. Full output, clean water, all five filtration stages green. You did this. The whole valley is drinking clean water because of you."
+          options:
+            - id: post_ask_output
+              label: "What's the current output?"
+              response: "Eighty percent capacity and climbing. I've got the pressure stabilized and the filtration membranes are performing better than I expected. At this rate, we could supply double the current demand. For the first time in six weeks, I actually slept last night."
+            - id: post_ask_ncr
+              label: "Has NCR command noticed?"
+              response: "*She grins.* Oh, they noticed. Colonel Moore suddenly has 'renewed interest' in the valley. Funny how that works when the water starts flowing. I filed a report with your name on it. You've got friends in high places now."
+            - id: post_ask_future
+              label: "What's next for the plant?"
+              response: "Expanding the distribution network. More settlements, more capacity. Rusty's been helping with the piping. This place went from a death trap to the most important building in the valley. And it all started with one pump regulator and someone brave enough to find it."
         - id: greeting
           text: "*A woman in a grease-stained NCR jumpsuit looks up from a clipboard, dark circles under her eyes.* Another visitor. If you're here about the water, take a number. If you're here to help, grab a wrench."
           options:

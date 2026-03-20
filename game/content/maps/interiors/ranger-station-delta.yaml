@@ -44,7 +44,22 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: ranger_bounty
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Jackson stands and extends a hand.* There's the one who took care of Gristle. The north road is safe again, and the Rangers won't forget it. You've earned your place at this table. What can I do for you?"
+          options:
+            - id: post_ask_road
+              label: "How's the north road?"
+              response: "Clear. First time in months the caravans are running without armed escorts. A few of Gristle's boys scattered into the hills, but without their leader they're just scared idiots with pipe pistols. Not a threat anymore."
+            - id: post_ask_bounties
+              label: "Got any more bounty work?"
+              response: "Always. The wasteland's never short on trouble. I've still got that reactor situation and the ghoul infestation to deal with. But take a breath first — you've earned it. When you're ready, come talk to me."
+            - id: post_ask_rangers
+              label: "What does this mean for the Rangers?"
+              response: "It means Station Delta stays operational. Command was talking about pulling us back — not enough to show for the investment. Now? We've got results. Ghost and I can keep doing our job. That's on you."
         - id: greeting
           text: "*A weathered man in a duster and wide-brimmed hat looks up from a map.* Ranger Jackson, Station Delta. If you've made it this far, you're either tough or lucky. Have a seat — water's in the barrel."
           options:

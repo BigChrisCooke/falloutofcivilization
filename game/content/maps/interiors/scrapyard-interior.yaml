@@ -66,7 +66,22 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: water_for_the_valley
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Rusty looks up and his weathered face breaks into a genuine grin.* Well I'll be damned. The water's flowing. Clean and clear, just like it should be. You actually did it. For Copper. For all of them."
+          options:
+            - id: post_ask_plant
+              label: "How's the plant running?"
+              response: "Like a dream. Torres and I got the filtration stages calibrated last week — output's at 80% and climbing. Three settlements are already hooked into the main line. People are drinking clean water for the first time in their lives. That's your legacy."
+            - id: post_ask_rusty
+              label: "How are you doing, Rusty?"
+              response: "*He flexes his prosthetic hand, servos whirring softly.* Better. I visit Copper's grave every morning and tell her about the water. Sounds crazy, but I think she'd be proud. I know I am — of you."
+            - id: post_ask_trade
+              label: "Got anything good in stock?"
+              response: "For you? Top shelf, preferred rates, first pick on everything. You earned it. I've been getting better salvage now that the caravans are running regular again. Take a look — anything catches your eye, it's yours at cost."
         - id: greeting
           text: "*A stocky man with oil-stained coveralls and a prosthetic left hand looks up from a disassembled motor.* Customer or scavenger? Either way, welcome to Rusty's. Touch anything without asking and you lose a finger. Prosthetics ain't cheap — trust me."
           options:

@@ -45,7 +45,22 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: ncr_raider_problem
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Hayes stands at attention and gives a sharp nod.* Outstanding work. The raider camp is cleared, supply convoys are running again, and the NCR owes you a debt. You're a friend of the Republic now."
+          options:
+            - id: post_ask_convoys
+              label: "Are the supply lines secure?"
+              response: "Three convoys through this week, not a single incident. The quartermaster actually sent extra rations as a thank-you — first time that's ever happened. The north road is ours again."
+            - id: post_ask_standing
+              label: "What does 'friend of the Republic' mean exactly?"
+              response: "It means if you need NCR resources in this valley, I'll make the call. Ammo, medical supplies, intelligence — within reason. You did our job for us. The least we can do is have your back."
+            - id: post_ask_threats
+              label: "Any new threats on the horizon?"
+              response: "Nothing confirmed, but I've been hearing chatter about the reactor complex south of here. Whatever's in there, it's got the scavengers spooked. Might be worth looking into if you're feeling adventurous."
         - id: greeting
           text: "At ease, traveler. Corporal Hayes, NCR 5th Battalion. We don't get many visitors out here — which means you're either lost or looking for work."
           options:

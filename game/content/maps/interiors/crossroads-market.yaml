@@ -48,7 +48,22 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: water_for_the_valley
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Ada beams the moment she sees you.* There's my favorite customer! Clean water is flowing again, and business has never been better. The whole valley owes you one. What can I get you?"
+          options:
+            - id: post_ask_business
+              label: "How's business?"
+              response: "Booming! Caravans are running again, prices are stable, and people aren't fighting over water rations anymore. I've got stock I haven't had in months. All because you got that plant running. You're a miracle worker."
+            - id: post_ask_settlements
+              label: "How are the settlements doing?"
+              response: "Better than they've been in years. Clean water means healthier people, more crops, less desperation. Three new families moved into the valley this week alone. You didn't just fix a pipe — you gave people hope."
+            - id: post_ask_discount
+              label: "Any chance of that friends-and-family discount?"
+              response: "*Ada laughs.* For you? Permanent preferred pricing. You earned it ten times over. Just don't tell the other customers — I've got a reputation to maintain."
         - id: greeting
           text: "Welcome to Crossroads Market! Ada's the name, trade's the game. We've got provisions, medicine, and the best gossip in Frontier Valley. What can I do for you?"
           options:
@@ -134,7 +149,22 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: smugglers_tip
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Vex spots you and gives a knowing nod.* Well, well. The person who actually followed through. You found the Brotherhood bunker — and you're still breathing. That puts you ahead of most people I've dealt with. What's next?"
+          options:
+            - id: post_ask_brotherhood
+              label: "The Brotherhood — are they a problem?"
+              response: "Depends on your definition. They're not shooting at you, which means they either like you or they're watching you. With the Brotherhood, it's usually both. My advice? Stay useful to them and they'll stay useful to you."
+            - id: post_ask_intel
+              label: "Got any more information to trade?"
+              response: "*Vex grins.* Always. But now you're in a different bracket. Premium clients get premium intel. Come back when you've got something juicy and we'll do business. Knowledge for knowledge — same as always."
+            - id: post_ask_vex
+              label: "You seem less paranoid than last time."
+              response: "You proved you can keep your mouth shut and get things done. That's currency in my world. Don't mistake it for trust — but it's the closest thing I offer. We're good."
         - id: greeting
           text: "*A lean figure in a patched duster leans against the stall, picking at his nails with a knife.* You're staring. That usually means you want something. Or you're a threat. Which is it?"
           options:
@@ -226,7 +256,7 @@ loot:
   - id: trade_manifest
     label: Trade Manifest
     description: "A ledger of trade routes and delivery schedules. Names, dates, and quantities — the lifeblood of caravan commerce."
-    x: 3
+    x: 4
     y: 2
 questHooks:
   - water_for_the_valley

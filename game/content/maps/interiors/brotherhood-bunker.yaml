@@ -150,7 +150,22 @@ npcs:
     y: 3
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: brotherhood_lost_tech
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Ibsen practically leaps from his chair when he sees you, goggles bouncing on his forehead.* You're back! The holotape — the schematics — they're everything we hoped for and more! You've single-handedly advanced Brotherhood research by years!"
+          options:
+            - id: post_ask_schematics
+              label: "What did you find on the holotape?"
+              response: "*Ibsen's eyes light up behind his goggles.* Communications array blueprints, signal encryption protocols, even a partial manifest of Poseidon Energy relay stations! I've already started cross-referencing with our existing data. If this pans out, we could restore long-range communications across the entire western seaboard!"
+            - id: post_ask_ramos
+              label: "How did Ramos take the news?"
+              response: "He actually smiled. I didn't think his face could do that. He's already filed a commendation with the Elder. You're officially recognized as a friend of the Brotherhood — and that's not something Ramos gives out lightly."
+            - id: post_ask_next
+              label: "What's the next step?"
+              response: "The signal processor in the Spire is still the missing piece. But with these schematics, I know exactly what we need and how to install it. You've turned a needle-in-a-haystack search into a surgical operation. If you're willing to help again, we're that much closer to changing the world."
         - id: greeting
           text: "*A thin man in a worn lab coat looks up from a disassembled circuit board, magnifying goggles making his eyes comically large.* Oh! A visitor! Ramos didn't shoot you — that's a good sign. I'm Scribe Ibsen. Welcome to my humble workshop."
           options:

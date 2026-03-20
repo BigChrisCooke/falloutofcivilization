@@ -278,6 +278,8 @@ function syncQuestMarkerLayer(
     retainedNodes.questMarkerById.delete(id);
   }
 
+  const hasAnySelected = scene.questMarkers.some((m) => m.isSelected);
+
   for (const questMarker of scene.questMarkers) {
     let marker = retainedNodes.questMarkerById.get(questMarker.id);
 
@@ -289,6 +291,14 @@ function syncQuestMarkerLayer(
 
     marker.position.set(questMarker.markerPosition.x, questMarker.markerPosition.y);
     marker.zIndex = questMarker.zIndex;
+
+    if (hasAnySelected) {
+      marker.alpha = questMarker.isSelected ? 1.0 : 0.25;
+      marker.scale.set(questMarker.isSelected ? 1.3 : 0.8);
+    } else {
+      marker.alpha = 1.0;
+      marker.scale.set(1.0);
+    }
   }
 }
 

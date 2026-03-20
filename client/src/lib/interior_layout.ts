@@ -121,6 +121,11 @@ export function deriveInteriorPlacements(state: GameState): InteriorPlacements |
 
   const interactables = map.interactables
     .map((item, index) => {
+      // Use explicit position if provided
+      if (item.x !== undefined && item.y !== undefined) {
+        used.add(`${item.x},${item.y}`);
+        return { id: item.id, point: { x: item.x, y: item.y } };
+      }
       const token = normalizeToken(item.id);
       const typeToken = normalizeToken(item.type);
       // Prefer exact tile matches first

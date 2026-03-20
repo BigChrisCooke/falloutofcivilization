@@ -72,7 +72,7 @@ interactables:
         response: "'WANTED: Raider lieutenant known as GRISTLE. Organizing attacks on the north road. 50 caps and Ranger standing for proof of elimination. Report to Ranger Station Delta. — Ranger Jackson.' The paper is crisp. Recent."
       - id: read_caravan
         label: Read the Caravan Notice
-        response: "'MISSING: Kings courier, last seen on the east road past the old gas station, two days ago. Any information to Rex at the Dusty Spur. — The Kings.' Someone has added in pencil: 'Check the ridge.'"
+        response: "'MISSING: Kings courier, last seen on the east road past the old gas station, two days ago. Any information to Frankie at the Dusty Spur. — The Kings.' Someone has added in pencil: 'Check the ridge.'"
       - id: read_reactor
         label: Read the Reactor Warning
         response: "'DO NOT APPROACH THE REACTOR COMPLEX AT NIGHT. Something is coming out of there. Not ghouls. Worse. Two scavengers dead this month. — Anonymous.' The handwriting is shaky."
@@ -317,7 +317,22 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: ncr_raider_problem
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "Well, look who it is. The raider problem's been dealt with, and the NCR has you to thank for it. The north road's open again. You've done good work, civilian."
+          options:
+            - id: post_ask_road
+              label: "How's the north road looking?"
+              response: "Clear and quiet. Supply convoys are running on schedule for the first time in months. The settlements are getting what they need. That's because of you."
+            - id: post_ask_ncr_standing
+              label: "What's my standing with the NCR?"
+              response: "Solid. I put in a good word for you with command. You ever need NCR backing in this valley, you've got it. That's not something I say lightly."
+            - id: post_ask_threats
+              label: "Any new threats?"
+              response: "Nothing immediate, but the wasteland never stays quiet for long. I'll let you know if something comes up. For now, enjoy the peace you earned."
         - id: greeting
           text: "Civilian. Frontier Valley's under NCR protection. Keep your nose clean."
           options:
@@ -512,14 +527,26 @@ npcs:
 
   # ── Rex (The Kings) ────────────────────────────────────────
   - id: kings_member
-    name: "Rex (The Kings)"
+    name: "Frankie (The Kings)"
     disposition: friendly
     factionId: the_kings
     x: 7
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: kings_missing_courier
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "Hey, it's you! The one who found Danny! Man, The King hasn't stopped talking about it. You're practically an honorary King at this point. What can I do for you?"
+          options:
+            - id: post_ask_danny
+              label: "How's Danny doing?"
+              response: "Back on the route, believe it or not. Tougher than he looks. The King assigned him an escort now though — nobody's getting jumped on our watch again. That's thanks to you."
+            - id: post_ask_kings_mood
+              label: "How are things with the Kings?"
+              response: "Good, real good. Morale's up. The courier routes are running smooth again. Even Pacer's been less grumpy, and that's saying something. You did right by us, friend."
         - id: greeting
           text: "Hey, friend. New blood in the valley. The King says everyone deserves a fair shake — I'm inclined to agree."
           options:

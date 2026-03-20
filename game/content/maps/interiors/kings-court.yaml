@@ -57,7 +57,22 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: kings_missing_courier
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*The King rises from his throne and spreads his arms wide.* There they are! The hero of the hour. Danny's back safe and sound, and the Kings owe you — big time. You've got a standing invitation in the Court. What can I do for you?"
+          options:
+            - id: post_ask_danny
+              label: "How's Danny doing?"
+              response: "Shaken up, but alive. Pacer's been hovering over him like a mother deathclaw. The boy's got stories to tell now — and the Kings love a good story. You gave him a chance to tell them."
+            - id: post_ask_kings
+              label: "How are the Kings holding up?"
+              response: "Better than ever. Morale's through the roof. You showed people that someone out there still does the right thing. The courier routes are running again, supplies are flowing. That's all you, friend."
+            - id: post_ask_work
+              label: "Got any more work?"
+              response: "Always. The wasteland never runs out of problems. But right now? Enjoy the music, have a drink. You've earned it. When something comes up, you'll be the first to know."
         - id: greeting
           text: "*A man in a perfectly maintained leather jacket and impeccable pompadour looks up from his throne.* Well, well. A new face in the Court. Welcome, friend. I'm The King. And before you ask — yes, that's my real title. Around here, it means something."
           options:
@@ -256,7 +271,7 @@ loot:
     label: "King's Gang Jacket"
     description: "A leather jacket with the Kings' gang insignia. Worn with pride by members of the Kings. Makes a statement, whether you intend it or not."
     ownedBy: kings
-    x: 2
+    x: 3
     y: 5
 questHooks:
   - kings_missing_courier

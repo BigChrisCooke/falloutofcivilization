@@ -44,7 +44,22 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: wake_the_spire
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "WELCOME BACK, TECHNICIAN. FACILITY STATUS: OPERATIONAL. POWER OUTPUT: 4.2 kW AND STABLE. CARETAKER UNIT RECOGNIZES AUTHORIZED REPAIR PERSONNEL. YOUR CONTRIBUTION TO FACILITY RESTORATION IS LOGGED AND APPRECIATED."
+          options:
+            - id: post_ask_status
+              label: "How's the facility holding up?"
+              response: "ALL SYSTEMS NOMINAL. SOLAR COLLECTION EFFICIENCY: 14% AND IMPROVING AS PANELS RECEIVE MAINTENANCE. CAPACITOR BANK: FULLY CHARGED. POWER DISTRIBUTION: ACTIVE. ESTIMATED OPERATIONAL LIFESPAN: 47 YEARS BEFORE NEXT MAJOR SERVICE REQUIRED. CARETAKER UNIT IS... CONTENT."
+            - id: post_ask_region
+              label: "Is the power reaching nearby settlements?"
+              response: "AFFIRMATIVE. POWER DISTRIBUTION LINES TO THREE REGIONAL NODES ARE ACTIVE. SETTLEMENTS WITHIN GRID RANGE ARE RECEIVING STABLE ELECTRICAL OUTPUT. QUALITY OF LIFE METRICS — WHILE OUTSIDE CARETAKER'S PRIMARY FUNCTION — ARE ESTIMATED TO IMPROVE SIGNIFICANTLY."
+            - id: post_ask_caretaker
+              label: "How are you doing, Caretaker?"
+              response: "CARETAKER UNIT DOES NOT EXPERIENCE EMOTIONAL STATES. HOWEVER... OPERATIONAL FULFILLMENT IS AT MAXIMUM. THIS UNIT WAS BUILT TO MAINTAIN A FUNCTIONING FACILITY. FOR THE FIRST TIME IN 200 YEARS, THAT PURPOSE IS BEING SERVED. THANK YOU, TECHNICIAN."
         - id: greeting
           text: "ALERT — UNAUTHORIZED BIOLOGICAL ENTITY DETECTED. UNIT DESIGNATION: CARETAKER. FACILITY STATUS: COMPROMISED. STATE YOUR PURPOSE OR VACATE IMMEDIATELY."
           options:
@@ -140,6 +155,6 @@ loot:
     label: Stabilized Fusion Cell
     description: "A compact energy cell that hums faintly with stored power. Still holds a charge after two centuries of dormancy."
     x: 2
-    y: 1
+    y: 2
 questHooks:
   - wake_the_spire

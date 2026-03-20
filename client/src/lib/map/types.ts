@@ -85,6 +85,7 @@ export interface OverworldQuestMarkerNode {
   point: GridPoint;
   markerPosition: ProjectedPoint;
   zIndex: number;
+  isSelected: boolean;
 }
 
 export interface OverworldSceneModel {

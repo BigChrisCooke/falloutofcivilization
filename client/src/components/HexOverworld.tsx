@@ -11,7 +11,7 @@ interface HexOverworldProps {
 }
 
 export function HexOverworld({ state, selectedQuestId, onTravel, onEnterLocation }: HexOverworldProps) {
-  const scene = buildOverworldSceneModel(state);
+  const scene = buildOverworldSceneModel(state, selectedQuestId);
   const sceneHostRef = useRetainedMapRuntime(scene, overworldRuntimeAdapter, {
     onTravel,
     onEnterLocation

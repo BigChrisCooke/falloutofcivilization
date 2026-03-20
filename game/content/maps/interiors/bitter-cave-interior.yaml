@@ -42,7 +42,22 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: danger_in_the_hollow
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Kell looks up from a makeshift campfire, and for once the machete stays on the ground.* You actually did it. The Gangers think I'm dead, and the dynamite's off my back. I can breathe again. I owe you my life."
+          options:
+            - id: post_ask_plans
+              label: "What are you going to do now?"
+              response: "Get out of this cave, for starters. Maybe head west — I heard there's work at the Crossroads Market for anyone willing to carry a pack. Honest work. Never thought I'd want that, but almost dying changes your perspective."
+            - id: post_ask_gangers
+              label: "Are the Powder Gangers still a threat?"
+              response: "To me? Not anymore. They wrote me off. To everyone else? Yeah, they're still out there making trouble. But that's not my fight anymore. I'm done with that life. Thanks to you, I get a second chance."
+            - id: post_ask_cave
+              label: "You keeping the cave?"
+              response: "*A dry laugh.* What, this luxury resort? Nah. I'll leave the bats to it. But if you ever need a place to lay low, it's yours. Consider it a standing offer from a grateful man."
         - id: greeting
           text: "*A figure rises from the shadows, hand on a rusted machete.* Turn around. Now. This cave is mine."
           options:

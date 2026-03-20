@@ -41,6 +41,8 @@ interactables:
   - id: back_room_cache
     type: container
     label: Back Room Cache
+    x: 4
+    y: 1
     actions:
       - id: examine_cache
         label: Examine

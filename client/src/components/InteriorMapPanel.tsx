@@ -261,9 +261,16 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
             if (nearbyExits.length === 0) {
               return <p className="subtle">Move toward the exit to leave.</p>;
             }
+            // Deduplicate exits that go to the same target (e.g. double doors)
+            const seenTargets = new Set<string>();
+            const uniqueExits = nearbyExits.filter((exit) => {
+              if (seenTargets.has(exit.target)) return false;
+              seenTargets.add(exit.target);
+              return true;
+            });
             return (
               <div className="location-actions">
-                {nearbyExits.map((exit) => (
+                {uniqueExits.map((exit) => (
                   <button key={exit.id} className="primary-button" type="button" onClick={() => onExit(exit.id)}>
                     Leave {map.name}
                   </button>
