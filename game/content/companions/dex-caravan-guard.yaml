@@ -1,0 +1,208 @@
+id: dex
+name: Dex
+bio: "A former caravan guard stranded at the Dusty Spur after his last outfit was ambushed on the north road. Quiet, dependable, and looking for someone worth following into the wasteland."
+tokenColor: "#D97706"
+recruitLocationId: dusty_tavern
+recruitDialogueId: recruit_greeting
+storyStages:
+  - id: backstory
+    title: "Old Roads"
+    triggerCondition:
+      type: immediate
+    dialogueTreeId: story_backstory
+  - id: revelation
+    title: "The Ambush"
+    triggerCondition:
+      type: locationsVisited
+      count: 2
+    dialogueTreeId: story_revelation
+  - id: crisis
+    title: "Unfinished Business"
+    triggerCondition:
+      type: locationsVisited
+      count: 4
+    dialogueTreeId: story_crisis
+  - id: resolution
+    title: "What Matters"
+    triggerCondition:
+      type: locationsVisited
+      count: 6
+    dialogueTreeId: story_resolution
+storyDialogues:
+  story_backstory:
+    rootNodeId: backstory_start
+    nodes:
+      - id: backstory_start
+        text: "*Dex leans against the wall and stares at the horizon.* You know, I ran the north road for seven years. Crimson Caravan. Best outfit in the valley. We knew every ridge, every ambush point, every safe camp."
+        options:
+          - id: ask_what_happened
+            label: "What happened?"
+            next: what_happened
+          - id: ask_caravan
+            label: "Tell me about the Crimson Caravan."
+            next: about_caravan
+      - id: about_caravan
+        text: "Biggest trade operation west of the Colorado. We moved everything — medicine, ammo, food. Kept the settlements alive. The pay was decent and the company was... well, they were family. The kind you choose."
+        options:
+          - id: ask_what_happened_2
+            label: "So what went wrong?"
+            next: what_happened
+      - id: what_happened
+        text: "Three months ago. Routine run up the north road. Six of us. We'd done it a hundred times. Then the shooting started — from both sides of the ridge. Professional. Coordinated. Not your average raider ambush."
+        options:
+          - id: ask_survivors
+            label: "You were the only survivor?"
+            next: survivors
+          - id: ask_who
+            label: "Who ambushed you?"
+            next: who_did_it
+      - id: survivors
+        text: "*His jaw tightens.* Marco caught the first round. Suki and Hank went down covering the brahmin. Old Pete... Pete tried to pull Suki to cover. He didn't make it. Chen ran west. I don't know if she got out. And me — I took two in the vest and played dead until they left."
+        options:
+          - id: thats_rough
+            label: "I'm sorry, Dex."
+            response: "*He nods slowly.* Yeah. Me too. But sorry doesn't find out who set us up."
+      - id: who_did_it
+        text: "That's what I can't figure out. Raiders don't set up crossfire ambushes. Someone knew our route, our timing. Someone on the inside — or someone who paid well for the information. I've been turning it over in my head for months."
+        options:
+          - id: find_out
+            label: "We'll figure it out. Together."
+            response: "*Dex looks at you — really looks at you.* Yeah. Maybe we will."
+
+  story_revelation:
+    rootNodeId: revelation_start
+    nodes:
+      - id: revelation_start
+        text: "*Dex pulls you aside, looking troubled.* I've been thinking about the ambush. Talking to people at the places we've visited. And I found something that doesn't add up."
+        options:
+          - id: what_found
+            label: "What did you find?"
+            next: what_found
+      - id: what_found
+        text: "The Crimson Caravan filed an insurance claim the day before our run. The day before. They listed our cargo as 'lost in transit' before we even left the gate. Someone at headquarters knew we weren't coming back."
+        options:
+          - id: inside_job
+            label: "An inside job. The caravan sold you out."
+            next: inside_job
+          - id: maybe_coincidence
+            label: "Could be a clerical error."
+            next: not_coincidence
+      - id: inside_job
+        text: "*Dex nods grimly.* That's what I think too. The cargo was insured for triple its market value. Six people died so someone could collect on a payout. My friends died for caps."
+        options:
+          - id: who_signed
+            label: "Who signed the claim?"
+            next: the_name
+      - id: not_coincidence
+        text: "I thought that too. Wanted to believe it. But insurance claims don't file themselves, and the timing is too clean. Someone at the top authorized it. And I think I know who."
+        options:
+          - id: who_is_it
+            label: "Who?"
+            next: the_name
+      - id: the_name
+        text: "A logistics manager named Harland. He handled all the route planning for our sector. Had access to schedules, cargo manifests, everything. And two weeks after the ambush, he transferred to the Hub office. Promotion. Convenient timing, wouldn't you say?"
+        options:
+          - id: well_find_him
+            label: "We'll find him."
+            response: "*Dex's expression hardens.* We will. And when we do, he's going to answer for what he did. One way or another."
+          - id: be_careful
+            label: "Be careful, Dex. Revenge can consume you."
+            response: "*He pauses.* It's not revenge. It's justice. ...But you're not wrong. I'll try to remember the difference."
+
+  story_crisis:
+    rootNodeId: crisis_start
+    nodes:
+      - id: crisis_start
+        text: "*Dex is pacing, agitated.* I got word through a trader. Harland isn't in the Hub anymore. He's here. In the valley. Running a new operation out of one of the old settlements. And he's hiring raiders — the same ones who hit us."
+        options:
+          - id: what_plan
+            label: "What do you want to do?"
+            next: the_plan
+          - id: slow_down
+            label: "Slow down. Let's think this through."
+            next: think_it_through
+      - id: the_plan
+        text: "Part of me wants to walk straight in there and put a bullet between his eyes. But that's not who I am. Not who I want to be. The question is — what kind of person are you? Because that's going to decide how this ends."
+        options:
+          - id: justice_path
+            label: "We bring him to justice. Expose what he did."
+            next: justice
+          - id: confront_path
+            label: "We confront him directly. Make him answer for it."
+            next: confront
+      - id: think_it_through
+        text: "You're right. I know you're right. It's just... hearing his name after all this time. Knowing he's out there living well while my friends are in the ground. *He takes a breath.* What do you think we should do?"
+        options:
+          - id: justice_path_2
+            label: "Gather evidence. Turn him over to the NCR."
+            next: justice
+          - id: confront_path_2
+            label: "Face him. But we do it together."
+            next: confront
+      - id: justice
+        text: "*Dex nods slowly.* The right way. Yeah. It'll be harder — but my crew deserved better than a back-alley killing. Let's find proof and make sure everyone knows what Harland did."
+        options:
+          - id: agreed
+            label: "That's the plan. We'll get the evidence."
+            response: "*Dex puts a hand on your shoulder.* Thank you. For keeping me straight. Marco would've liked you."
+      - id: confront
+        text: "*Dex checks his weapon.* Together, then. Not an execution — a reckoning. He looks me in the eye and tells me why. After that... we'll see what happens."
+        options:
+          - id: ready
+            label: "Whenever you're ready."
+            response: "*Dex's jaw sets.* I've been ready for three months. Let's finish this."
+
+  story_resolution:
+    rootNodeId: resolution_start
+    conditionalRoots:
+      - karmaMin: 50
+        nodeId: resolution_high_karma
+    nodes:
+      - id: resolution_start
+        text: "*Dex sits across from you, quieter than usual.* It's done. Harland's gone — fled the valley when he heard we were coming. Took everything with him. *He stares at his hands.* I spent months chasing a ghost. And now..."
+        options:
+          - id: it_matters
+            label: "It still matters. You know the truth now."
+            next: low_karma_ending
+          - id: move_on
+            label: "Sometimes moving forward is the only option."
+            next: low_karma_ending
+      - id: low_karma_ending
+        text: "*Dex looks around at the wasteland.* You know what I've learned traveling with you? The world takes everything — your friends, your plans, your sense of justice. But it can't take who you choose to be. Even when the choices are ugly. *He stands.* I'm staying. Whatever comes next, I'm in."
+        options:
+          - id: glad
+            label: "Glad to hear it, Dex."
+            response: "*He manages a tired smile.* Don't get sentimental on me. We've got work to do."
+      - id: resolution_high_karma
+        text: "*Dex finds you at dawn, looking more at peace than you've ever seen him.* I got a message from Chen. She's alive. Made it to a settlement east of here. She said someone tipped off the NCR about Harland — anonymous. They arrested him at the border."
+        options:
+          - id: thats_great
+            label: "That's great news, Dex."
+            next: high_karma_ending
+          - id: chen_alive
+            label: "Chen survived? That's incredible."
+            next: high_karma_ending
+      - id: high_karma_ending
+        text: "*Dex's eyes are bright.* I've been carrying this weight for months. And now... Harland's facing trial. Chen's alive. And I found someone worth walking with. *He straightens up.* You showed me something — that doing right matters, even when it's hard. Especially when it's hard. I'm not going anywhere."
+        options:
+          - id: together
+            label: "Together, then. Whatever comes next."
+            response: "*Dex grins — a real grin, maybe the first one you've seen.* Together. Now let's go find some trouble worth getting into."
+
+reactions:
+  positive:
+    - id: pos_1
+      text: "Good call. The wasteland needs more people like you."
+    - id: pos_2
+      text: "That's the kind of thing that keeps me around. Respect."
+    - id: pos_3
+      text: "You keep surprising me. In a good way."
+  negative:
+    - id: neg_1
+      text: "That wasn't yours to take. You know that, right?"
+    - id: neg_2
+      text: "I've walked with thieves before. Didn't end well for them."
+    - id: neg_3
+      text: "Keep this up and I'll have to rethink our arrangement."
+  warning: "I'm not going to stick around if this is who you really are. Consider this your last warning."
+  farewell: "I signed on because I thought you were different. Guess I was wrong. Good luck out there — you'll need it."

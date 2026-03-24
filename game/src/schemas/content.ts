@@ -36,6 +36,7 @@ export const dialogueOptionSchema = z.object({
   }).optional(),
   karmaDelta: z.number().int().optional(),
   grantItems: z.array(grantItemSchema).optional(),
+  companionRecruit: z.string().min(1).optional(),
   returnToRoot: z.boolean().optional()
 });
 
@@ -48,7 +49,8 @@ export const dialogueNodeSchema = z.object({
 export const dialogueTreeSchema = z.object({
   rootNodeId: z.string().min(1),
   conditionalRoots: z.array(z.object({
-    questCompleted: z.string().min(1),
+    questCompleted: z.string().min(1).optional(),
+    karmaMin: z.number().int().optional(),
     nodeId: z.string().min(1)
   })).optional(),
   nodes: z.array(dialogueNodeSchema).min(1)
@@ -192,6 +194,42 @@ export const interiorMapSchema = z.object({
   questHooks: z.array(z.string()).default([])
 });
 
+// --- Companion content schema ---
+
+export const companionStoryStageSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  triggerCondition: z.object({
+    type: z.enum(["locationsVisited", "karma", "immediate"]),
+    count: z.number().int().optional(),
+    min: z.number().int().optional(),
+    max: z.number().int().optional()
+  }),
+  dialogueTreeId: z.string().min(1)
+});
+
+export const companionReactionLineSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().min(1)
+});
+
+export const companionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  bio: z.string().min(1),
+  tokenColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a hex color like #D97706"),
+  recruitLocationId: z.string().min(1),
+  recruitDialogueId: z.string().min(1),
+  storyStages: z.array(companionStoryStageSchema).min(1),
+  storyDialogues: z.record(z.string(), dialogueTreeSchema).default({}),
+  reactions: z.object({
+    positive: z.array(companionReactionLineSchema).min(1),
+    negative: z.array(companionReactionLineSchema).min(1),
+    warning: z.string().min(1),
+    farewell: z.string().min(1)
+  })
+});
+
 export type SpecialStat = z.infer<typeof specialStatEnum>;
 export type SpecialGate = z.infer<typeof specialGateSchema>;
 export type DialogueOption = z.infer<typeof dialogueOptionSchema>;
@@ -203,3 +241,6 @@ export type RegionDefinition = z.infer<typeof regionSchema>;
 export type LocationDefinition = z.infer<typeof locationSchema>;
 export type OverworldMapDefinition = z.infer<typeof overworldMapSchema>;
 export type InteriorMapDefinition = z.infer<typeof interiorMapSchema>;
+export type CompanionDefinition = z.infer<typeof companionSchema>;
+export type CompanionStoryStage = z.infer<typeof companionStoryStageSchema>;
+export type CompanionReactionLine = z.infer<typeof companionReactionLineSchema>;

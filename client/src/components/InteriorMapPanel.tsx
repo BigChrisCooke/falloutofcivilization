@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { GameState } from "../lib/api.js";
-import { collectItem } from "../lib/api.js";
+import { collectItem, getCompanionStoryDialogue } from "../lib/api.js";
 import { interiorRuntimeAdapter } from "../lib/map/interior_adapter.js";
 import { buildInteriorSceneModel } from "../lib/map/interior_scene_model.js";
 import { useRetainedMapRuntime } from "../lib/map/map_runtime.js";
@@ -29,9 +29,37 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
   const [showPlayerPanel, setShowPlayerPanel] = useState(false);
   const [oldTimerChoices, setOldTimerChoices] = useState<string[]>([]);
+  const [companionStoryBubble, setCompanionStoryBubble] = useState<{ companionName: string; stageTitle: string; text: string } | null>(null);
+  const [storyBubbleDismissed, setStoryBubbleDismissed] = useState(false);
+  const [companionReactionBubble, setCompanionReactionBubble] = useState<{ companionName: string; text: string; departed: boolean } | null>(null);
 
   const collectedLoot = useMemo(() => new Set(state.collectedItemIds), [state.collectedItemIds]);
   const collectedActions = useMemo(() => new Set(state.collectedActionIds), [state.collectedActionIds]);
+
+  // Check for companion story dialogue on interior entry
+  useEffect(() => {
+    if (state.companions.length === 0 || storyBubbleDismissed) return;
+    const companion = state.companions[0];
+    if (!companion) return;
+
+    getCompanionStoryDialogue(companion.companionId)
+      .then(({ storyDialogue }) => {
+        if (storyDialogue?.dialogue) {
+          const rootNode = storyDialogue.dialogue.nodes.find(
+            (n) => n.id === storyDialogue.dialogue.rootNodeId
+          );
+          if (rootNode) {
+            setCompanionStoryBubble({
+              companionName: companion.name,
+              stageTitle: storyDialogue.stageTitle,
+              text: rootNode.text
+            });
+          }
+        }
+      })
+      .catch(() => { /* silently fail */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map?.id, state.companions.length]);
 
   // Auto-trigger Old Timer dialogue on first entry when SPECIAL not set
   useEffect(() => {
@@ -50,8 +78,17 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
 
   async function handleCollectItem(itemId: string, label: string, ownedBy?: string, quantity?: number, description?: string, actionId?: string) {
     try {
-      const { state: newState } = await collectItem(itemId, label, ownedBy, quantity, description, actionId);
+      const { result, state: newState } = await collectItem(itemId, label, ownedBy, quantity, description, actionId);
       onStateRefresh(newState);
+
+      if (result.companionReaction) {
+        const companion = newState.companions.find((c) => c.companionId === result.companionReaction!.companionId);
+        setCompanionReactionBubble({
+          companionName: companion?.name ?? result.companionReaction.companionId,
+          text: result.companionReaction.reaction,
+          departed: result.companionReaction.departed
+        });
+      }
     } catch {
       // Collection failed
     }
@@ -150,6 +187,14 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
                 setOldTimerChoices((prev) => [...prev.filter((c) => c.substring(0, 2) !== optionId.substring(0, 2)), optionId]);
               }
             } : undefined}
+            onCompanionReaction={(reaction) => {
+              const companion = state.companions.find((c) => c.companionId === reaction.companionId);
+              setCompanionReactionBubble({
+                companionName: companion?.name ?? reaction.companionId,
+                text: reaction.reaction,
+                departed: reaction.departed
+              });
+            }}
           />
         )}
 
@@ -226,6 +271,54 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Companion Story Bubble */}
+        {companionStoryBubble && !storyBubbleDismissed && !activeNpcId && !showCharacterCreation && (
+          <div className="interaction-panel companion-story-panel">
+            <div className="interaction-panel-header">
+              <span className="eyebrow">{companionStoryBubble.companionName} &middot; {companionStoryBubble.stageTitle}</span>
+              <button
+                className="ghost-button interaction-close"
+                type="button"
+                onClick={() => setStoryBubbleDismissed(true)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="companion-story-text">{companionStoryBubble.text}</p>
+            <button
+              className="ghost-button interaction-option"
+              type="button"
+              onClick={() => setStoryBubbleDismissed(true)}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Companion Reaction Bubble */}
+        {companionReactionBubble && (
+          <div className="interaction-panel companion-story-panel">
+            <div className="interaction-panel-header">
+              <span className="eyebrow">{companionReactionBubble.companionName}{companionReactionBubble.departed ? " (departing)" : ""}</span>
+              <button
+                className="ghost-button interaction-close"
+                type="button"
+                onClick={() => setCompanionReactionBubble(null)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="companion-story-text">{companionReactionBubble.text}</p>
+            <button
+              className="ghost-button interaction-option"
+              type="button"
+              onClick={() => setCompanionReactionBubble(null)}
+            >
+              Dismiss
+            </button>
           </div>
         )}
 

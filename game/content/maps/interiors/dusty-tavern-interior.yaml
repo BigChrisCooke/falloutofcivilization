@@ -679,6 +679,101 @@ npcs:
           text: "*Boxcars stands up abruptly.* Say that again. Go ahead. I dare you. ...Nah, forget it. Mina'd throw us both out. Just stay out of my face."
           options: []
 
+  # ── Dex (Companion) ───────────────────────────────────────
+  - id: dex
+    name: "Dex"
+    disposition: friendly
+    x: 3
+    y: 5
+    dialogue:
+      rootNodeId: recruit_greeting
+      nodes:
+        - id: recruit_greeting
+          text: "*A lean, weathered man sits alone, nursing a drink. He watches you approach with sharp, appraising eyes.* You look like someone with a purpose. That's rare around here."
+          options:
+            - id: ask_who
+              label: "Who are you?"
+              next: who_is_dex
+            - id: ask_why
+              label: "Why are you sitting alone?"
+              next: why_alone
+            - id: cha_direct
+              label: "You look like you can handle yourself. I could use someone like that."
+              specialGate: { stat: cha, min: 7 }
+              next: direct_recruit
+        - id: who_is_dex
+          text: "Name's Dex. Used to run guard for the Crimson Caravan — until my whole outfit got hit on the north road. Raiders. I'm the only one who walked away. Been stuck here since, drinking what's left of my severance."
+          options:
+            - id: sorry
+              label: "I'm sorry about your crew."
+              next: offer_join
+            - id: tough
+              label: "Sounds rough. What's your plan now?"
+              next: offer_join
+            - id: int_ambush
+              label: "An ambush on the north road — that's organized. Raiders don't usually coordinate like that."
+              specialGate: { stat: int, min: 7 }
+              next: int_ambush_response
+        - id: why_alone
+          text: "Everyone here's got a faction or a friend. I had a caravan. Now I've got a bar tab and a bad attitude. *He takes a slow drink.* I'm waiting for something worth getting up for."
+          options:
+            - id: be_that
+              label: "Maybe I'm that something."
+              next: offer_join
+            - id: keep_waiting
+              label: "Good luck with that."
+              response: "*Dex shrugs.* Yeah. You too."
+        - id: int_ambush_response
+          text: "*Dex looks at you sharply.* You're not wrong. The hit was too clean — someone tipped them off. I've got my suspicions, but I can't prove anything alone. *He leans forward.* You seem smart enough. Maybe we could figure it out together."
+          options:
+            - id: accept_int
+              label: "I'm in. Let's find out who set up your crew."
+              next: accepted
+              companionRecruit: dex
+            - id: decline_int
+              label: "Interesting, but I've got my own problems."
+              next: declined
+        - id: direct_recruit
+          text: "*Dex sets his drink down and looks you over.* Straight to the point. I respect that. I've been rotting in this bar long enough. If you're heading into the waste, I'd rather be out there watching your back than in here watching my drink get warm."
+          options:
+            - id: accept_direct
+              label: "Welcome aboard, Dex."
+              next: accepted
+              companionRecruit: dex
+            - id: decline_direct
+              label: "I'll think about it."
+              next: declined
+        - id: offer_join
+          text: "Look, I'll be straight with you. I've got skills — caravan guard, seven years. I can shoot, I can scout, and I don't panic when things go sideways. I'm not asking for caps. I just need a reason to get off this barstool. What do you say?"
+          options:
+            - id: accept
+              label: "Alright, Dex. You're with me."
+              next: accepted
+              companionRecruit: dex
+            - id: decline
+              label: "I work alone."
+              next: declined
+            - id: cha_negotiate
+              label: "Seven years of caravan work? That's valuable. But I need to know you won't cut and run when it gets ugly."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_negotiate_response
+        - id: cha_negotiate_response
+          text: "*Dex holds your gaze without flinching.* I watched six people die on the north road and I stayed to fight. I dragged two of them to cover before I realized they were already gone. I don't run."
+          options:
+            - id: accept_cha
+              label: "That's good enough for me. Let's go."
+              next: accepted
+              companionRecruit: dex
+            - id: decline_cha
+              label: "I believe you. But not right now."
+              next: declined
+        - id: accepted
+          text: "*Dex finishes his drink in one pull and stands.* About damn time. I was starting to grow roots. Lead the way — I've got your back."
+          options: []
+        - id: declined
+          text: "*Dex nods slowly and turns back to his drink.* Fair enough. I'll be here if you change your mind. Not like I've got anywhere else to be."
+          options: []
+
   # ── Scavenge (dog) ─────────────────────────────────────────
   - id: dog
     name: "Scavenge"

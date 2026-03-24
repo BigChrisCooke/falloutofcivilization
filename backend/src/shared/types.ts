@@ -77,6 +77,15 @@ export interface FactionStandingRow {
   updated_at: number;
 }
 
+export interface CompanionInstanceRow {
+  save_id: string;
+  companion_id: string;
+  recruited_at: number;
+  loyalty: number;
+  story_stage: number;
+  departed: number;
+}
+
 export interface AuthUser {
   id: string;
   username: string;

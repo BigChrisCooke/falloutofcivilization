@@ -5,11 +5,13 @@ import yaml from "js-yaml";
 import { ZodError } from "zod";
 
 import {
+  companionSchema,
   interiorMapSchema,
   locationSchema,
   overworldMapSchema,
   questSchema,
   regionSchema,
+  type CompanionDefinition,
   type InteriorMapDefinition,
   type LocationDefinition,
   type OverworldMapDefinition,
@@ -24,6 +26,7 @@ export interface GameContentBundle {
   overworldMaps: OverworldMapDefinition[];
   interiorMaps: InteriorMapDefinition[];
   quests: QuestDefinition[];
+  companions: CompanionDefinition[];
 }
 
 function loadYamlFile<T>(filePath: string, parser: { parse: (value: unknown) => T }): T {
@@ -69,6 +72,7 @@ export function loadGameContent(contentRoot = getDefaultContentRoot()): GameCont
   const overworldMaps = loadDirectory(path.join(contentRoot, "maps", "overworld"), overworldMapSchema);
   const interiorMaps = loadDirectory(path.join(contentRoot, "maps", "interiors"), interiorMapSchema);
   const quests = loadDirectoryIfExists(path.join(contentRoot, "quests"), questSchema);
+  const companions = loadDirectoryIfExists(path.join(contentRoot, "companions"), companionSchema);
 
   const regionIds = new Set(regions.map((region) => region.id));
   const questIds = new Set(quests.map((quest) => quest.id));
@@ -225,13 +229,22 @@ export function loadGameContent(contentRoot = getDefaultContentRoot()): GameCont
     }
   }
 
+  for (const companion of companions) {
+    if (!locationIds.has(companion.recruitLocationId)) {
+      throw new Error(
+        `Companion ${companion.id} references missing recruit location "${companion.recruitLocationId}"`
+      );
+    }
+  }
+
   return {
     contentRoot,
     regions,
     locations,
     overworldMaps,
     interiorMaps,
-    quests
+    quests,
+    companions
   };
 }
 

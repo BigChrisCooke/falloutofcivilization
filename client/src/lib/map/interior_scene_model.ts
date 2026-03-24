@@ -12,7 +12,8 @@ import { deriveInteriorPlacements } from "../interior_layout.js";
 import { isPassableTile } from "../../../../game/src/tiles.js";
 
 import { getHexWorldPolygon } from "./hex_geometry.js";
-import type { InteriorMarkerNode, InteriorSceneModel, InteriorTileNode } from "./types.js";
+import { hexNeighbors } from "./hex_pathfinding.js";
+import type { CompanionActorNode, InteriorMarkerNode, InteriorSceneModel, InteriorTileNode } from "./types.js";
 
 function getMarkerPosition(point: { x: number; y: number }) {
   const projected = projectHex(point, INTERIOR_ISO_METRICS);
@@ -100,6 +101,10 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
     ? placements.loot.filter((p) => !collectedLootIds.has(p.id))
     : placements.loot;
 
+  // Suppress recruited companion NPCs from the props layer
+  const activeCompanionIds = new Set(state.companions.map((c) => c.companionId));
+  const visibleNpcs = placements.npcs.filter((npc) => !activeCompanionIds.has(npc.id));
+
   const markers: InteriorMarkerNode[] = [
     ...map.exits.map((exit) =>
       createMarkerNode(exit.id, "exit", { x: exit.x, y: exit.y }, exit.target, 20, toTileKey({ x: exit.x, y: exit.y }) === currentTileKey)
@@ -109,8 +114,48 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       const lootDef = activeLoot.find((l) => l.id === item.id);
       return createMarkerNode(item.id, "loot", item.point, item.id, 32, true, lootDef?.ownedBy);
     }),
-    ...placements.npcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, true))
+    ...visibleNpcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, true))
   ].sort((left, right) => left.zIndex - right.zIndex);
+
+  // Compute companion actor position if a companion is active
+  let companion: CompanionActorNode | null = null;
+  const activeCompanion = state.companions[0];
+
+  if (activeCompanion?.tokenColor) {
+    const occupiedKeys = new Set([
+      currentTileKey,
+      ...markers.map((m) => toTileKey(m.point))
+    ]);
+    const passableKeys = new Set(
+      tiles.filter((t) => t.isPassable).map((t) => t.key)
+    );
+
+    // Prefer the tile directly "behind" the player (higher y = visually behind in iso)
+    // by sorting neighbors with higher y first, then by distance
+    const neighbors = hexNeighbors(currentPoint)
+      .filter((n) => {
+        const key = toTileKey(n);
+        return passableKeys.has(key) && !occupiedKeys.has(key);
+      })
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+
+    // If no adjacent tile is free, scan all passable tiles sorted by distance
+    const companionPoint = neighbors[0] ?? tiles
+      .filter((t) => t.isPassable && !occupiedKeys.has(t.key))
+      .sort((a, b) => hexDistance(currentPoint, a.point) - hexDistance(currentPoint, b.point))[0]?.point
+      ?? null;
+
+    if (companionPoint) {
+      companion = {
+        id: `companion-${activeCompanion.companionId}`,
+        companionId: activeCompanion.companionId,
+        tokenColor: activeCompanion.tokenColor,
+        point: companionPoint,
+        anchor: getInteriorCourierAnchor(companionPoint),
+        zIndex: getTileZIndex(companionPoint) + 85
+      };
+    }
+  }
 
   return {
     mapId: map.id,
@@ -127,6 +172,7 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       point: currentPoint,
       anchor: getInteriorCourierAnchor(currentPoint),
       zIndex: getTileZIndex(currentPoint) + 90
-    }
+    },
+    companion
   };
 }

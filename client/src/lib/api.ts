@@ -57,6 +57,8 @@ export interface DialogueSelectResult {
   questCompleted: QuestCompletionResult | null;
   karmaDelta: number;
   factionDelta: { factionId: string; delta: number } | null;
+  companionRecruited: string | null;
+  companionReaction: { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null;
   stateUpdated: boolean;
 }
 
@@ -176,6 +178,15 @@ export interface GameState {
   }>;
   collectedItemIds: string[];
   collectedActionIds: string[];
+  companions: Array<{
+    companionId: string;
+    name: string;
+    tokenColor: string | null;
+    loyalty: number;
+    storyStage: number;
+    storyStageTitle: string | null;
+    recruitedAt: number;
+  }>;
   factionStanding: Record<string, number>;
   locations: LocationSummary[];
 }
@@ -324,7 +335,7 @@ export function collectItem(
   quantity?: number,
   description?: string | null,
   actionId?: string
-): Promise<{ result: { karmaDelta: number; factionDelta: { factionId: string; delta: number } | null }; state: GameState }> {
+): Promise<{ result: { karmaDelta: number; factionDelta: { factionId: string; delta: number } | null; companionReaction: { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null }; state: GameState }> {
   return request("/api/game/inventory/collect", {
     method: "POST",
     body: JSON.stringify({ itemId, label, ownedBy: ownedBy ?? null, quantity: quantity ?? 1, description: description ?? null, actionId: actionId ?? undefined })
@@ -334,6 +345,20 @@ export function collectItem(
 export function saveCurrentGame(saveId: string): Promise<{ save: SaveGame; message: string }> {
   return request(`/api/saves/${saveId}/save`, {
     method: "POST"
+  });
+}
+
+export function getCompanionStoryDialogue(companionId: string): Promise<{ storyDialogue: { dialogue: { rootNodeId: string; nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }> }; stageTitle: string } | null }> {
+  return request("/api/game/companion/story", {
+    method: "POST",
+    body: JSON.stringify({ companionId })
+  });
+}
+
+export function recruitCompanion(companionId: string): Promise<{ state: GameState }> {
+  return request("/api/game/companion/recruit", {
+    method: "POST",
+    body: JSON.stringify({ companionId })
   });
 }
 

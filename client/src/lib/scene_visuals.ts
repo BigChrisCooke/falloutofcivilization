@@ -194,6 +194,21 @@ export function drawDiamondPrism(graphics: Graphics, metrics: IsoMetrics, visual
     .stroke({ color: visual.edgeColor, width: 1.5, alpha: 0.45 });
 }
 
+export function createCompanionToken(hexColor: string): Container {
+  const tint = parseInt(hexColor.replace("#", ""), 16);
+  const token = createCourierToken();
+  token.scale.set(0.82);
+
+  // Tint all graphics children to the companion's color
+  for (const child of token.children) {
+    if (child instanceof Graphics) {
+      child.tint = tint;
+    }
+  }
+
+  return token;
+}
+
 export function createCourierToken(): Container {
   const token = new Container();
   const shadow = new Graphics()

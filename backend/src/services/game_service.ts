@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 
+import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
 
@@ -40,12 +41,14 @@ export class GameService {
   private readonly saveRepo: SaveRepo;
   private readonly gameStateRepo: GameStateRepo;
   private readonly inventoryRepo: InventoryRepo;
+  private readonly companionRepo: CompanionRepo;
   private readonly dialogueService: DialogueService;
 
   public constructor(db: Database.Database) {
     this.saveRepo = new SaveRepo(db);
     this.gameStateRepo = new GameStateRepo(db);
     this.inventoryRepo = new InventoryRepo(db);
+    this.companionRepo = new CompanionRepo(db);
     this.dialogueService = new DialogueService(db);
   }
 
@@ -85,6 +88,7 @@ export class GameService {
     const inventoryRows = this.inventoryRepo.getAll(saveId);
     const collectedItemIds = inventoryRows.map((row) => row.item_id);
     const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
+    const companionRows = this.companionRepo.getAll(saveId);
 
     return {
       save,
@@ -133,6 +137,19 @@ export class GameService {
       })),
       collectedItemIds,
       collectedActionIds,
+      companions: companionRows.map((row) => {
+        const companionDef = content.companions.find((c) => c.id === row.companion_id);
+        const currentStage = companionDef?.storyStages[row.story_stage];
+        return {
+          companionId: row.companion_id,
+          name: companionDef?.name ?? row.companion_id,
+          tokenColor: companionDef?.tokenColor ?? null,
+          loyalty: row.loyalty,
+          storyStage: row.story_stage,
+          storyStageTitle: currentStage?.title ?? null,
+          recruitedAt: row.recruited_at
+        };
+      }),
       locations: regionLocations.map((location) => ({
         ...location,
         discovered: normalizedState.discoveredLocationIds.includes(location.id),
@@ -156,6 +173,90 @@ export class GameService {
         updated_at: Date.now()
       });
     }
+  }
+
+  public checkCompanionStoryProgression(saveId: string): { companionId: string; newStage: number; stageTitle: string; dialogueTreeId: string } | null {
+    const content = getGameContent();
+    const companions = this.companionRepo.getAll(saveId);
+    const companion = companions[0];
+    if (!companion) return null;
+
+    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    if (!companionDef) return null;
+
+    const nextStageIndex = companion.story_stage + 1;
+    const nextStage = companionDef.storyStages[nextStageIndex];
+    if (!nextStage) return null;
+
+    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+    const discoveredLocationIds = mapDiscovery
+      ? safeJsonParse<string[]>(mapDiscovery.discovered_locations_json, [])
+      : [];
+    const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+    const karma = playerCharacter?.karma ?? 0;
+
+    const trigger = nextStage.triggerCondition;
+    let triggered = false;
+
+    if (trigger.type === "immediate") {
+      triggered = true;
+    } else if (trigger.type === "locationsVisited" && trigger.count !== undefined) {
+      triggered = discoveredLocationIds.length >= trigger.count;
+    } else if (trigger.type === "karma") {
+      if (trigger.min !== undefined && karma >= trigger.min) triggered = true;
+      if (trigger.max !== undefined && karma <= trigger.max) triggered = true;
+    }
+
+    if (!triggered) return null;
+
+    this.companionRepo.updateStoryStage(saveId, companion.companion_id, nextStageIndex);
+
+    return {
+      companionId: companion.companion_id,
+      newStage: nextStageIndex,
+      stageTitle: nextStage.title,
+      dialogueTreeId: nextStage.dialogueTreeId
+    };
+  }
+
+  public getCompanionStoryDialogue(saveId: string, companionId: string): { dialogue: { rootNodeId: string; nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }> }; stageTitle: string } | null {
+    const content = getGameContent();
+    const companion = this.companionRepo.find(saveId, companionId);
+    if (!companion || companion.departed) return null;
+
+    const companionDef = content.companions.find((c) => c.id === companionId);
+    if (!companionDef) return null;
+
+    const currentStage = companionDef.storyStages[companion.story_stage];
+    if (!currentStage) return null;
+
+    const dialogueTree = companionDef.storyDialogues[currentStage.dialogueTreeId];
+    if (!dialogueTree) return null;
+
+    // Resolve effective root node via conditionalRoots (e.g. karma-based branching)
+    let effectiveRootNodeId = dialogueTree.rootNodeId;
+    if (dialogueTree.conditionalRoots && dialogueTree.conditionalRoots.length > 0) {
+      const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+      const karma = playerCharacter?.karma ?? 0;
+      const questState = this.gameStateRepo.getQuestState(saveId);
+      const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+
+      for (const condition of dialogueTree.conditionalRoots) {
+        if (condition.questCompleted && completed.includes(condition.questCompleted)) {
+          effectiveRootNodeId = condition.nodeId;
+          break;
+        }
+        if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
+          effectiveRootNodeId = condition.nodeId;
+          break;
+        }
+      }
+    }
+
+    return {
+      dialogue: { ...dialogueTree, rootNodeId: effectiveRootNodeId },
+      stageTitle: currentStage.title
+    };
   }
 
   public updateScreen(saveId: string, screen: "overworld" | "vault"): void {
@@ -260,6 +361,9 @@ export class GameService {
       player_y: spawnPoint.y,
       updated_at: Date.now()
     });
+
+    // Check companion story progression when entering a location
+    this.checkCompanionStoryProgression(saveId);
   }
 
   public travel(saveId: string, x: number, y: number): void {
@@ -437,6 +541,24 @@ export class GameService {
       discoveredLocationIds: normalizedExploration.discoveredLocationIds,
       discoveredTileKeys: normalizedExploration.discoveredTileKeys
     };
+  }
+
+  public recruitCompanion(saveId: string, companionId: string): void {
+    const content = getGameContent();
+    const companion = content.companions.find((c) => c.id === companionId);
+    if (!companion) {
+      throw new Error("Unknown companion.");
+    }
+
+    const existing = this.companionRepo.find(saveId, companionId);
+    if (existing && !existing.departed) {
+      throw new Error("Companion is already recruited.");
+    }
+    if (existing && existing.departed) {
+      throw new Error("This companion has departed and cannot be re-recruited.");
+    }
+
+    this.companionRepo.recruit(saveId, companionId);
   }
 
   public savePlayerSpecial(saveId: string, special: Record<string, number>): void {

@@ -63,6 +63,7 @@ function createGameState(): GameState {
     inventory: [],
     collectedItemIds: [],
     collectedActionIds: [],
+    companions: [],
     factionStanding: {
       settlers: 1
     },

@@ -1,7 +1,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 
 import { INTERIOR_ISO_METRICS } from "../iso.js";
-import { createCourierToken, createSceneMarker, drawHexSurface, INTERIOR_SURFACE_VISUALS } from "../scene_visuals.js";
+import { createCompanionToken, createCourierToken, createSceneMarker, drawHexSurface, INTERIOR_SURFACE_VISUALS } from "../scene_visuals.js";
 
 import { flattenPolygon } from "./hex_geometry.js";
 import type { InteriorMarkerNode, InteriorSceneModel, InteriorTileNode } from "./types.js";
@@ -19,6 +19,8 @@ export interface InteriorRetainedNodes {
   markerById: Map<string, Container>;
   glow: Graphics | null;
   courier: Container | null;
+  companionToken: Container | null;
+  companionId: string | null;
   lootTooltip: Container | null;
 }
 
@@ -58,6 +60,8 @@ export function createInteriorRetainedNodes(): InteriorRetainedNodes {
     markerById: new Map(),
     glow: null,
     courier: null,
+    companionToken: null,
+    companionId: null,
     lootTooltip: null
   };
 }
@@ -238,6 +242,28 @@ function syncActorLayer(
 
   retainedNodes.courier.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
   retainedNodes.courier.zIndex = scene.courier.zIndex;
+
+  // Companion token
+  if (scene.companion) {
+    // Recreate if companion changed
+    if (retainedNodes.companionId !== scene.companion.companionId) {
+      if (retainedNodes.companionToken) {
+        layers.actors.removeChild(retainedNodes.companionToken);
+        retainedNodes.companionToken.destroy({ children: true });
+      }
+      retainedNodes.companionToken = createCompanionToken(scene.companion.tokenColor);
+      retainedNodes.companionId = scene.companion.companionId;
+      layers.actors.addChild(retainedNodes.companionToken);
+    }
+
+    retainedNodes.companionToken!.position.set(scene.companion.anchor.x, scene.companion.anchor.y);
+    retainedNodes.companionToken!.zIndex = scene.companion.zIndex;
+  } else if (retainedNodes.companionToken) {
+    layers.actors.removeChild(retainedNodes.companionToken);
+    retainedNodes.companionToken.destroy({ children: true });
+    retainedNodes.companionToken = null;
+    retainedNodes.companionId = null;
+  }
 }
 
 function syncTooltipLayer(
