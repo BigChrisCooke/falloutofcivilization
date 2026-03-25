@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.*
+node_modules
+**/node_modules
+coverage
+**/coverage
+backend/dist
+client/dist
+game/dist
+npm-debug.log*

@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "./runtime_config.js";
+
 export interface AuthUser {
   id: string;
   username: string;
@@ -217,10 +219,8 @@ interface SessionResponse {
   currentSaveId: string | null;
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:6201";
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",

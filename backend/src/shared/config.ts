@@ -5,6 +5,7 @@ import type { DbDialect } from "../db/types.js";
 export interface AppConfig {
   port: number;
   clientOrigin: string;
+  clientDistPath: string;
   dbDriver: DbDialect;
   sqlitePath: string;
   databaseUrl: string | null;
@@ -17,6 +18,8 @@ export interface AppConfig {
   dbPoolMax: number;
   sessionTtlDays: number;
   cookieName: string;
+  cookieSecure: boolean;
+  trustProxy: boolean;
 }
 
 function readNumber(value: string | undefined, fallback: number): number {
@@ -45,8 +48,9 @@ export function getConfig(): AppConfig {
   }
 
   return {
-    port: readNumber(process.env.BACKEND_PORT, 6201),
-    clientOrigin: process.env.CLIENT_ORIGIN ?? "http://localhost:6200",
+    port: readNumber(process.env.PORT ?? process.env.BACKEND_PORT, 6201),
+    clientOrigin: process.env.CLIENT_ORIGIN ?? process.env.RENDER_EXTERNAL_URL ?? "http://localhost:6200",
+    clientDistPath: path.resolve(process.cwd(), process.env.CLIENT_DIST_PATH ?? "../client/dist"),
     dbDriver,
     sqlitePath: sqlitePath === ":memory:" ? sqlitePath : path.resolve(process.cwd(), sqlitePath),
     databaseUrl: process.env.DATABASE_URL ?? null,
@@ -58,6 +62,8 @@ export function getConfig(): AppConfig {
     postgresSsl: readBoolean(process.env.POSTGRES_SSL, false),
     dbPoolMax: readNumber(process.env.DB_POOL_MAX, 10),
     sessionTtlDays: readNumber(process.env.SESSION_TTL_DAYS, 14),
-    cookieName: "foc_session"
+    cookieName: "foc_session",
+    cookieSecure: readBoolean(process.env.COOKIE_SECURE, false),
+    trustProxy: readBoolean(process.env.TRUST_PROXY, false)
   };
 }

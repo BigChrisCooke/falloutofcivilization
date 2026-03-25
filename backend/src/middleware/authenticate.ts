@@ -48,7 +48,7 @@ export function createSessionCookie(config: AppConfig, sessionId: string, maxAge
     httpOnly: true,
     path: "/",
     sameSite: "lax",
-    secure: false,
+    secure: config.cookieSecure,
     maxAge: Math.floor(maxAgeMs / 1000)
   });
 }
@@ -58,7 +58,7 @@ export function clearSessionCookie(config: AppConfig): string {
     httpOnly: true,
     path: "/",
     sameSite: "lax",
-    secure: false,
+    secure: config.cookieSecure,
     maxAge: 0
   });
 }

@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 
@@ -22,6 +25,11 @@ export function createApp(config: AppConfig) {
   const dialogueService = new DialogueService();
   const inventoryService = new InventoryService();
   const app = express();
+  const clientIndexPath = path.join(config.clientDistPath, "index.html");
+
+  if (config.trustProxy) {
+    app.set("trust proxy", 1);
+  }
 
   app.use(
     cors({
@@ -39,6 +47,13 @@ export function createApp(config: AppConfig) {
   app.use("/api/auth", createAuthRouter(authService, config));
   app.use("/api/saves", createSaveRouter(authService, saveService));
   app.use("/api/game", createGameRouter(gameService, dialogueService, inventoryService));
+
+  if (existsSync(clientIndexPath)) {
+    app.use(express.static(config.clientDistPath));
+    app.get(/^(?!\/api(?:\/|$)).*/u, (_request, response) => {
+      response.sendFile(clientIndexPath);
+    });
+  }
 
   app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
     if (error instanceof SyntaxError && "body" in error) {

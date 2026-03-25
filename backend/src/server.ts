@@ -1,15 +1,12 @@
 import { createApp } from "./app.js";
 import { closeDb, initDb } from "./db/connection.js";
-import { runMigrations } from "./db/run_migrations.js";
 import { getConfig } from "./shared/config.js";
 import { loadEnv } from "./shared/load_env.js";
 
 loadEnv();
 
 const config = getConfig();
-const db = await initDb(config);
-
-await runMigrations(db);
+await initDb(config);
 
 const app = createApp(config);
 const server = app.listen(config.port, () => {

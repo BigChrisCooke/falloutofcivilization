@@ -24,6 +24,7 @@ The current base is a Phase 1 vertical slice:
 - Keep runtime save state separate from authored content files.
 - Keep all database driver usage inside `backend/src/db/`.
 - Treat repos plus the shared DB layer as the only runtime DB access path.
+- For Docker/Render production, treat the backend as the single runtime process that also serves the built client.
 
 ## Actual Repository Structure
 
@@ -110,6 +111,18 @@ Do not:
 - Keep timestamp writes application-supplied and consistent with the existing epoch-millisecond model used by the backend.
 - Use `getDb()` and `withTransaction()` for runtime access and transaction scoping.
 - Multi-write gameplay flows should stay atomic through the shared transaction layer.
+
+## Deployment Rules
+
+- Local dev uses separate frontend and backend dev servers.
+- Docker/Render production uses one container and one public port.
+- Do not add a second long-running frontend process to the production container unless explicitly requested.
+- The backend should serve `client/dist` when that build output exists.
+- Production Docker startup should generate browser-safe runtime config, run backend migrations, then start the backend server.
+- Docker and Render env configuration should stay discoverable in `Dockerfile`, `.dockerignore`, `.env.example`, and `render.yaml`.
+- Treat Docker/Render envs as two groups: server-only runtime envs and browser-safe runtime-config envs.
+- Never expose secrets such as `DATABASE_URL`, Postgres credentials, cookie settings, or private tokens to browser runtime config.
+- Render should rely on `PORT`, `DATABASE_URL`, and production-safe cookie/proxy settings.
 
 ## Migration Rules
 
@@ -199,5 +212,8 @@ These files should always match the real repo commands and structure.
 - Root `.env` should be the source of environment configuration.
 - `DB_DRIVER=sqlite` is the default local workflow.
 - PostgreSQL uses `DATABASE_URL` first, then the discrete `POSTGRES_*` settings if needed.
+- `PORT` is provided by Render in production; local dev can keep using `BACKEND_PORT`.
+- `CLIENT_DIST_PATH` defaults to `../client/dist` from the backend workspace for static production serving.
+- `TRUST_PROXY=true` and `COOKIE_SECURE=true` are the intended Render defaults.
 - Content files define authored world data; backend DB storage holds runtime save state.
 - The safe way to add a new enterable location is: add content, validate content, then wire any UI affordance if needed.

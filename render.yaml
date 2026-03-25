@@ -1,0 +1,34 @@
+databases:
+  - name: falloutofcivilization-db
+    databaseName: falloutofcivilization
+    user: falloutofcivilization
+    region: oregon
+
+services:
+  - type: web
+    name: falloutofcivilization
+    runtime: docker
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_DRIVER
+        value: postgres
+      - key: POSTGRES_SSL
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: CLIENT_DIST_PATH
+        value: /app/client/dist
+      - key: GAME_CONTENT_ROOT
+        value: /app/game/content
+      - key: DATABASE_URL
+        fromDatabase:
+          name: falloutofcivilization-db
+          property: connectionString

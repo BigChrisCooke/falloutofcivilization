@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { closeDb, setDbForTests } from "../db/connection.js";
 import { runMigrations } from "../db/run_migrations.js";
 import { createSqliteAdapter } from "../db/sqlite_adapter.js";
@@ -19,6 +21,7 @@ export function createTestConfig(): AppConfig {
   return {
     port: 3001,
     clientOrigin: "http://localhost:4321",
+    clientDistPath: path.resolve(process.cwd(), "..", "client", "dist"),
     dbDriver: "sqlite",
     sqlitePath: ":memory:",
     databaseUrl: null,
@@ -30,6 +33,8 @@ export function createTestConfig(): AppConfig {
     postgresSsl: false,
     dbPoolMax: 2,
     sessionTtlDays: 14,
-    cookieName: "foc_session"
+    cookieName: "foc_session",
+    cookieSecure: false,
+    trustProxy: false
   };
 }
