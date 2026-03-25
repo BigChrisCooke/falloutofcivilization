@@ -9,9 +9,9 @@ objectives:
     target: pump_regulator
     locationId: scrapyard
   - id: deliver_regulator
-    description: "Deliver the pump regulator to the Water Purification Plant."
-    type: visit
-    target: water_purification
+    description: "Deliver the pump regulator to Engineer Torres at the Water Purification Plant."
+    type: talk
+    target: engineer_torres
     locationId: water_purification
 rewards:
   karma: 20

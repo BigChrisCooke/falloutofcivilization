@@ -89,6 +89,7 @@ export class SaveService {
       save_id: save.id,
       discovered_locations_json: JSON.stringify(explorationState.discoveredLocationIds),
       discovered_tiles_json: JSON.stringify(explorationState.discoveredTileKeys),
+      entered_locations_json: JSON.stringify([]),
       updated_at: now
     };
 

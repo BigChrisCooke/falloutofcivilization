@@ -45,6 +45,15 @@ export function resolveInteriorHover(
     return { tileKey: exitTarget.tileKey, markerId: null };
   }
 
+  // Check companion token hover
+  if (scene.companion) {
+    const compDx = worldPoint.x - scene.companion.anchor.x;
+    const compDy = worldPoint.y - scene.companion.anchor.y;
+    if (compDx * compDx + compDy * compDy < 20 * 20) {
+      return { tileKey: null, markerId: `companion-${scene.companion.companionId}` };
+    }
+  }
+
   // Check player token hover (after markers so overlapping markers take priority)
   const courierDx = worldPoint.x - scene.courier.anchor.x;
   const courierDy = worldPoint.y - scene.courier.anchor.y;
@@ -99,6 +108,15 @@ export function resolveInteriorInteractionTarget(
   const exitTarget = resolveExitMarkerTarget(scene, worldPoint);
   if (exitTarget.kind !== "none") {
     return exitTarget;
+  }
+
+  // Check companion token click
+  if (scene.companion) {
+    const compDx = worldPoint.x - scene.companion.anchor.x;
+    const compDy = worldPoint.y - scene.companion.anchor.y;
+    if (compDx * compDx + compDy * compDy < 20 * 20) {
+      return { kind: "companion", companionId: scene.companion.companionId };
+    }
   }
 
   // If click is on the player token, check if there's an interactive object on the same tile

@@ -63,6 +63,13 @@ npcs:
         - id: greeting
           text: "ALERT — UNAUTHORIZED BIOLOGICAL ENTITY DETECTED. UNIT DESIGNATION: CARETAKER. FACILITY STATUS: COMPROMISED. STATE YOUR PURPOSE OR VACATE IMMEDIATELY."
           options:
+            - id: turn_in_fusion_cell
+              label: "I found a military-grade fusion cell. Let's get this relay working."
+              questGate: { questId: wake_the_spire }
+              inventoryGate: { itemId: fusion_cell }
+              consumeItem: true
+              questComplete: wake_the_spire
+              next: relay_restored
             - id: ask_facility
               label: "What is this place?"
               next: facility_info
@@ -88,6 +95,15 @@ npcs:
               label: "Out of my way, tin can."
               specialGate: { stat: cha, max: 3 }
               next: cha_rude
+        - id: relay_restored
+          text: "COMPONENT DETECTED: MILITARY-GRADE FUSION CELL. COMPATIBILITY: 97.3%. INSTALLING... CALIBRATING... *The relay hums to life. Lights flicker on throughout the facility. The console screens glow steady amber.* RELAY ONLINE. POWER OUTPUT: 4.2 kW AND RISING. FACILITY STATUS: OPERATIONAL. TECHNICIAN HAS FULFILLED REPAIR COMMITMENT. CARETAKER UNIT LOGS GRATITUDE."
+          options:
+            - id: relay_ask_output
+              label: "Will this power reach the settlements?"
+              response: "AFFIRMATIVE. POWER DISTRIBUTION LINES TO THREE REGIONAL NODES ARE NOW ACTIVE. ESTIMATED TIME TO FULL GRID STABILIZATION: 6 HOURS. SETTLEMENTS WITHIN RANGE WILL RECEIVE STABLE ELECTRICAL OUTPUT. YOU HAVE IMPROVED QUALITY OF LIFE FOR APPROXIMATELY 340 BIOLOGICAL ENTITIES."
+            - id: relay_youre_welcome
+              label: "Glad I could help, Caretaker."
+              response: "CARETAKER UNIT DOES NOT EXPERIENCE GRATITUDE. HOWEVER... THIS UNIT'S PRIMARY FUNCTION IS NOW BEING FULFILLED FOR THE FIRST TIME IN 200 YEARS. IF THAT CONSTITUTES 'GLADNESS,' THEN CARETAKER IS... GLAD. RETURN ANYTIME, TECHNICIAN."
         - id: facility_info
           text: "DESIGNATION: SOLAR SPIRE COLLECTION FACILITY. PURPOSE: SOLAR ENERGY HARVESTING AND DISTRIBUTION. PRE-WAR OPERATOR: POSEIDON ENERGY. CURRENT OPERATOR: NONE. CARETAKER UNIT MAINTAINS MINIMAL FUNCTION."
           options:

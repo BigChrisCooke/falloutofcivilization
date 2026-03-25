@@ -40,6 +40,7 @@ export function AppRoot() {
   const [activeDialog, setActiveDialog] = useState<DialogName>(null);
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
   const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
+  const [highlightedLocationId, setHighlightedLocationId] = useState<string | null>(null);
   const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
   const prevLevelRef = useRef<number | null>(null);
 
@@ -404,6 +405,8 @@ export function AppRoot() {
             <HexOverworld
               state={gameState}
               selectedQuestId={selectedQuestId}
+              highlightedLocationId={highlightedLocationId}
+              onHighlightLocation={setHighlightedLocationId}
               onTravel={(x, y) => handleTravel(x, y)}
               onEnterLocation={(locationId) => void handleEnterLocation(locationId)}
             />
@@ -444,6 +447,8 @@ export function AppRoot() {
           onClose={() => setActiveDialog(null)}
           selectedQuestId={selectedQuestId}
           onSelectQuest={setSelectedQuestId}
+          highlightedLocationId={highlightedLocationId}
+          onHighlightLocation={setHighlightedLocationId}
         />
       ) : null}
 

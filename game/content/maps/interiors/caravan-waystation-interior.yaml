@@ -292,5 +292,10 @@ loot:
     description: "A pouch of caravan trail mix — dried brahmin jerky, mutfruit pieces, and roasted nuts. Trail-tested nutrition."
     x: 5
     y: 1
+  - id: courier_satchel
+    label: "Courier's Satchel"
+    description: "A battered leather satchel with the Kings' emblem stitched into the flap. Inside are sealed documents and a handful of caps. The strap is torn — looks like it was ripped off someone in a hurry."
+    x: 2
+    y: 3
 questHooks:
   - kings_missing_courier

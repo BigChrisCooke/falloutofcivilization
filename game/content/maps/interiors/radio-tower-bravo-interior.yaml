@@ -85,6 +85,11 @@ npcs:
         - id: greeting
           text: "*A gaunt figure in a patched duster sits in the corner, headphones around their neck and a 10mm pistol on the desk. Dark eyes watch you from beneath a wide-brimmed hat.* You found the tower. Either you're very curious or very lost. Which is it?"
           options:
+            - id: report_repeater_found
+              label: "I found the repeater station. The signal is real — there's something out there."
+              questGate: { questId: signal_in_the_dark }
+              questComplete: signal_in_the_dark
+              next: repeater_report_accepted
             - id: curious
               label: "Curious. I followed the signal."
               next: followed_signal
@@ -102,6 +107,15 @@ npcs:
               label: "Easy. I'm not here to cause trouble. You look like you could use a friend."
               specialGate: { stat: cha, min: 6 }
               next: friendly_intro
+        - id: repeater_report_accepted
+          text: "*Ghost's hands stop trembling. For the first time since you've met, the tension drains from those dark eyes.* You found it. The repeater is real. That means the signal chain is intact — someone on the other end is still listening. Still alive. *Ghost's voice cracks.* After all this time..."
+          options:
+            - id: repeater_who_listening
+              label: "Who's on the other end?"
+              response: "*Ghost pulls the headphones back on, adjusting the frequency with practiced hands.* Remnants. People who survived the fall and kept the old communication networks alive. If the repeater is functional, I can boost my signal far enough to make contact. You just gave me hope — real hope — for the first time in years."
+            - id: repeater_glad_to_help
+              label: "I'm glad I could help."
+              response: "*Ghost actually smiles — a small, fragile thing, like sunlight through clouds.* You have no idea what this means. I've been sitting in this tower for months, broadcasting into the void, hoping someone would answer. Now, thanks to you, they might. The wasteland just got a little smaller."
         - id: followed_signal
           text: "*Ghost tenses.* You followed the signal. Then you're smarter than most wastelanders — or dumber. That signal wasn't meant for you. It wasn't meant for anyone in this valley."
           options:

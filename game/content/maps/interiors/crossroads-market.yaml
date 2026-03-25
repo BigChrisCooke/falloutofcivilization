@@ -168,6 +168,11 @@ npcs:
         - id: greeting
           text: "*A lean figure in a patched duster leans against the stall, picking at his nails with a knife.* You're staring. That usually means you want something. Or you're a threat. Which is it?"
           options:
+            - id: report_bunker_found
+              label: "I found the Brotherhood Bunker. It's real — hidden in the eastern mountains."
+              questGate: { questId: smugglers_tip }
+              questComplete: smugglers_tip
+              next: bunker_report_accepted
             - id: ask_business
               label: "I hear you deal in information."
               next: info_business
@@ -185,6 +190,15 @@ npcs:
               label: "You look sketchy. What are you hiding?"
               specialGate: { stat: cha, max: 3 }
               next: cha_accusation
+        - id: bunker_report_accepted
+          text: "*Vex's knife stops mid-pick. Those sharp eyes fix on you with new interest.* You actually got in? Most people who go looking for the Brotherhood end up lost in the hills or shot on sight. Color me impressed."
+          options:
+            - id: bunker_what_now
+              label: "What are you going to do with this information?"
+              response: "*Vex flips the knife closed and tucks it away.* Same thing I do with all information — file it away for when it's valuable. Knowing where the Brotherhood is camped gives me leverage. Not against them — I'm not stupid. But knowing things other people don't? That's currency. You just made me richer."
+            - id: bunker_youre_welcome
+              label: "Information delivered. We're square."
+              response: "*Vex nods slowly.* Square. I like that. Clean transactions, no loose ends. You're my kind of operator. If you need information in the future — locations, rumors, who's buying what — come to Vex first. I'll give you the friend rate."
         - id: info_business
           text: "Information, salvage, things that fall off the back of a brahmin. I'm a facilitator. I connect people who have things with people who need things. For a modest fee, naturally."
           options:

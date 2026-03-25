@@ -40,6 +40,12 @@ export class CompanionRepo {
       .run(storyStage, saveId, companionId);
   }
 
+  public markStoryStageViewed(saveId: string, companionId: string, storyStage: number): void {
+    this.db
+      .prepare("UPDATE companion_instances SET story_stage_viewed = ? WHERE save_id = ? AND companion_id = ? AND departed = 0")
+      .run(storyStage, saveId, companionId);
+  }
+
   public remove(saveId: string, companionId: string): void {
     this.db
       .prepare("UPDATE companion_instances SET departed = 1, loyalty = 0 WHERE save_id = ? AND companion_id = ?")

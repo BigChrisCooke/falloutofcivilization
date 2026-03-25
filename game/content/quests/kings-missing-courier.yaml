@@ -8,6 +8,11 @@ objectives:
     type: visit
     target: caravan_waystation
     locationId: caravan_waystation
+  - id: recover_satchel
+    description: "Recover the courier's satchel inside the Caravan Waystation."
+    type: fetch
+    target: courier_satchel
+    locationId: caravan_waystation
   - id: return_satchel
     description: "Return the courier's satchel to The King at Kings' Court."
     type: talk

@@ -36,6 +36,7 @@ export interface OverworldLocationNode {
   interiorMapId: string | null;
   discovered: boolean;
   isCurrent: boolean;
+  isHighlighted: boolean;
   zIndex: number;
 }
 
@@ -107,6 +108,7 @@ export interface OverworldSceneModel {
   tiles: OverworldTileNode[];
   locations: OverworldLocationNode[];
   courier: OverworldActorNode;
+  companion: CompanionActorNode | null;
   routes: Array<{ id: string }>;
   terrainFeatures: Array<{ id: string }>;
   questMarkers: OverworldQuestMarkerNode[];
@@ -143,6 +145,7 @@ export type InteriorInteractionTarget =
   | { kind: "npc"; npcId: string }
   | { kind: "loot"; lootId: string }
   | { kind: "interactable"; interactableId: string }
+  | { kind: "companion"; companionId: string }
   | { kind: "player" };
 
 export type OverworldState = GameState;

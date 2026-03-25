@@ -29,37 +29,16 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
   const [showPlayerPanel, setShowPlayerPanel] = useState(false);
   const [oldTimerChoices, setOldTimerChoices] = useState<string[]>([]);
-  const [companionStoryBubble, setCompanionStoryBubble] = useState<{ companionName: string; stageTitle: string; text: string } | null>(null);
-  const [storyBubbleDismissed, setStoryBubbleDismissed] = useState(false);
+  const [companionDialogue, setCompanionDialogue] = useState<{
+    companionName: string;
+    stageTitle: string;
+    nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+    currentNodeId: string;
+  } | null>(null);
   const [companionReactionBubble, setCompanionReactionBubble] = useState<{ companionName: string; text: string; departed: boolean } | null>(null);
 
   const collectedLoot = useMemo(() => new Set(state.collectedItemIds), [state.collectedItemIds]);
   const collectedActions = useMemo(() => new Set(state.collectedActionIds), [state.collectedActionIds]);
-
-  // Check for companion story dialogue on interior entry
-  useEffect(() => {
-    if (state.companions.length === 0 || storyBubbleDismissed) return;
-    const companion = state.companions[0];
-    if (!companion) return;
-
-    getCompanionStoryDialogue(companion.companionId)
-      .then(({ storyDialogue }) => {
-        if (storyDialogue?.dialogue) {
-          const rootNode = storyDialogue.dialogue.nodes.find(
-            (n) => n.id === storyDialogue.dialogue.rootNodeId
-          );
-          if (rootNode) {
-            setCompanionStoryBubble({
-              companionName: companion.name,
-              stageTitle: storyDialogue.stageTitle,
-              text: rootNode.text
-            });
-          }
-        }
-      })
-      .catch(() => { /* silently fail */ });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map?.id, state.companions.length]);
 
   // Auto-trigger Old Timer dialogue on first entry when SPECIAL not set
   useEffect(() => {
@@ -94,6 +73,29 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
     }
   }
 
+  function handleCompanionClick(companionId: string) {
+    const companion = state.companions.find((c) => c.companionId === companionId);
+    if (!companion) return;
+
+    setActiveNpcId(null);
+    setActiveLootId(null);
+    setActiveInteractableId(null);
+    setShowPlayerPanel(false);
+
+    getCompanionStoryDialogue(companionId)
+      .then(({ storyDialogue }) => {
+        if (storyDialogue?.dialogue) {
+          setCompanionDialogue({
+            companionName: companion.name,
+            stageTitle: storyDialogue.stageTitle,
+            nodes: storyDialogue.dialogue.nodes,
+            currentNodeId: storyDialogue.dialogue.rootNodeId
+          });
+        }
+      })
+      .catch(() => { /* silently fail */ });
+  }
+
   const scene = buildInteriorSceneModel(state, collectedLoot);
 
   const sceneHostRef = useRetainedMapRuntime(scene, interiorRuntimeAdapter, {
@@ -105,6 +107,7 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
       setActiveLootId(null);
       setActiveInteractableId(null);
       setShowPlayerPanel(false);
+      setCompanionDialogue(null);
     },
     onLootClick: (lootId) => {
       if (!collectedLoot.has(lootId)) {
@@ -112,6 +115,7 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
         setActiveNpcId(null);
         setActiveInteractableId(null);
         setShowPlayerPanel(false);
+        setCompanionDialogue(null);
       }
     },
     onInteractableClick: (interactableId) => {
@@ -120,12 +124,17 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
       setActiveNpcId(null);
       setActiveLootId(null);
       setShowPlayerPanel(false);
+      setCompanionDialogue(null);
+    },
+    onCompanionClick: (companionId) => {
+      handleCompanionClick(companionId);
     },
     onPlayerClick: () => {
       setShowPlayerPanel(true);
       setActiveNpcId(null);
       setActiveLootId(null);
       setActiveInteractableId(null);
+      setCompanionDialogue(null);
     }
   });
 
@@ -274,29 +283,61 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
           </div>
         )}
 
-        {/* Companion Story Bubble */}
-        {companionStoryBubble && !storyBubbleDismissed && !activeNpcId && !showCharacterCreation && (
-          <div className="interaction-panel companion-story-panel">
-            <div className="interaction-panel-header">
-              <span className="eyebrow">{companionStoryBubble.companionName} &middot; {companionStoryBubble.stageTitle}</span>
-              <button
-                className="ghost-button interaction-close"
-                type="button"
-                onClick={() => setStoryBubbleDismissed(true)}
-              >
-                ×
-              </button>
-            </div>
-            <p className="companion-story-text">{companionStoryBubble.text}</p>
-            <button
-              className="ghost-button interaction-option"
-              type="button"
-              onClick={() => setStoryBubbleDismissed(true)}
-            >
-              Dismiss
-            </button>
+        {/* Companion Speech Bubble Indicator */}
+        {state.companions[0]?.hasNewStory && !companionDialogue && !activeNpcId && !showCharacterCreation && (
+          <div className="companion-speech-indicator" onClick={() => handleCompanionClick(state.companions[0]!.companionId)}>
+            <span className="companion-speech-name">{state.companions[0]!.name}</span>
+            <span className="companion-speech-dots">...</span>
           </div>
         )}
+
+        {/* Companion Interactive Dialogue */}
+        {companionDialogue && (() => {
+          const currentNode = companionDialogue.nodes.find((n) => n.id === companionDialogue.currentNodeId);
+          if (!currentNode) return null;
+          return (
+            <div className="interaction-panel companion-story-panel">
+              <div className="interaction-panel-header">
+                <span className="eyebrow">{companionDialogue.companionName} &middot; {companionDialogue.stageTitle}</span>
+                <button
+                  className="ghost-button interaction-close"
+                  type="button"
+                  onClick={() => setCompanionDialogue(null)}
+                >
+                  ×
+                </button>
+              </div>
+              <p className="companion-story-text">{currentNode.text}</p>
+              <div className="interaction-options">
+                {currentNode.options.map((option) => (
+                  <button
+                    key={option.id}
+                    className="ghost-button interaction-option"
+                    type="button"
+                    onClick={() => {
+                      if (option.next) {
+                        setCompanionDialogue({ ...companionDialogue, currentNodeId: option.next });
+                      } else {
+                        setCompanionDialogue(null);
+                      }
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+                {currentNode.options.length === 0 && (
+                  <button
+                    className="ghost-button interaction-option"
+                    type="button"
+                    onClick={() => setCompanionDialogue(null)}
+                  >
+                    End conversation
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Companion Reaction Bubble */}
         {companionReactionBubble && (

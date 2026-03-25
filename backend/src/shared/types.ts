@@ -50,6 +50,7 @@ export interface MapDiscoveryRow {
   save_id: string;
   discovered_locations_json: string;
   discovered_tiles_json: string | null;
+  entered_locations_json: string | null;
   updated_at: number;
 }
 
@@ -84,6 +85,7 @@ export interface CompanionInstanceRow {
   recruited_at: number;
   loyalty: number;
   story_stage: number;
+  story_stage_viewed: number;
   departed: number;
 }
 

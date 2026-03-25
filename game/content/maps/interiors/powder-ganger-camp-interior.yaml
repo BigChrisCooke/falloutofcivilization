@@ -60,10 +60,29 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: danger_in_the_hollow
+          nodeId: post_quest_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Eddie leans back in his chair, fingers laced behind his head. For once, he doesn't look like he's about to have someone shot.* Look who it is. The hollow-clearer. My boys can move through that territory without losing limbs now. That's worth something."
+          options:
+            - id: post_ask_gangers
+              label: "How are the Powder Gangers doing?"
+              response: "Better. The hollow was costing us people every week — now we've got a clean supply route to the eastern passes. Morale's up, recruitment's up. You did us a solid. Eddie doesn't forget that."
+            - id: post_ask_trade
+              label: "Got anything worth trading?"
+              response: "For you? Maybe. We've got explosives, obviously. And we've been... acquiring some NCR supplies that fell off the back of a brahmin. Come back when you need something. We'll talk terms."
         - id: greeting
           text: "*A stocky man with a shaved head and prison tattoos sits behind a makeshift desk made from ammo crates. He doesn't stand.* Well, well. Either you're very brave or very stupid walking into my camp. Which is it?"
           options:
+            - id: turn_in_dynamite
+              label: "I've got the dynamite from the hollow. The job's done."
+              questGate: { questId: danger_in_the_hollow }
+              inventoryGate: { itemId: dynamite_stash }
+              consumeItem: true
+              questComplete: danger_in_the_hollow
+              next: dynamite_returned
             - id: brave
               label: "Brave. I'm here to talk, not fight."
               next: here_to_talk
@@ -92,6 +111,15 @@ npcs:
               label: "Is this... outside jail? Or inside jail? I can't tell because of the rocks."
               specialGate: { stat: int, max: 3 }
               next: eddie_int_dumb_response
+        - id: dynamite_returned
+          text: "*Eddie takes the dynamite bundle and weighs it in his hands, a slow grin spreading across his scarred face.* Well, well. You actually did it. Cleared the hollow and brought back the goods. Maybe you're not as soft as you look."
+          options:
+            - id: dynamite_whats_next
+              label: "What happens to the hollow now?"
+              response: "My boys move in, set up a supply route. The creatures down there won't be bothering anyone for a while — and the Powder Gangers remember who made that possible. You've got safe passage through our territory. That's not nothing out here."
+            - id: dynamite_just_business
+              label: "A deal's a deal."
+              response: "*Eddie nods, something almost like respect in his eyes.* Straight talk. I can work with that. The Powder Gangers keep their word too — when it suits us. And right now, keeping our word to you suits us just fine."
         - id: here_to_talk
           text: "*Eddie leans back.* Talk. That's refreshing. Most people who come through here are either NCR grunts trying to look tough or scavengers begging for their lives. What's on your mind?"
           options:

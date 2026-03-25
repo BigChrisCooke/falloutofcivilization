@@ -64,6 +64,11 @@ npcs:
         - id: greeting
           text: "At ease, traveler. Corporal Hayes, NCR 5th Battalion. We don't get many visitors out here — which means you're either lost or looking for work."
           options:
+            - id: report_raiders_cleared
+              label: "The raiders at the overlook are dealt with. The road should be safe now."
+              questGate: { questId: ncr_raider_problem }
+              questComplete: ncr_raider_problem
+              next: raiders_report_accepted
             - id: ask_work
               label: "I'm looking for work. What's the situation?"
               next: raider_problem
@@ -81,6 +86,15 @@ npcs:
               label: "Great. More NCR grunts playing soldier."
               specialGate: { stat: cha, max: 3 }
               next: cha_insult
+        - id: raiders_report_accepted
+          text: "*Hayes stands up straight and snaps a crisp salute.* Outstanding work, civilian. Those raiders have been bleeding us dry for weeks. With them gone, our supply lines are secure and the settlements can breathe easy. I'm putting you in for a commendation."
+          options:
+            - id: report_ask_convoys
+              label: "Will the convoys start running again?"
+              response: "Already radioed HQ. First resupply convoy rolls tomorrow morning. Medical supplies, ammunition, food — everything the valley's been short on. That's on you. The Republic owes you a debt, and I'll make sure they know it."
+            - id: report_just_duty
+              label: "Just doing what needed to be done."
+              response: "*Hayes nods with genuine respect.* That's exactly the kind of attitude this wasteland needs more of. No politics, no angle — just getting the job done. If you ever need NCR support in this valley, you've got it. My word on that."
         - id: raider_problem
           text: "Raiders. They've been hitting our supply convoys on the north road for weeks now. Three shipments lost. HQ won't authorize a patrol — says we're 'overextended.' Typical brass. I need someone unofficial to scout their camp and deal with the problem."
           options:

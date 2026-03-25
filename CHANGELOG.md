@@ -1,9 +1,17 @@
 # Changelog
 
 ## [Unreleased]
-[FEATURE] Companion token renders in interior actors layer with fixed assigned color (amber for Dex)
-[FEATURE] Companion follows player to nearest unoccupied tile behind them, snapping to closest available in tight spaces
+
+## [0.4.0] - 2026-03-25
+[FEATURE] Companion token renders on both interior and overworld maps with assigned color
+[FEATURE] Companion follows player movement, snapping to nearest unoccupied tile
+[FEATURE] Entered-location tracking persisted per save (fog of war foundation)
+[FIX] All 10 quests now have proper NPC turn-in dialogue with questComplete (8 were unreachable)
+[FIX] Water for the Valley uses NPC turn-in instead of auto-completing on location entry
+[IMPROVEMENT] Companion speech indicator only appears when companion has new story content
+[IMPROVEMENT] Companion speech indicator shows name first ("Dex ...") instead of "... Dex"
 [IMPROVEMENT] Recruited companion NPC suppressed from props layer to avoid duplicate rendering
+[IMPROVEMENT] Quest target location highlighted with larger marker on overworld
 
 ## [0.3.0] - 2026-03-20
 

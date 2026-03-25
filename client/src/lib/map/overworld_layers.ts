@@ -1,7 +1,7 @@
 import { Container, Graphics } from "pixi.js";
 
 import { OVERWORLD_ISO_METRICS } from "../iso.js";
-import { createCourierToken, createLocationMarker, createQuestMarker, drawHexSurface, TERRAIN_VISUALS } from "../scene_visuals.js";
+import { createCompanionToken, createCourierToken, createLocationMarker, createQuestMarker, drawHexSurface, TERRAIN_VISUALS } from "../scene_visuals.js";
 
 import { flattenPolygon } from "./hex_geometry.js";
 import type { OverworldLocationNode, OverworldQuestMarkerNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
@@ -22,6 +22,8 @@ export interface OverworldRetainedNodes {
   questMarkerById: Map<string, Container>;
   mist: Graphics | null;
   courier: Container | null;
+  companionToken: Container | null;
+  companionId: string | null;
 }
 
 export function createOverworldLayerContainers(): OverworldLayerContainers {
@@ -48,7 +50,9 @@ export function createOverworldRetainedNodes(): OverworldRetainedNodes {
     markerById: new Map(),
     questMarkerById: new Map(),
     mist: null,
-    courier: null
+    courier: null,
+    companionToken: null,
+    companionId: null
   };
 }
 
@@ -258,6 +262,14 @@ function syncPropLayer(
     }
 
     syncMarkerNode(marker, location);
+
+    if (location.isHighlighted) {
+      marker.alpha = 1.0;
+      marker.scale.set(1.4);
+    } else {
+      marker.alpha = 1.0;
+      marker.scale.set(1.0);
+    }
   }
 }
 
@@ -314,6 +326,27 @@ function syncActorLayer(
 
   retainedNodes.courier.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
   retainedNodes.courier.zIndex = scene.courier.zIndex;
+
+  // Companion token
+  if (scene.companion) {
+    if (retainedNodes.companionId !== scene.companion.companionId) {
+      if (retainedNodes.companionToken) {
+        layers.actors.removeChild(retainedNodes.companionToken);
+        retainedNodes.companionToken.destroy({ children: true });
+      }
+      retainedNodes.companionToken = createCompanionToken(scene.companion.tokenColor);
+      retainedNodes.companionId = scene.companion.companionId;
+      layers.actors.addChild(retainedNodes.companionToken);
+    }
+
+    retainedNodes.companionToken!.position.set(scene.companion.anchor.x, scene.companion.anchor.y);
+    retainedNodes.companionToken!.zIndex = scene.companion.zIndex;
+  } else if (retainedNodes.companionToken) {
+    layers.actors.removeChild(retainedNodes.companionToken);
+    retainedNodes.companionToken.destroy({ children: true });
+    retainedNodes.companionToken = null;
+    retainedNodes.companionId = null;
+  }
 }
 
 export function syncOverworldScene(

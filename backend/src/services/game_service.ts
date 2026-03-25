@@ -69,6 +69,7 @@ export class GameService {
     const regionLocations = region ? getRegionLocations(content, region.id) : [];
     const overworldMap = region ? getOverworldMap(content, region) : null;
     const isOnOverworld = worldState.current_screen === "overworld";
+    const enteredLocationIds = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
     const normalizedState =
       region && overworldMap && isOnOverworld
         ? this.ensureExplorationState(saveId, worldState, mapDiscovery)
@@ -128,7 +129,9 @@ export class GameService {
                 completed = true;
               } else if (o.type === "fetch") {
                 completed = collectedItemIds.includes(o.target);
-              } else if (o.type === "visit" || o.type === "kill") {
+              } else if (o.type === "visit") {
+                completed = enteredLocationIds.includes(o.target);
+              } else if (o.type === "kill") {
                 completed = normalizedState.discoveredLocationIds.includes(o.target);
               }
               return { id: o.id, description: o.description, type: o.type, target: o.target, locationId: o.locationId, completed };
@@ -167,6 +170,7 @@ export class GameService {
           loyalty: row.loyalty,
           storyStage: row.story_stage,
           storyStageTitle: currentStage?.title ?? null,
+          hasNewStory: row.story_stage > row.story_stage_viewed,
           recruitedAt: row.recruited_at
         };
       }),
@@ -284,6 +288,11 @@ export class GameService {
       }
     }
 
+    // Mark this stage as viewed so the "new story" indicator disappears
+    if (companion.story_stage_viewed < companion.story_stage) {
+      this.companionRepo.markStoryStageViewed(saveId, companionId, companion.story_stage);
+    }
+
     return {
       dialogue: { ...dialogueTree, rootNodeId: effectiveRootNodeId },
       stageTitle: currentStage.title
@@ -381,6 +390,7 @@ export class GameService {
     }
 
     const spawnPoint = getInteriorSpawnPoint(getInteriorMap(content, location.interiorMapId));
+    const now = Date.now();
 
     this.gameStateRepo.updateWorldState({
       ...worldState,
@@ -390,8 +400,19 @@ export class GameService {
       current_panel: "location",
       player_x: spawnPoint.x,
       player_y: spawnPoint.y,
-      updated_at: Date.now()
+      updated_at: now
     });
+
+    // Record this location as entered (for visit objective tracking)
+    const enteredLocations = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
+    if (!enteredLocations.includes(location.id)) {
+      enteredLocations.push(location.id);
+      this.gameStateRepo.updateMapDiscovery({
+        ...mapDiscovery,
+        entered_locations_json: JSON.stringify(enteredLocations),
+        updated_at: now
+      });
+    }
 
     // Check companion story progression when entering a location
     this.checkCompanionStoryProgression(saveId);
@@ -454,6 +475,7 @@ export class GameService {
         save_id: saveId,
         discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
         discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
+        entered_locations_json: mapDiscovery.entered_locations_json,
         updated_at: now
       }
     );
@@ -643,6 +665,7 @@ export class GameService {
       ...mapDiscovery,
       discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
       discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
+      entered_locations_json: mapDiscovery.entered_locations_json,
       updated_at: Date.now()
     });
   }

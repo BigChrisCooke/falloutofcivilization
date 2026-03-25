@@ -13,6 +13,7 @@ export interface InteriorRuntimeHandlers {
   onNpcClick: (npcId: string) => void;
   onLootClick: (lootId: string) => void;
   onInteractableClick: (interactableId: string) => void;
+  onCompanionClick: (companionId: string) => void;
   onPlayerClick: () => void;
 }
 
@@ -179,6 +180,11 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
           handlers.onInteractableClick(target.interactableId);
         }
       })();
+      return;
+    }
+
+    if (target.kind === "companion") {
+      handlers.onCompanionClick(target.companionId);
       return;
     }
 

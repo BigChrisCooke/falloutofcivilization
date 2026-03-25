@@ -6,12 +6,14 @@ import { overworldRuntimeAdapter } from "../lib/map/overworld_adapter.js";
 interface HexOverworldProps {
   state: GameState;
   selectedQuestId?: string | null;
+  highlightedLocationId: string | null;
+  onHighlightLocation: (locationId: string | null) => void;
   onTravel: (x: number, y: number) => Promise<void>;
   onEnterLocation: (locationId: string) => void;
 }
 
-export function HexOverworld({ state, selectedQuestId, onTravel, onEnterLocation }: HexOverworldProps) {
-  const scene = buildOverworldSceneModel(state, selectedQuestId);
+export function HexOverworld({ state, selectedQuestId, highlightedLocationId, onHighlightLocation, onTravel, onEnterLocation }: HexOverworldProps) {
+  const scene = buildOverworldSceneModel(state, selectedQuestId, highlightedLocationId);
   const sceneHostRef = useRetainedMapRuntime(scene, overworldRuntimeAdapter, {
     onTravel,
     onEnterLocation
@@ -45,7 +47,11 @@ export function HexOverworld({ state, selectedQuestId, onTravel, onEnterLocation
           <h3>Known locations</h3>
           <div className="location-chip-list">
             {discoveredLocations.map((location) => (
-              <span key={location.id} className={`location-chip ${location.atPlayerPosition ? "is-current" : ""}`}>
+              <span
+                key={location.id}
+                className={`location-chip${location.atPlayerPosition ? " is-current" : ""}${highlightedLocationId === location.id ? " is-selected" : ""}`}
+                onClick={() => onHighlightLocation(highlightedLocationId === location.id ? null : location.id)}
+              >
                 {location.name}
               </span>
             ))}

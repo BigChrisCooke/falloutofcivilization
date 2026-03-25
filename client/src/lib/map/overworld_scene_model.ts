@@ -4,12 +4,14 @@ import {
   getHexBoardSize,
   getMarkerAnchor,
   getTileZIndex,
+  hexDistance,
   projectHex,
   toTileKey
 } from "../iso.js";
 
 import { getHexWorldPolygon } from "./hex_geometry.js";
-import type { OverworldLocationNode, OverworldQuestMarkerNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
+import { hexNeighbors } from "./hex_pathfinding.js";
+import type { CompanionActorNode, OverworldLocationNode, OverworldQuestMarkerNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
 
 function getPrimaryLocation(locations: LocationSummary[]): LocationSummary | null {
   return locations[0] ?? null;
@@ -19,7 +21,7 @@ function getPrimaryEnterableLocation(locations: LocationSummary[]): LocationSumm
   return locations.find((location) => location.interiorMapId) ?? null;
 }
 
-export function buildOverworldSceneModel(state: GameState, selectedQuestId?: string | null): OverworldSceneModel | null {
+export function buildOverworldSceneModel(state: GameState, selectedQuestId?: string | null, highlightedLocationId?: string | null): OverworldSceneModel | null {
   const overworldMap = state.overworldMap;
   const playerX = state.worldState.player_x;
   const playerY = state.worldState.player_y;
@@ -89,6 +91,7 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
         interiorMapId: location.interiorMapId,
         discovered: location.discovered,
         isCurrent,
+        isHighlighted: location.id === highlightedLocationId,
         zIndex: getTileZIndex(location.position) + 50
       };
     })
@@ -130,6 +133,35 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
     });
   }
 
+  // Compute companion position on overworld (mirrors interior_scene_model.ts pattern)
+  let companion: CompanionActorNode | null = null;
+  const activeCompanion = state.companions[0];
+
+  if (activeCompanion?.tokenColor) {
+    const neighbors = hexNeighbors(currentPoint)
+      .filter((n) => {
+        const key = toTileKey(n);
+        return discoveredTiles.has(key) && key !== currentTileKey;
+      })
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+
+    const companionPoint = neighbors[0] ?? tiles
+      .filter((t) => t.discovered && t.key !== currentTileKey)
+      .sort((a, b) => hexDistance(currentPoint, a.point) - hexDistance(currentPoint, b.point))[0]?.point
+      ?? null;
+
+    if (companionPoint) {
+      companion = {
+        id: `companion-${activeCompanion.companionId}`,
+        companionId: activeCompanion.companionId,
+        tokenColor: activeCompanion.tokenColor,
+        point: companionPoint,
+        anchor: getCourierAnchor(companionPoint),
+        zIndex: getTileZIndex(companionPoint) + 85
+      };
+    }
+  }
+
   return {
     mapId: overworldMap.id,
     mapName: overworldMap.name,
@@ -145,6 +177,7 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
       anchor: getCourierAnchor(currentPoint),
       zIndex: getTileZIndex(currentPoint) + 90
     },
+    companion,
     routes: [],
     terrainFeatures: [],
     questMarkers,

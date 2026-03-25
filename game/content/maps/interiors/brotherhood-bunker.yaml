@@ -169,6 +169,13 @@ npcs:
         - id: greeting
           text: "*A thin man in a worn lab coat looks up from a disassembled circuit board, magnifying goggles making his eyes comically large.* Oh! A visitor! Ramos didn't shoot you — that's a good sign. I'm Scribe Ibsen. Welcome to my humble workshop."
           options:
+            - id: turn_in_holotape
+              label: "I found an encrypted holotape at the crashed Vertibird. This is what you're looking for."
+              questGate: { questId: brotherhood_lost_tech }
+              inventoryGate: { itemId: encrypted_holotape }
+              consumeItem: true
+              questComplete: brotherhood_lost_tech
+              next: holotape_returned
             - id: ask_work
               label: "What are you working on?"
               next: current_project
@@ -189,6 +196,15 @@ npcs:
               label: "Oooh, shiny bits! Can I touch?"
               specialGate: { stat: int, max: 3 }
               next: dumb_touch
+        - id: holotape_returned
+          text: "*Ibsen's hands tremble as he takes the holotape. He inserts it into a reader and his eyes go wide behind those ridiculous goggles.* Communications array schematics... signal encryption protocols... a Poseidon Energy relay manifest! This is EVERYTHING! You beautiful, brilliant, incredible person!"
+          options:
+            - id: holotape_whats_on_it
+              label: "What does this mean for the Brotherhood?"
+              response: "It means we're years ahead of where we were yesterday. With these schematics, I can design a working relay system. Long-range communications, restored supply lines, contact with other chapters... you've changed the game entirely. Ramos might actually smile."
+            - id: holotape_youre_welcome
+              label: "Just doing my part."
+              response: "*Ibsen clutches the holotape like it's made of gold — which, to him, it might as well be.* Your 'part' just advanced human knowledge by decades. The Brotherhood won't forget this. I won't forget this. Now if you'll excuse me, I have schematics to decode and approximately zero sleep planned for the next week."
         - id: current_project
           text: "Trying to reverse-engineer a pre-war water purification controller. If I can crack it, we could build new purifiers from scrap parts. Clean water for settlements, no more dependence on old tech. It's slow going, but every circuit tells a story."
           options:

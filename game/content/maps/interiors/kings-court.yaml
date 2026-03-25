@@ -76,6 +76,13 @@ npcs:
         - id: greeting
           text: "*A man in a perfectly maintained leather jacket and impeccable pompadour looks up from his throne.* Well, well. A new face in the Court. Welcome, friend. I'm The King. And before you ask — yes, that's my real title. Around here, it means something."
           options:
+            - id: turn_in_satchel
+              label: "I found your courier's satchel at the Caravan Waystation."
+              questGate: { questId: kings_missing_courier }
+              inventoryGate: { itemId: courier_satchel }
+              consumeItem: true
+              questComplete: kings_missing_courier
+              next: satchel_returned
             - id: ask_kings
               label: "Who are the Kings?"
               next: about_kings
@@ -96,6 +103,15 @@ npcs:
               label: "You named yourself 'The King'? Bit much, don't you think?"
               specialGate: { stat: cha, max: 3 }
               next: cha_disrespect
+        - id: satchel_returned
+          text: "*The King takes the battered satchel and turns it over in his hands, running a finger across the Kings' emblem.* Danny's satchel... this is his, alright. *He opens it, scans the documents inside, then looks up.* The dispatches are intact. And the caps. You could've kept them, but you didn't. That tells me everything I need to know about you, friend. The Kings won't forget this."
+          options:
+            - id: ask_about_danny
+              label: "What about Danny? Is he alright?"
+              response: "We'll send Pacer to retrace the route now that we know where to look. If Danny's out there, we'll find him. You've given us the lead we needed."
+            - id: just_glad_to_help
+              label: "Just doing the right thing."
+              response: "*The King nods slowly.* And that's exactly why the wasteland needs more people like you. You're welcome in the Court anytime."
         - id: about_kings
           text: "We're a family. Started in Freeside — found an old building full of holotapes about a man called Elvis. The way he carried himself, the way people loved him... we figured the wasteland could use some of that. Style. Dignity. A code."
           options:

@@ -99,11 +99,12 @@ export class GameStateRepo {
   public updateMapDiscovery(mapDiscovery: MapDiscoveryRow): void {
     this.db
       .prepare(
-        "UPDATE map_discovery SET discovered_locations_json = ?, discovered_tiles_json = ?, updated_at = ? WHERE save_id = ?"
+        "UPDATE map_discovery SET discovered_locations_json = ?, discovered_tiles_json = ?, entered_locations_json = ?, updated_at = ? WHERE save_id = ?"
       )
       .run(
         mapDiscovery.discovered_locations_json,
         mapDiscovery.discovered_tiles_json,
+        mapDiscovery.entered_locations_json,
         mapDiscovery.updated_at,
         mapDiscovery.save_id
       );

@@ -10,6 +10,8 @@ interface PipBoyOverlayProps {
   onClose: () => void;
   selectedQuestId: string | null;
   onSelectQuest: (questId: string | null) => void;
+  highlightedLocationId: string | null;
+  onHighlightLocation: (locationId: string | null) => void;
 }
 
 const SPECIAL_LABELS: Record<string, string> = {
@@ -32,10 +34,9 @@ function karmaLabel(karma: number): string {
   return "Demon";
 }
 
-export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }: PipBoyOverlayProps) {
+export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, highlightedLocationId, onHighlightLocation }: PipBoyOverlayProps) {
   const [tab, setTab] = useState<PipBoyTab>("stats");
   const [selectedItem, setSelectedItem] = useState<GameState["inventory"][number] | null>(null);
-  const [highlightedLocationId, setHighlightedLocationId] = useState<string | null>(null);
   const special = state.playerCharacter.special;
   const karma = state.playerCharacter.karma;
   const quests = state.questState;
@@ -135,7 +136,7 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                           ))}
                         </ul>
                       )}
-                      {quest.activeMapMarker && (
+                      {quest.activeMapMarker && !quest.objectives.some(o => o.description === quest.activeMapMarker?.label) && (
                         <p className="quest-marker-label">
                           <span className="quest-marker-icon">&#9670;</span>
                           {quest.activeMapMarker.label}
@@ -288,7 +289,7 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                     <div
                       key={loc.id}
                       className={`location-entry clickable${highlightedLocationId === loc.id ? " is-selected" : ""}`}
-                      onClick={() => setHighlightedLocationId(highlightedLocationId === loc.id ? null : loc.id)}
+                      onClick={() => onHighlightLocation(highlightedLocationId === loc.id ? null : loc.id)}
                     >
                       <span className="location-name">{loc.name}</span>
                       <span className="subtle">{loc.type}</span>

@@ -203,6 +203,7 @@ export interface GameState {
     loyalty: number;
     storyStage: number;
     storyStageTitle: string | null;
+    hasNewStory: boolean;
     recruitedAt: number;
   }>;
   factionStanding: Record<string, number>;

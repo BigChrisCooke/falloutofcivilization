@@ -63,6 +63,11 @@ npcs:
         - id: greeting
           text: "*A weathered man in a duster and wide-brimmed hat looks up from a map.* Ranger Jackson, Station Delta. If you've made it this far, you're either tough or lucky. Have a seat — water's in the barrel."
           options:
+            - id: report_bounty_complete
+              label: "The raider boss at the overlook has been dealt with. Bounty's done."
+              questGate: { questId: ranger_bounty }
+              questComplete: ranger_bounty
+              next: bounty_report_accepted
             - id: ask_rangers
               label: "Tell me about the Rangers."
               next: ranger_info
@@ -83,6 +88,15 @@ npcs:
               label: "Nice hat. You compensating for something?"
               specialGate: { stat: cha, max: 3 }
               next: cha_hat_insult
+        - id: bounty_report_accepted
+          text: "*Jackson sets down his pen and leans back, the faintest hint of a smile crossing that weathered face.* Confirmed kill on the raider boss. That's one less problem for the travelers on that road. Rangers don't hand out praise lightly — but you earned it."
+          options:
+            - id: bounty_ask_road
+              label: "Will the roads be safer now?"
+              response: "Safer, yes. Safe? Never — not in the wasteland. But taking out the leadership breaks their coordination. The rank and file will scatter, fight each other for scraps. Gives us months of breathing room. I'll update the travel advisories."
+            - id: bounty_just_business
+              label: "Bounty's a bounty. Just collecting what's owed."
+              response: "*Jackson tips his hat.* Professional. I can respect that. Your caps are earned, and your name goes in the Station log as reliable. That means something to the Rangers — next time you need our help, you won't have to ask twice."
         - id: ranger_info
           text: "Desert Rangers. We've been patrolling the wastes since before the NCR was a gleam in Tandi's eye. Merged with them officially, but out here? We operate our own way. Scout, report, and protect. No politics, no bureaucracy. Just the mission."
           options:

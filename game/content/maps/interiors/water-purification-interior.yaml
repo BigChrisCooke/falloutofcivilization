@@ -68,6 +68,11 @@ npcs:
         - id: greeting
           text: "*A woman in a grease-stained NCR jumpsuit looks up from a clipboard, dark circles under her eyes.* Another visitor. If you're here about the water, take a number. If you're here to help, grab a wrench."
           options:
+            - id: have_regulator
+              label: "I found a pump regulator. Will this work?"
+              questGate: { questId: water_for_the_valley }
+              inventoryGate: { itemId: pump_regulator }
+              next: install_regulator
             - id: ask_water_crisis
               label: "What's wrong with the water?"
               next: water_crisis
@@ -153,6 +158,7 @@ npcs:
               label: "Here. One military-grade pump regulator, as requested."
               inventoryGate: { itemId: pump_regulator }
               consumeItem: true
+              questComplete: water_for_the_valley
               response: "*Torres takes the regulator with trembling hands, turning it over carefully.* This is it. This is exactly what we need. Give me a few hours and the valley will have clean water again. You just saved a lot of lives. The NCR won't forget this."
               factionDelta: { factionId: ncr, delta: 10 }
               karmaDelta: 5
