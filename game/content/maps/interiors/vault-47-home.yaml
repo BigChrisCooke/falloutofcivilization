@@ -162,7 +162,7 @@ npcs:
               label: "I'll save your vault — but I expect the best room when this is over."
               specialGate: { stat: cha, min: 5 }
               questGrant: save_vault_47
-              factionDelta: { factionId: vault-dwellers, delta: 3 }
+              factionDelta: { factionId: vault_dwellers, delta: 3 }
               next: quest_accepted_cha
             - id: dumb_accept
               label: "Me find tool thing! Me fix tube house!"

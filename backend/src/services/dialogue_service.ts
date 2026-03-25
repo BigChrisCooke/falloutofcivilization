@@ -68,6 +68,8 @@ export interface FilteredDialogueOption {
   grantsQuest: string | null;
   returnToRoot: boolean;
   alreadySelected: boolean;
+  capsCost: number | null;
+  canAfford: boolean;
 }
 
 export interface QuestCompletionResult {
@@ -188,6 +190,16 @@ export class DialogueService {
     }
 
     const wasAlreadySelected = npcState.selected.includes(optionId);
+    const isPurchase = !!option.capsCost;
+
+    // Validate caps cost before proceeding
+    if (isPurchase) {
+      const capsItem = this.inventoryRepo.findItem(saveId, "caps");
+      const currentCaps = capsItem?.quantity ?? 0;
+      if (currentCaps < option.capsCost!) {
+        throw new Error(`Not enough caps. You need ${option.capsCost} but only have ${currentCaps}.`);
+      }
+    }
 
     const result: DialogueSelectResult = {
       response: option.response ?? null,
@@ -202,7 +214,30 @@ export class DialogueService {
       alreadySelected: wasAlreadySelected
     };
 
-    // Side effects only trigger the FIRST time an option is selected
+    // Purchases are always repeatable; other side effects only trigger once
+    if (isPurchase) {
+      // Deduct caps
+      const capsItem = this.inventoryRepo.findItem(saveId, "caps")!;
+      this.inventoryRepo.updateQuantity(saveId, "caps", capsItem.quantity - option.capsCost!);
+      result.stateUpdated = true;
+
+      // Grant purchased items
+      if (option.grantItems) {
+        for (const grant of option.grantItems) {
+          this.inventoryRepo.addItem({
+            save_id: saveId,
+            item_id: grant.itemId,
+            label: grant.label,
+            owned_by: null,
+            quantity: grant.quantity,
+            description: null,
+            collected_at: Date.now()
+          });
+        }
+      }
+    }
+
+    // Non-purchase side effects only trigger the FIRST time an option is selected
     if (!wasAlreadySelected) {
       if (option.questGrant) {
         result.questGranted = this.grantQuest(saveId, option.questGrant);
@@ -237,7 +272,8 @@ export class DialogueService {
         result.stateUpdated = true;
       }
 
-      if (option.grantItems) {
+      // Grant items (non-purchase grants are first-time only)
+      if (!isPurchase && option.grantItems) {
         for (const grant of option.grantItems) {
           this.inventoryRepo.addItem({
             save_id: saveId,
@@ -487,16 +523,26 @@ export class DialogueService {
         (saveId ? this.passesInventoryGate(option, saveId) : !option.inventoryGate) &&
         (saveId ? this.passesQuestGate(option, saveId) : !option.questGate)
       )
-      .map((option) => ({
-        id: option.id,
-        label: option.label,
-        specialGateLabel: saveId ? this.formatGateLabel(option, saveId) : this.formatGateLabel(option, ""),
-        hasResponse: !!option.response,
-        hasNext: !!option.next,
-        grantsQuest: option.questGrant ?? null,
-        returnToRoot: option.returnToRoot ?? false,
-        alreadySelected: selectedOptionIds.includes(option.id)
-      }));
+      .map((option) => {
+        const capsCost = option.capsCost ?? null;
+        let canAfford = true;
+        if (capsCost !== null && saveId) {
+          const capsItem = this.inventoryRepo.findItem(saveId, "caps");
+          canAfford = (capsItem?.quantity ?? 0) >= capsCost;
+        }
+        return {
+          id: option.id,
+          label: option.label,
+          specialGateLabel: saveId ? this.formatGateLabel(option, saveId) : this.formatGateLabel(option, ""),
+          hasResponse: !!option.response,
+          hasNext: !!option.next,
+          grantsQuest: option.questGrant ?? null,
+          returnToRoot: option.returnToRoot ?? false,
+          alreadySelected: selectedOptionIds.includes(option.id),
+          capsCost,
+          canAfford
+        };
+      });
 
     // Auto-inject "Let's talk about something else" on non-root nodes
     if (!isRoot && !filteredOptions.some((o) => o.returnToRoot)) {
@@ -508,7 +554,9 @@ export class DialogueService {
         hasNext: true,
         grantsQuest: null,
         returnToRoot: true,
-        alreadySelected: false
+        alreadySelected: false,
+        capsCost: null,
+        canAfford: true
       });
     }
 
@@ -642,6 +690,9 @@ export class DialogueService {
         });
       }
     }
+
+    // Award 50 XP for quest completion
+    this.saveRepo.awardXp(saveId, 50);
 
     return result;
   }

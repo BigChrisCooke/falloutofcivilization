@@ -219,5 +219,11 @@ loot:
     ownedBy: ncr
     x: 2
     y: 3
+  - id: hunting_rifle
+    label: Hunting Rifle
+    description: "A solid bolt-action hunting rifle. Accurate, reliable, and common enough that ammo is easy to find. A wasteland staple."
+    ownedBy: ncr
+    x: 5
+    y: 2
 questHooks:
   - ncr_raider_problem

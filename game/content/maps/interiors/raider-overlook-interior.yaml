@@ -311,6 +311,16 @@ loot:
     ownedBy: traders
     x: 6
     y: 4
+  - id: pipe_rifle
+    label: Pipe Rifle
+    description: "A weapon cobbled together from pipe fittings and scrap. It's ugly, unreliable, and effective enough to kill. Welcome to the wasteland."
+    x: 3
+    y: 3
+  - id: combat_knife
+    label: Combat Knife
+    description: "A military-grade combat knife. Keeps an edge like nothing else. Every wastelander should have one."
+    x: 5
+    y: 2
 questHooks:
   - ranger_bounty
   - ncr_raider_problem

@@ -7,7 +7,7 @@ position:
   y: 4
 interiorMapId: crashed_vertibird_interior
 factionTags:
-  - old-world
+  - old_world
 questTags:
   - salvage
 encounterFlags:

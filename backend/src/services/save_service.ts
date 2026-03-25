@@ -66,6 +66,7 @@ export class SaveService {
       save_id: save.id,
       name: "The Courier",
       level: 1,
+      xp: 0,
       archetype: "survivor",
       special_json: null,
       karma: 0,
@@ -103,9 +104,17 @@ export class SaveService {
     const factionStanding: FactionStandingRow = {
       save_id: save.id,
       standings_json: JSON.stringify({
-        vaultDwellers: 0,
+        vault_dwellers: 0,
         traders: 0,
-        raiders: 0
+        raiders: 0,
+        ncr: 0,
+        brotherhood: 0,
+        kings: 0,
+        powder_gangers: 0,
+        rangers: 0,
+        gun_runners: 0,
+        caesar_legion: 0,
+        old_world: 0
       }),
       updated_at: now
     };

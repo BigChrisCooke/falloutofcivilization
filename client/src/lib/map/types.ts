@@ -133,7 +133,8 @@ export interface InteriorSceneModel {
 export type MapInteractionTarget =
   | { kind: "none" }
   | { kind: "tile"; point: GridPoint; tileKey: string }
-  | { kind: "location"; locationId: string; tileKey: string };
+  | { kind: "location"; locationId: string; tileKey: string }
+  | { kind: "fog"; point: GridPoint; tileKey: string };
 
 export type InteriorInteractionTarget =
   | { kind: "none" }

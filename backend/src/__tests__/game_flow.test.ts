@@ -226,7 +226,7 @@ describe("game flow", () => {
     });
 
     expect(tavernExitBlockedResponse.status).toBe(400);
-    expect(tavernExitBlockedResponse.body.error).toContain("Move onto the exit tile");
+    expect(tavernExitBlockedResponse.body.error).toContain("Move closer to the exit");
 
     const tavernBackToWorldResponse = await agent.post("/api/game/screen").send({
       screen: "overworld"

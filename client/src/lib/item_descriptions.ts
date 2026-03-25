@@ -674,6 +674,254 @@ const SPECIAL_ITEM_DESCRIPTIONS: SpecialDescriptionMap = {
     }
   ],
 
+  "9mm_pistol": [
+    {
+      condition: { stat: "per", min: 7 },
+      text: "Standard 9mm, well-maintained. The sights are factory-aligned — unusual for wasteland hardware. Reliable out to 25 meters."
+    },
+    {
+      condition: { stat: "int", max: 3 },
+      text: "Pointy-shooty thing! Pull the clicky part and it goes BANG! Fun!"
+    },
+    {
+      text: "A dependable 9mm pistol. Nothing fancy, but it goes bang when you pull the trigger. That's all you need."
+    }
+  ],
+
+  "10mm_pistol": [
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Good weight, solid recoil. The 10mm round hits harder than a 9 — you can feel the difference in the kick."
+    },
+    {
+      condition: { stat: "per", min: 7 },
+      text: "N99 pattern, post-war manufacture. The slide has been re-blued and the feed ramp polished. Someone took care of this one."
+    },
+    {
+      text: "The 10mm pistol — the wasteland's workhorse sidearm. A step up from a 9mm, and ammunition is everywhere."
+    }
+  ],
+
+  "357_magnum": [
+    {
+      condition: { stat: "lck", min: 7 },
+      text: "Six rounds, six chances to make your own luck. A revolver this clean practically begs to be spun."
+    },
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Heavy cylinder, serious recoil. The .357 round doesn't mess around — neither should you."
+    },
+    {
+      text: "A .357 magnum revolver. The cylinder clicks with satisfying precision. A classic weapon for a classic wasteland."
+    }
+  ],
+
+  laser_pistol: [
+    {
+      condition: { stat: "int", min: 7 },
+      text: "Wattz 1000 laser pistol. The focusing crystal is slightly misaligned — a quarter-turn of the adjustment screw would improve coherence by about 15%."
+    },
+    {
+      condition: { stat: "int", max: 3 },
+      text: "Magic light gun! Makes red zappy beam! Don't point at face. ...Me already pointed at face."
+    },
+    {
+      text: "A pre-war energy weapon that fires concentrated beams of light. Quiet, accurate, and unsettling to watch in action."
+    }
+  ],
+
+  plasma_pistol: [
+    {
+      condition: { stat: "int", min: 7 },
+      text: "Superheated plasma contained in a magnetic bottle and projected at range. The engineering required for this to not explode in your hand is genuinely impressive."
+    },
+    {
+      condition: { stat: "end", min: 7 },
+      text: "The grip gets uncomfortably hot after sustained firing. The blisters are worth it for what this does to the target."
+    },
+    {
+      text: "A plasma pistol — fires bolts of superheated green plasma. Devastating on impact. The hum it makes when charged is deeply unsettling."
+    }
+  ],
+
+  hunting_rifle: [
+    {
+      condition: { stat: "per", min: 7 },
+      text: "Bolt-action, walnut stock, iron sights zeroed at 200 yards. The barrel is clean and the action is smooth. A marksman's tool."
+    },
+    {
+      condition: { stat: "str", max: 3 },
+      text: "Heavy. The recoil might knock you flat. Maybe stick to something lighter?"
+    },
+    {
+      text: "A solid bolt-action hunting rifle. Accurate, reliable, and common enough that ammo is easy to find. A wasteland staple."
+    }
+  ],
+
+  service_rifle: [
+    {
+      condition: { stat: "per", min: 7 },
+      text: "NCR-issue, semi-automatic, 5.56mm. The receiver markings suggest Boneyard manufacture. Well-balanced with a 20-round magazine."
+    },
+    {
+      condition: { stat: "int", min: 7 },
+      text: "Based on the AR-15 platform — pre-war design, post-war necessity. The gas system has been modified for wasteland reliability over precision."
+    },
+    {
+      text: "A semi-automatic service rifle. Standard NCR military issue, but effective in anyone's hands."
+    }
+  ],
+
+  laser_rifle: [
+    {
+      condition: { stat: "int", min: 7 },
+      text: "Wattz 2000 laser rifle. The longer beam path allows for tighter coherence than the pistol variant. The microfusion cell snaps in clean — good contacts."
+    },
+    {
+      text: "A pre-war laser rifle. Fires a focused beam of light that can cut through most wasteland armor. Ammunition is the hard part."
+    }
+  ],
+
+  plasma_rifle: [
+    {
+      condition: { stat: "int", min: 7 },
+      text: "Urban Plasma Rifle — the toroid containment field is remarkably stable. Winchester Arms really knew what they were doing. Each shot costs a small fortune in microfusion cells."
+    },
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Heavy weapon, heavier impact. The plasma bolt vaporizes on contact. Whatever you hit won't be getting back up."
+    },
+    {
+      text: "A plasma rifle. Fires bolts of superheated plasma at range. Rare, expensive, and absolutely devastating."
+    }
+  ],
+
+  sawed_off_shotgun: [
+    {
+      condition: { stat: "agl", min: 7 },
+      text: "Compact, concealable, and fast on the draw. Two barrels, two chances. Make them count."
+    },
+    {
+      condition: { stat: "str", max: 3 },
+      text: "The kick on this might literally knock you down. Brace yourself. Seriously."
+    },
+    {
+      text: "A sawed-off double-barrel shotgun. What it lacks in range, it makes up for in pure close-quarters devastation."
+    }
+  ],
+
+  combat_shotgun: [
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Semi-auto, drum magazine. The recoil is manageable if you've got the arms for it. You do."
+    },
+    {
+      condition: { stat: "per", min: 7 },
+      text: "Effective range about 30 meters with standard buckshot. The drum holds 12 rounds. The spread pattern widens fast — this is a hallway weapon."
+    },
+    {
+      text: "A semi-automatic combat shotgun with a drum magazine. Room-clearing made easy. Not subtle, but extremely effective."
+    }
+  ],
+
+  combat_knife: [
+    {
+      condition: { stat: "agl", min: 7 },
+      text: "Balanced for throwing or close work. The edge is razor-sharp — someone recently honed it. Quick hands make this lethal."
+    },
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Military-grade steel. In your hands, this isn't just a knife — it's a statement."
+    },
+    {
+      text: "A military-grade combat knife. Keeps an edge like nothing else. Every wastelander should have one."
+    }
+  ],
+
+  baseball_bat: [
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Solid ash, good swing weight. You could send a raider's head into the cheap seats with this thing."
+    },
+    {
+      condition: { stat: "int", max: 3 },
+      text: "BONK STICK! Hehe. Bonk bonk bonk!"
+    },
+    {
+      text: "A pre-war baseball bat. The American pastime takes on a whole new meaning in the wasteland."
+    }
+  ],
+
+  tire_iron: [
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Heavy steel with good leverage. Meant for lug nuts, but it'll crack a skull just as easily."
+    },
+    {
+      text: "A sturdy tire iron. The original owner used it on cars. The wasteland finds other uses for heavy blunt objects."
+    }
+  ],
+
+  super_sledge: [
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Kinetic energy storage system in the head. When you swing, it RELEASES. The impact is genuinely terrifying. You love it."
+    },
+    {
+      condition: { stat: "str", max: 3 },
+      text: "You can barely lift this thing. It's heavier than you expected anything could be. Maybe just... leave it for someone else."
+    },
+    {
+      condition: { stat: "int", min: 7 },
+      text: "Pre-war kinetic energy storage hammer. The capacitor in the head stores momentum and releases it on impact, multiplying force dramatically. Brilliant and brutal engineering."
+    },
+    {
+      text: "A massive sledgehammer with a built-in kinetic energy storage system. Requires serious strength to use, but the results speak for themselves."
+    }
+  ],
+
+  power_fist: [
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Pneumatic actuators amplify your punch. With your natural strength plus this thing? You could dent power armor."
+    },
+    {
+      condition: { stat: "agl", min: 7 },
+      text: "The pneumatic mechanism has a half-second reset. Time your swings right and the rhythm is devastating."
+    },
+    {
+      text: "A pneumatic power fist. Straps to your arm and turns every punch into a wrecking ball. Satisfying in a primal sort of way."
+    }
+  ],
+
+  lucky_357: [
+    {
+      condition: { stat: "lck", min: 7 },
+      text: "The cylinder spins perfectly. Every shot from this gun feels guided — like the universe wants you to hit. Your kind of weapon."
+    },
+    {
+      condition: { stat: "per", min: 7 },
+      text: "Custom sights, hand-filed trigger, mother-of-pearl grip. This wasn't manufactured — it was crafted. By someone who understood that a weapon is personal."
+    },
+    {
+      text: "A unique .357 magnum, customized with care. The grip is inlaid with mother-of-pearl and the action is glass-smooth. This gun has a story."
+    }
+  ],
+
+  this_machine: [
+    {
+      condition: { stat: "int", min: 7 },
+      text: "M1 Garand pattern — .30-06, en-bloc clip, gas-operated. 'THIS MACHINE' is engraved on the receiver. A patriot's weapon, preserved across the apocalypse."
+    },
+    {
+      condition: { stat: "str", min: 7 },
+      text: "Heavy rifle, heavy round. The .30-06 hits like a freight train. The ping of the ejecting clip is the most satisfying sound in warfare."
+    },
+    {
+      text: "A unique battle rifle with 'THIS MACHINE' engraved on the receiver. Pre-war craftsmanship at its finest — powerful, accurate, and storied."
+    }
+  ],
+
   travelers_cap: [
     {
       condition: { stat: "cha", min: 7 },

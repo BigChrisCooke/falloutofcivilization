@@ -13,10 +13,6 @@ The game has two exploration layers:
 
 Character progression is centered on the Courier rather than the base. The starting vault grows over time, but the core loop is exploration, dialogue, faction reputation, combat, loot, quest resolution, and character build development.
 
-## IP Note
-
-If this moves beyond a private prototype, replace copyrighted names, factions, locations, dialogue, story beats, and visual references with original or properly licensed material. Treat Fallout and Civilization references as creative direction, not production-safe content.
-
 ## Core Design Pillars
 
 - Exploration first: the player should steadily reveal the map and feel pulled toward unknown tiles, landmarks, and rumors.

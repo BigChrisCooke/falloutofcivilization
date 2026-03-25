@@ -7,10 +7,12 @@ objectives:
     description: "Locate the Brotherhood Bunker in the eastern mountains."
     type: visit
     target: brotherhood_bunker
+    locationId: brotherhood_bunker
   - id: report_back
     description: "Return to Smuggler Vex and tell her what you found."
     type: talk
     target: smuggler_vex
+    locationId: crossroads_market
 rewards:
   karma: 0
   caps: 50

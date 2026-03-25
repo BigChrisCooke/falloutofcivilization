@@ -71,6 +71,9 @@ npcs:
         - id: weapons_stock
           text: "Standard inventory: 9mm pistols, hunting rifles, combat shotguns. Ammo for all of the above. We get specialty items from time to time — energy weapons, explosives. Premium goods for premium caps."
           options:
+            - id: browse_shop
+              label: "Let me see what you've got."
+              next: weapon_shop
             - id: int_specs
               label: "What's the muzzle velocity on your hunting rifles? And are the receivers forged or cast?"
               specialGate: { stat: int, min: 7 }
@@ -82,6 +85,73 @@ npcs:
             - id: ask_energy
               label: "Tell me about the energy weapons."
               next: energy_weapons
+        - id: weapon_shop
+          text: "Here's what I've got on the rack today. All Gun Runner quality — forged, not cast. Every piece test-fired before it hits the shelf."
+          options:
+            - id: buy_9mm_pistol
+              label: "9mm Pistol — 50 caps"
+              capsCost: 50
+              grantItems:
+                - itemId: 9mm_pistol
+                  label: 9mm Pistol
+                  quantity: 1
+              response: "*Isaac slides the 9mm across the counter.* Reliable sidearm. Won't let you down."
+            - id: buy_10mm_pistol
+              label: "10mm Pistol — 75 caps"
+              capsCost: 75
+              grantItems:
+                - itemId: 10mm_pistol
+                  label: 10mm Pistol
+                  quantity: 1
+              response: "*Isaac hands over the 10mm.* More stopping power than the 9. Classic wasteland carry."
+            - id: buy_hunting_rifle
+              label: "Hunting Rifle — 250 caps"
+              capsCost: 250
+              grantItems:
+                - itemId: hunting_rifle
+                  label: Hunting Rifle
+                  quantity: 1
+              response: "*Isaac carefully sets the rifle on the counter.* Bolt-action, hand-fitted receiver. Accurate out to 300 yards."
+            - id: buy_service_rifle
+              label: "Service Rifle — 300 caps"
+              capsCost: 300
+              grantItems:
+                - itemId: service_rifle
+                  label: Service Rifle
+                  quantity: 1
+              response: "*Isaac nods approvingly.* NCR standard issue, but we've tuned this one up. Semi-auto, reliable as sunrise."
+            - id: buy_combat_shotgun
+              label: "Combat Shotgun — 350 caps"
+              capsCost: 350
+              grantItems:
+                - itemId: combat_shotgun
+                  label: Combat Shotgun
+                  quantity: 1
+              response: "*Isaac hefts the shotgun over.* Close quarters king. Nothing clears a room faster."
+            - id: buy_sawed_off
+              label: "Sawed-Off Shotgun — 120 caps"
+              capsCost: 120
+              grantItems:
+                - itemId: sawed_off_shotgun
+                  label: Sawed-Off Shotgun
+                  quantity: 1
+              response: "*Isaac pulls the compact shotgun from under the counter.* Concealable. Devastating up close. Not much range, but who needs it?"
+            - id: buy_combat_knife
+              label: "Combat Knife — 30 caps"
+              capsCost: 30
+              grantItems:
+                - itemId: combat_knife
+                  label: Combat Knife
+                  quantity: 1
+              response: "*Isaac flips the knife and hands it over grip-first.* Military surplus. Keeps an edge like nothing else."
+            - id: buy_laser_pistol
+              label: "Laser Pistol — 200 caps"
+              capsCost: 200
+              grantItems:
+                - itemId: laser_pistol
+                  label: Laser Pistol
+                  quantity: 1
+              response: "*Isaac opens a padded case.* Pre-war Wattz design. Don't ask where I got it — just know it works."
         - id: int_technical
           text: "Now that's a question I don't hear often. Forged receivers, hand-fitted. 2,800 feet per second with our match-grade .308 loads. You know your weapons — I might have some special inventory in the back for a discerning customer."
           options:

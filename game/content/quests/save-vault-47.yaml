@@ -7,14 +7,16 @@ objectives:
     description: "Find a repair kit — try the Abandoned Gas Station to the east."
     type: fetch
     target: makeshift_repair_kit
+    locationId: abandoned_gas_station
   - id: return_to_hale
     description: "Bring the repair kit back to Overseer Hale in Vault 47."
     type: talk
     target: overseer_hale
+    locationId: vault_47
 rewards:
   karma: 20
   factionDeltas:
-    vault-dwellers: 15
+    vault_dwellers: 15
   caps: 50
   items:
     - itemId: vault_tec_jumpsuit

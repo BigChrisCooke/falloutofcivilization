@@ -1,4 +1,4 @@
-An isometric turn based RPG on a hexagon map that expands as you explore the fog of war surrounding your initial start as a courier in a vault based in the play style and graphics of Civilization 4, using the factions and story points of Fallout: New Vegas.
+An isometric turn based RPG on a hexagon map that expands as you explore the fog of war surrounding your initial start as a courier in a vault. It’s based on the play style and graphics of Civilization 4, but using the factions, post-apocalyptic world, and story points of the RPG shooter Fallout: New Vegas.
 
 When you go inside a building, a vault, a cave, or a special location like Hoover Dam, The Strip, or Caesar’s Fort, it loads a new map for you to explore, giving more depth and detail to each world with different graphics and themes.
 

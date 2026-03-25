@@ -118,6 +118,47 @@ export function findNearestAdjacentTile(
   return best;
 }
 
+/**
+ * Hex distance between two grid points (axial distance for offset coordinates).
+ */
+function hexDist(a: GridPoint, b: GridPoint): number {
+  // Convert offset to cube coordinates
+  function toCube(p: GridPoint) {
+    const col = p.x - (p.y - (p.y & 1)) / 2;
+    const row = p.y;
+    return { q: col, r: row, s: -col - row };
+  }
+  const ca = toCube(a);
+  const cb = toCube(b);
+  return (Math.abs(ca.q - cb.q) + Math.abs(ca.r - cb.r) + Math.abs(ca.s - cb.s)) / 2;
+}
+
+/**
+ * From a given position, find the neighbor hex that is closest to the target
+ * and is within the valid tile set (map bounds).
+ */
+export function bestStepToward(
+  from: GridPoint,
+  target: GridPoint,
+  validTiles: Set<string>
+): GridPoint | null {
+  const neighbors = hexNeighbors(from);
+  let best: GridPoint | null = null;
+  let bestDist = Infinity;
+
+  for (const n of neighbors) {
+    const key = toKey(n);
+    if (!validTiles.has(key)) continue;
+    const d = hexDist(n, target);
+    if (d < bestDist) {
+      bestDist = d;
+      best = n;
+    }
+  }
+
+  return best;
+}
+
 export const STEP_DELAY_MS = 500;
 
 export function delay(ms: number): Promise<void> {

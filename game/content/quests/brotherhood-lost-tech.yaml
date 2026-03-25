@@ -6,15 +6,17 @@ objectives:
   - id: search_vertibird
     description: "Search the Crashed Vertibird wreckage for the holotape."
     type: fetch
-    target: crashed_vertibird
+    target: encrypted_holotape
+    locationId: crashed_vertibird
   - id: return_holotape
     description: "Return the holotape to Scribe Ibsen at the Brotherhood Bunker."
     type: talk
     target: scribe_ibsen
+    locationId: brotherhood_bunker
 rewards:
   karma: 10
   factionDeltas:
-    brotherhood-of-steel: 15
+    brotherhood: 15
   caps: 75
 mapMarker:
   locationId: crashed_vertibird

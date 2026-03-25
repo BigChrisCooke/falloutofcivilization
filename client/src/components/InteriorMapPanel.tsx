@@ -354,13 +354,16 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
             if (nearbyExits.length === 0) {
               return <p className="subtle">Move toward the exit to leave.</p>;
             }
-            // Deduplicate exits that go to the same target (e.g. double doors)
-            const seenTargets = new Set<string>();
-            const uniqueExits = nearbyExits.filter((exit) => {
-              if (seenTargets.has(exit.target)) return false;
-              seenTargets.add(exit.target);
-              return true;
-            });
+            // Deduplicate exits that go to the same target (e.g. double doors).
+            // Prefer the exit the player is standing on so the backend check passes.
+            const byTarget = new Map<string, typeof nearbyExits[0]>();
+            for (const exit of nearbyExits) {
+              const existing = byTarget.get(exit.target);
+              if (!existing || (exit.x === px && exit.y === py)) {
+                byTarget.set(exit.target, exit);
+              }
+            }
+            const uniqueExits = Array.from(byTarget.values());
             return (
               <div className="location-actions">
                 {uniqueExits.map((exit) => (

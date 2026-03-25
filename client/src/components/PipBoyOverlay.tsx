@@ -35,6 +35,7 @@ function karmaLabel(karma: number): string {
 export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }: PipBoyOverlayProps) {
   const [tab, setTab] = useState<PipBoyTab>("stats");
   const [selectedItem, setSelectedItem] = useState<GameState["inventory"][number] | null>(null);
+  const [highlightedLocationId, setHighlightedLocationId] = useState<string | null>(null);
   const special = state.playerCharacter.special;
   const karma = state.playerCharacter.karma;
   const quests = state.questState;
@@ -99,6 +100,13 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
               <div className="pipboy-section">
                 <h3>Character</h3>
                 <p>{state.playerCharacter.name} &middot; Level {state.playerCharacter.level} &middot; {state.playerCharacter.archetype}</p>
+                <div className="xp-display">
+                  <span className="xp-label">XP</span>
+                  <div className="xp-bar-track">
+                    <div className="xp-bar-fill" style={{ width: `${state.playerCharacter.xp % 100}%` }} />
+                  </div>
+                  <span className="xp-value">{state.playerCharacter.xp % 100}/100</span>
+                </div>
               </div>
             </div>
           )}
@@ -120,17 +128,17 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                       {quest.objectives.length > 0 && (
                         <ul className="quest-objectives">
                           {quest.objectives.map((obj) => (
-                            <li key={obj.id} className="quest-objective">
-                              <span className="quest-objective-icon">&#9702;</span>
+                            <li key={obj.id} className={`quest-objective${obj.completed ? " objective-completed" : " objective-active"}`}>
+                              <span className="quest-objective-icon">{obj.completed ? "\u2714" : "\u25CB"}</span>
                               <span>{obj.description}</span>
                             </li>
                           ))}
                         </ul>
                       )}
-                      {quest.mapMarker && (
+                      {quest.activeMapMarker && (
                         <p className="quest-marker-label">
                           <span className="quest-marker-icon">&#9670;</span>
-                          {quest.mapMarker.label}
+                          {quest.activeMapMarker.label}
                         </p>
                       )}
                     </div>
@@ -188,6 +196,7 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
           {selectedItem && (() => {
             const specialDesc = getSpecialDescription(selectedItem.id, special);
             const displayDesc = specialDesc ?? selectedItem.description;
+            const weaponInfo = state.weaponCatalog?.find((w) => w.id === selectedItem.id);
             return (
               <div className="item-detail-popup" onClick={() => setSelectedItem(null)}>
                 <div className="item-detail-card" onClick={(e) => e.stopPropagation()}>
@@ -196,6 +205,15 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                     <button className="ghost-button interaction-close" type="button" onClick={() => setSelectedItem(null)}>×</button>
                   </div>
                   {displayDesc && <p className="item-detail-desc">{displayDesc}</p>}
+                  {weaponInfo && (
+                    <div className="weapon-stats">
+                      <p><strong>DMG</strong> {weaponInfo.damage} <span className="subtle">({weaponInfo.damageType})</span></p>
+                      <p><strong>Type</strong> {weaponInfo.category}</p>
+                      <p><strong>Weight</strong> {weaponInfo.weight} lbs</p>
+                      <p><strong>Value</strong> {weaponInfo.value} caps</p>
+                      <p><strong>Rarity</strong> {weaponInfo.rarity}</p>
+                    </div>
+                  )}
                   {selectedItem.quantity > 1 && <p className="subtle">Quantity: {selectedItem.quantity}</p>}
                   {selectedItem.ownedBy && <p className="stolen-tag">Stolen property</p>}
                 </div>
@@ -212,11 +230,11 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                     const selectedQuest = selectedQuestId
                       ? quests.definitions.find((q) => q.id === selectedQuestId)
                       : null;
-                    const selectedQuestMarkerLocId = selectedQuest?.mapMarker?.locationId ?? null;
+                    const selectedQuestMarkerLocId = selectedQuest?.activeMapMarker?.locationId ?? null;
                     const questMarkerLocIds = new Set(
                       quests.definitions
-                        .filter((q) => quests.active.includes(q.id) && q.mapMarker)
-                        .map((q) => q.mapMarker!.locationId)
+                        .filter((q) => quests.active.includes(q.id) && q.activeMapMarker)
+                        .map((q) => q.activeMapMarker!.locationId)
                     );
                     const questMarkerPositions = new Set(
                       state.locations
@@ -242,10 +260,11 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                             const location = state.locations.find((l) => l.position.x === x && l.position.y === y && l.discovered);
                             const isQuestTarget = questMarkerPositions.has(key);
                             const isSelectedObjective = selectedQuestKey === key;
+                            const isHighlightedLocation = highlightedLocationId && location?.id === highlightedLocationId;
                             return (
                               <div
                                 key={key}
-                                className={`minimap-cell${discovered ? ` tile-${tile}` : " tile-fog"}${isPlayer ? " is-player" : ""}${location ? " has-location" : ""}${isQuestTarget ? " has-quest-marker" : ""}${isSelectedObjective ? " is-selected-objective" : ""}`}
+                                className={`minimap-cell${discovered ? ` tile-${tile}` : " tile-fog"}${isPlayer ? " is-player" : ""}${location ? " has-location" : ""}${isQuestTarget ? " has-quest-marker" : ""}${isSelectedObjective ? " is-selected-objective" : ""}${isHighlightedLocation ? " is-highlighted-location" : ""}`}
                                 title={discovered ? (location ? location.name : tile) : "???"}
                               />
                             );
@@ -266,7 +285,11 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest }
                 <div className="pipboy-section">
                   <h3>Known Locations</h3>
                   {state.locations.filter((l) => l.discovered).map((loc) => (
-                    <div key={loc.id} className="location-entry">
+                    <div
+                      key={loc.id}
+                      className={`location-entry clickable${highlightedLocationId === loc.id ? " is-selected" : ""}`}
+                      onClick={() => setHighlightedLocationId(highlightedLocationId === loc.id ? null : loc.id)}
+                    >
                       <span className="location-name">{loc.name}</span>
                       <span className="subtle">{loc.type}</span>
                     </div>

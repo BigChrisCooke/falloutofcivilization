@@ -27,6 +27,7 @@ export interface PlayerCharacterRow {
   save_id: string;
   name: string;
   level: number;
+  xp: number;
   archetype: string;
   special_json: string | null;
   karma: number;

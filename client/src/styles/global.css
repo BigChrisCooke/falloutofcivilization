@@ -702,6 +702,26 @@ h2 {
   margin: 0.5rem 0;
 }
 
+.weapon-stats {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 255, 128, 0.04);
+  font-size: 0.8rem;
+}
+
+.weapon-stats p {
+  margin: 0.2rem 0;
+  color: #b0e0b0;
+}
+
+.weapon-stats strong {
+  display: inline-block;
+  width: 4rem;
+  color: #00ff80;
+}
+
 .inventory-item.clickable {
   cursor: pointer;
 }
@@ -887,9 +907,22 @@ h2 {
 }
 
 .quest-objective-icon {
-  color: rgba(100, 255, 140, 0.4);
   font-size: 0.9rem;
   flex-shrink: 0;
+}
+
+.objective-active {
+  color: rgba(255, 220, 80, 0.85);
+}
+.objective-active .quest-objective-icon {
+  color: rgba(255, 220, 80, 0.6);
+}
+
+.objective-completed {
+  color: rgba(80, 255, 120, 0.7);
+}
+.objective-completed .quest-objective-icon {
+  color: rgba(80, 255, 120, 0.8);
 }
 
 .quest-marker-label {
@@ -994,6 +1027,18 @@ h2 {
   animation: pulse-objective 1.2s ease-in-out infinite;
 }
 
+.minimap-cell.is-highlighted-location {
+  background: #64ff8c !important;
+  box-shadow: 0 0 8px rgba(100, 255, 140, 0.9), 0 0 16px rgba(100, 255, 140, 0.4);
+  border: 2px solid #fff;
+  animation: pulse-location 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-location {
+  0%, 100% { box-shadow: 0 0 8px rgba(100, 255, 140, 0.9), 0 0 16px rgba(100, 255, 140, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(100, 255, 140, 1), 0 0 24px rgba(100, 255, 140, 0.6); }
+}
+
 @keyframes pulse-objective {
   0%, 100% { box-shadow: 0 0 8px rgba(255, 96, 64, 0.9), 0 0 16px rgba(255, 96, 64, 0.4); }
   50% { box-shadow: 0 0 12px rgba(255, 96, 64, 1), 0 0 24px rgba(255, 96, 64, 0.6); }
@@ -1017,6 +1062,86 @@ h2 {
 
 .location-name {
   color: rgba(100, 255, 140, 0.7);
+}
+
+.location-entry.is-selected {
+  background: rgba(100, 255, 140, 0.1);
+  border-radius: 4px;
+}
+
+.location-entry.is-selected .location-name {
+  color: rgba(100, 255, 140, 1);
+}
+
+/* XP bar */
+.xp-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+}
+
+.xp-label {
+  color: rgba(100, 255, 140, 0.5);
+  min-width: 1.5rem;
+}
+
+.xp-bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(100, 255, 140, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: #f0c040;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.xp-value {
+  color: rgba(100, 255, 140, 0.6);
+  min-width: 3rem;
+  text-align: right;
+  font-size: 0.75rem;
+}
+
+/* Level-up notification */
+.level-up-toast {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 12, 8, 0.95);
+  border: 2px solid #f0c040;
+  border-radius: 8px;
+  padding: 1rem 2rem;
+  color: #f0c040;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  z-index: 9999;
+  animation: level-up-appear 0.4s ease-out, level-up-fade 0.6s ease-in 2.4s forwards;
+  box-shadow: 0 0 20px rgba(240, 192, 64, 0.4), 0 0 40px rgba(240, 192, 64, 0.2);
+}
+
+.level-up-toast .level-up-label {
+  font-size: 0.8rem;
+  color: rgba(100, 255, 140, 0.7);
+  margin-top: 0.25rem;
+}
+
+@keyframes level-up-appear {
+  0% { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.9); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+@keyframes level-up-fade {
+  0% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
 }
 
 /* Faction entries */

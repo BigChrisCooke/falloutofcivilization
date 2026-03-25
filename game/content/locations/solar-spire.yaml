@@ -7,7 +7,7 @@ position:
   y: 3
 interiorMapId: solar_spire_core
 factionTags:
-  - old-world
+  - old_world
 questTags:
   - mystery
 encounterFlags:

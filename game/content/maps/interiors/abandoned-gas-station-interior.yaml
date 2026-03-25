@@ -61,5 +61,15 @@ loot:
     x: 4
     y: 1
     description: "A half-full can of pre-war motor oil. Still slick and usable — machines don't care how old their lubricant is."
+  - id: tire_iron
+    label: Tire Iron
+    description: "A sturdy tire iron. The original owner used it on cars. The wasteland finds other uses for heavy blunt objects."
+    x: 2
+    y: 3
+  - id: 9mm_pistol
+    label: 9mm Pistol
+    description: "A dependable 9mm pistol. Nothing fancy, but it goes bang when you pull the trigger. That's all you need."
+    x: 1
+    y: 1
 questHooks:
   - save_vault_47

@@ -177,5 +177,15 @@ loot:
     description: "A military Meal Ready to Eat, still vacuum-sealed. The US Army built these to survive anything — including the apocalypse, apparently."
     x: 4
     y: 1
+  - id: laser_rifle
+    label: Laser Rifle
+    description: "A pre-war laser rifle. Fires a focused beam of light that can cut through most wasteland armor. Ammunition is the hard part."
+    x: 2
+    y: 3
+  - id: 10mm_pistol
+    label: 10mm Pistol
+    description: "The 10mm pistol — the wasteland's workhorse sidearm. A step up from a 9mm, and ammunition is everywhere."
+    x: 4
+    y: 3
 questHooks:
   - brotherhood_lost_tech

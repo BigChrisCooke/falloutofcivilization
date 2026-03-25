@@ -32,6 +32,20 @@ export interface DialogueOption {
   grantsQuest: string | null;
   returnToRoot: boolean;
   alreadySelected: boolean;
+  capsCost: number | null;
+  canAfford: boolean;
+}
+
+export interface WeaponDefinition {
+  id: string;
+  name: string;
+  category: string;
+  damage: number;
+  damageType: string;
+  weight: number;
+  value: number;
+  rarity: string;
+  description: string;
 }
 
 export interface DialogueNode {
@@ -67,6 +81,8 @@ export interface QuestObjective {
   description: string;
   type: "talk" | "fetch" | "kill" | "visit";
   target: string;
+  locationId?: string;
+  completed: boolean;
 }
 
 export interface QuestSummary {
@@ -75,6 +91,7 @@ export interface QuestSummary {
   description: string;
   objectives: QuestObjective[];
   mapMarker: { locationId: string; label: string } | null;
+  activeMapMarker: { locationId: string; label: string } | null;
 }
 
 export interface GameState {
@@ -82,6 +99,7 @@ export interface GameState {
   playerCharacter: {
     name: string;
     level: number;
+    xp: number;
     archetype: string;
     special: {
       str: number; per: number; end: number; cha: number;
@@ -189,6 +207,7 @@ export interface GameState {
   }>;
   factionStanding: Record<string, number>;
   locations: LocationSummary[];
+  weaponCatalog: WeaponDefinition[];
 }
 
 interface SessionResponse {

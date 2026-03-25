@@ -248,6 +248,16 @@ loot:
     description: "A damaged holotape. Most of the data is corrupted, but fragments of text are still readable. Someone didn't want this found."
     x: 1
     y: 5
+  - id: plasma_pistol
+    label: Plasma Pistol
+    description: "A plasma pistol — fires bolts of superheated green plasma. Devastating on impact. The hum it makes when charged is deeply unsettling."
+    x: 5
+    y: 3
+  - id: laser_pistol
+    label: Laser Pistol
+    description: "A pre-war energy weapon that fires concentrated beams of light. Quiet, accurate, and unsettling to watch in action."
+    x: 3
+    y: 5
 questHooks:
   - brotherhood_lost_tech
   - wake_the_spire

@@ -308,9 +308,9 @@ npcs:
           text: "And you look like something the radroaches dragged in, but I'm too polite to say so. Now — do you want help or not?"
           options: []
 
-  # ── Corporal Hayes (NCR) ───────────────────────────────────
+  # ── Private Reyes (NCR) ───────────────────────────────────
   - id: ncr_trooper
-    name: "Corporal Hayes"
+    name: "Private Reyes"
     disposition: neutral
     factionId: ncr
     x: 4
@@ -334,7 +334,7 @@ npcs:
               label: "Any new threats?"
               response: "Nothing immediate, but the wasteland never stays quiet for long. I'll let you know if something comes up. For now, enjoy the peace you earned."
         - id: greeting
-          text: "Civilian. Frontier Valley's under NCR protection. Keep your nose clean."
+          text: "Civilian. Private Reyes, NCR liaison. Frontier Valley's under NCR protection. Keep your nose clean."
           options:
             - id: ncr_about
               label: "Tell me about the NCR."
@@ -346,7 +346,7 @@ npcs:
               label: "How do you feel about this place?"
               next: ncr_attitude
             - id: cha_salute
-              label: "Corporal. Appreciate what the NCR does out here. Truly."
+              label: "Private. Appreciate what the NCR does out here. Truly."
               specialGate: { stat: cha, min: 7 }
               next: cha_salute
             - id: cha_hostile
@@ -373,7 +373,7 @@ npcs:
               factionDelta: { factionId: ncr, delta: 2 }
               next: raider_accepted
             - id: cha_negotiate
-              label: "I'll do it — but I expect fair compensation, Corporal."
+              label: "I'll do it — but I expect fair compensation, Private."
               specialGate: { stat: cha, min: 7 }
               questGrant: ncr_raider_problem
               factionDelta: { factionId: ncr, delta: 5 }
@@ -529,7 +529,7 @@ npcs:
   - id: kings_member
     name: "Frankie (The Kings)"
     disposition: friendly
-    factionId: the_kings
+    factionId: kings
     x: 7
     y: 2
     dialogue:
@@ -584,13 +584,13 @@ npcs:
             - id: accept_courier
               label: "I'll keep an eye out. Where was he last seen?"
               questGrant: kings_missing_courier
-              factionDelta: { factionId: the_kings, delta: 2 }
+              factionDelta: { factionId: kings, delta: 2 }
               next: courier_accepted
             - id: cha_promise
               label: "You've got my word. I'll find your man — or what happened to him."
               specialGate: { stat: cha, min: 7 }
               questGrant: kings_missing_courier
-              factionDelta: { factionId: the_kings, delta: 5 }
+              factionDelta: { factionId: kings, delta: 5 }
               next: courier_promise
             - id: dumb_accept
               label: "Me find lost mail man! Me good at finding stuff!"

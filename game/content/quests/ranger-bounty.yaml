@@ -7,10 +7,12 @@ objectives:
     description: "Track down the raider boss at the Raider Overlook."
     type: visit
     target: raider_overlook
+    locationId: raider_overlook
   - id: report_jackson
     description: "Report back to Ranger Jackson at Ranger Station Delta."
     type: talk
     target: ranger_jackson
+    locationId: ranger_station
 rewards:
   karma: 10
   factionDeltas:

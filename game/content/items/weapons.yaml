@@ -1,0 +1,195 @@
+# Pistols
+- id: 9mm_pistol
+  name: 9mm Pistol
+  category: pistol
+  damage: 18
+  damageType: ballistic
+  weight: 2.5
+  value: 50
+  rarity: common
+  description: "A reliable semi-automatic pistol chambered in 9mm. Standard issue for caravan guards and settlers who can afford one. Nothing fancy, but it'll keep you breathing."
+
+- id: 10mm_pistol
+  name: 10mm Pistol
+  category: pistol
+  damage: 22
+  damageType: ballistic
+  weight: 3.5
+  value: 75
+  rarity: common
+  description: "The N99 10mm pistol — the sidearm that won the Resource Wars, if you believe the propaganda. Two centuries later, it's still the most common handgun in the wasteland. There's a reason for that."
+
+- id: 357_magnum
+  name: .357 Magnum Revolver
+  category: pistol
+  damage: 36
+  damageType: ballistic
+  weight: 4.0
+  value: 150
+  rarity: uncommon
+  description: "A double-action revolver with serious stopping power. Six rounds of .357 magnum will put down most things that aren't wearing power armor. The kick is enough to remind you you're alive."
+
+# Energy Pistols
+- id: laser_pistol
+  name: Laser Pistol
+  category: energy
+  damage: 28
+  damageType: energy
+  weight: 3.5
+  value: 200
+  rarity: uncommon
+  description: "An AER9 laser pistol in working condition. The focused beam can punch through leather armor like paper. Runs on microfusion cells — expensive to feed, but devastatingly effective."
+
+- id: plasma_pistol
+  name: Plasma Pistol
+  category: energy
+  damage: 42
+  damageType: energy
+  weight: 3.5
+  value: 300
+  rarity: rare
+  description: "A compact plasma weapon that fires superheated bolts of ionized gas. The projectiles are slow but hit like a freight train. One good shot will turn a raider into a puddle of green goo."
+
+# Rifles
+- id: pipe_rifle
+  name: Pipe Rifle
+  category: rifle
+  damage: 20
+  damageType: ballistic
+  weight: 5.5
+  value: 35
+  rarity: common
+  description: "A weapon cobbled together from pipe fittings, scrap metal, and desperation. It's ugly, it jams, and the accuracy is questionable at best. But when you can't afford anything better, it beats throwing rocks."
+
+- id: hunting_rifle
+  name: Hunting Rifle
+  category: rifle
+  damage: 52
+  damageType: ballistic
+  weight: 7.5
+  value: 250
+  rarity: common
+  description: "A bolt-action rifle with a walnut stock and iron sights. Pre-war hunters used these for bighorners and elk. Post-war hunters use them for raiders and deathclaws. Same principle, higher stakes."
+
+- id: service_rifle
+  name: Service Rifle
+  category: rifle
+  damage: 38
+  damageType: ballistic
+  weight: 6.0
+  value: 300
+  rarity: uncommon
+  description: "Standard-issue NCR infantry weapon. Semi-automatic, chambered in 5.56mm. Mass-produced and reliable. Every NCR trooper carries one, and most of them even know how to use it."
+
+- id: laser_rifle
+  name: Laser Rifle
+  category: energy
+  damage: 48
+  damageType: energy
+  weight: 7.0
+  value: 400
+  rarity: uncommon
+  description: "An AER14 laser rifle — the Brotherhood of Steel's weapon of choice. The focused beam can cut through combat armor at range. Expensive, temperamental, and absolutely lethal in trained hands."
+
+- id: plasma_rifle
+  name: Plasma Rifle
+  category: energy
+  damage: 65
+  damageType: energy
+  weight: 8.0
+  value: 600
+  rarity: rare
+  description: "A military-grade plasma rifle recovered from a pre-war armory. The superheated plasma bolts can melt through power armor given enough shots. The recoil compensation system still works, barely."
+
+# Shotguns
+- id: sawed_off_shotgun
+  name: Sawed-Off Shotgun
+  category: shotgun
+  damage: 45
+  damageType: ballistic
+  weight: 4.5
+  value: 120
+  rarity: common
+  description: "A double-barreled shotgun with the barrel cut down to something barely legal. Two shots, massive spread, and enough stopping power to clear a room. Reload time is the price you pay."
+
+- id: combat_shotgun
+  name: Combat Shotgun
+  category: shotgun
+  damage: 55
+  damageType: ballistic
+  weight: 7.0
+  value: 350
+  rarity: uncommon
+  description: "A semi-automatic shotgun with an 8-round drum magazine. Pre-war military issue, designed for close-quarters combat. The drum feed mechanism is finicky, but when it works, nothing clears a hallway faster."
+
+# Melee
+- id: combat_knife
+  name: Combat Knife
+  category: melee
+  damage: 15
+  damageType: melee
+  weight: 1.0
+  value: 30
+  rarity: common
+  description: "A military-issue fighting knife with a carbon steel blade. Sharp enough to shave with, balanced enough to throw. Every wastelander should carry one — it never runs out of ammo."
+
+- id: baseball_bat
+  name: Baseball Bat
+  category: melee
+  damage: 20
+  damageType: melee
+  weight: 3.0
+  value: 25
+  rarity: common
+  description: "An aluminum baseball bat, slightly dented from purposes the manufacturer never intended. America's pastime meets America's post-apocalypse. Batter up."
+
+- id: tire_iron
+  name: Tire Iron
+  category: melee
+  damage: 18
+  damageType: melee
+  weight: 4.0
+  value: 20
+  rarity: common
+  description: "A heavy steel tire iron. Originally designed for changing tires on pre-war vehicles. Now primarily used for changing the structural integrity of skulls. Simple, effective, indestructible."
+
+- id: super_sledge
+  name: Super Sledge
+  category: melee
+  damage: 60
+  damageType: melee
+  weight: 12.0
+  value: 500
+  rarity: rare
+  description: "A rocket-propelled sledgehammer. The kinetic storage device in the head amplifies each swing into a devastating blow that can crush power armor. The weight is brutal, but so is everything it hits."
+
+- id: power_fist
+  name: Power Fist
+  category: melee
+  damage: 45
+  damageType: melee
+  weight: 6.0
+  value: 350
+  rarity: rare
+  description: "A pneumatic gauntlet that delivers hydraulically-powered punches. Strap it on, make a fist, and let the servos do the work. The Brotherhood developed these for a reason — sometimes you need to punch through a wall."
+
+# Unique weapons
+- id: lucky_357
+  name: '"Lucky"'
+  category: pistol
+  damage: 42
+  damageType: ballistic
+  weight: 4.0
+  value: 500
+  rarity: unique
+  description: "A custom .357 revolver with an ivory grip and a four-leaf clover etched into the barrel. Legend says every sixth shot is a guaranteed critical hit. Whether that's luck or engineering is anyone's guess."
+
+- id: this_machine
+  name: '"This Machine"'
+  category: rifle
+  damage: 58
+  damageType: ballistic
+  weight: 8.5
+  value: 600
+  rarity: unique
+  description: "A beautifully maintained M1 Garand battle rifle with 'WELL THIS MACHINE KILLS COMMIES' scratched into the stock. Pre-war patriotism meets post-war firepower. The en-bloc clip pings when empty — music to a marksman's ears."

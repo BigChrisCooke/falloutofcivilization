@@ -70,4 +70,16 @@ export class SaveRepo {
       .prepare("UPDATE player_characters SET karma = ? WHERE save_id = ?")
       .run(karma, saveId);
   }
+
+  public awardXp(saveId: string, amount: number): { newXp: number; newLevel: number; leveledUp: boolean } {
+    const pc = this.findPlayerCharacter(saveId);
+    if (!pc) throw new Error("Player character not found.");
+    const newXp = pc.xp + amount;
+    const newLevel = Math.floor(newXp / 100) + 1;
+    const leveledUp = newLevel > pc.level;
+    this.db
+      .prepare("UPDATE player_characters SET xp = ?, level = ? WHERE save_id = ?")
+      .run(newXp, newLevel, saveId);
+    return { newXp, newLevel, leveledUp };
+  }
 }

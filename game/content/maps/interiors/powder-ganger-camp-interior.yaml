@@ -620,5 +620,17 @@ loot:
     ownedBy: powder_gangers
     x: 3
     y: 6
+  - id: sawed_off_shotgun
+    label: Sawed-Off Shotgun
+    description: "A sawed-off double-barrel shotgun. What it lacks in range, it makes up for in pure close-quarters devastation."
+    ownedBy: powder_gangers
+    x: 7
+    y: 3
+  - id: 9mm_pistol
+    label: 9mm Pistol
+    description: "A dependable 9mm pistol. Nothing fancy, but it goes bang when you pull the trigger. That's all you need."
+    ownedBy: powder_gangers
+    x: 5
+    y: 5
 questHooks:
   - danger_in_the_hollow

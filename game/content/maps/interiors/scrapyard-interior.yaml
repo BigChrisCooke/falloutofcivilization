@@ -303,5 +303,15 @@ loot:
     description: "A salvaged circuit board, copper traces still gleaming. Valuable to anyone who works with electronics or energy systems."
     x: 1
     y: 5
+  - id: baseball_bat
+    label: Baseball Bat
+    description: "A pre-war baseball bat. The American pastime takes on a whole new meaning in the wasteland."
+    x: 4
+    y: 3
+  - id: pipe_rifle
+    label: Pipe Rifle
+    description: "A weapon cobbled together from pipe fittings and scrap. It's ugly, unreliable, and effective enough to kill. Welcome to the wasteland."
+    x: 7
+    y: 4
 questHooks:
   - water_for_the_valley

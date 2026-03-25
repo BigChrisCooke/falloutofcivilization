@@ -4,6 +4,8 @@ import path from "node:path";
 import yaml from "js-yaml";
 import { ZodError } from "zod";
 
+import { z } from "zod";
+
 import {
   companionSchema,
   interiorMapSchema,
@@ -11,12 +13,14 @@ import {
   overworldMapSchema,
   questSchema,
   regionSchema,
+  weaponDefinitionSchema,
   type CompanionDefinition,
   type InteriorMapDefinition,
   type LocationDefinition,
   type OverworldMapDefinition,
   type QuestDefinition,
-  type RegionDefinition
+  type RegionDefinition,
+  type WeaponDefinition
 } from "../schemas/content.js";
 
 export interface GameContentBundle {
@@ -27,6 +31,7 @@ export interface GameContentBundle {
   interiorMaps: InteriorMapDefinition[];
   quests: QuestDefinition[];
   companions: CompanionDefinition[];
+  weapons: WeaponDefinition[];
 }
 
 function loadYamlFile<T>(filePath: string, parser: { parse: (value: unknown) => T }): T {
@@ -73,6 +78,20 @@ export function loadGameContent(contentRoot = getDefaultContentRoot()): GameCont
   const interiorMaps = loadDirectory(path.join(contentRoot, "maps", "interiors"), interiorMapSchema);
   const quests = loadDirectoryIfExists(path.join(contentRoot, "quests"), questSchema);
   const companions = loadDirectoryIfExists(path.join(contentRoot, "companions"), companionSchema);
+
+  // Load weapons from a single array YAML file
+  const weaponsPath = path.join(contentRoot, "items", "weapons.yaml");
+  const weapons: WeaponDefinition[] = existsSync(weaponsPath)
+    ? loadYamlFile(weaponsPath, z.array(weaponDefinitionSchema))
+    : [];
+
+  const weaponIds = new Set<string>();
+  for (const weapon of weapons) {
+    if (weaponIds.has(weapon.id)) {
+      throw new Error(`Duplicate weapon ID: ${weapon.id}`);
+    }
+    weaponIds.add(weapon.id);
+  }
 
   const regionIds = new Set(regions.map((region) => region.id));
   const questIds = new Set(quests.map((quest) => quest.id));
@@ -244,7 +263,8 @@ export function loadGameContent(contentRoot = getDefaultContentRoot()): GameCont
     overworldMaps,
     interiorMaps,
     quests,
-    companions
+    companions,
+    weapons
   };
 }
 

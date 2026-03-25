@@ -7,10 +7,12 @@ objectives:
     description: "Clear out the raiders at the Raider Overlook east of the valley."
     type: kill
     target: raider_overlook
+    locationId: raider_overlook
   - id: report_hayes
     description: "Report back to Corporal Hayes at NCR Outpost Alpha."
     type: talk
     target: corporal_hayes
+    locationId: ncr_outpost
 rewards:
   karma: 15
   factionDeltas:

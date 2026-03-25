@@ -7,14 +7,16 @@ objectives:
     description: "Find a pump regulator — try the Scrapyard or Gun Runner Depot."
     type: fetch
     target: pump_regulator
+    locationId: scrapyard
   - id: deliver_regulator
     description: "Deliver the pump regulator to the Water Purification Plant."
     type: visit
     target: water_purification
+    locationId: water_purification
 rewards:
   karma: 20
   factionDeltas:
-    frontier-settlers: 15
+    traders: 15
   caps: 100
 mapMarker:
   locationId: water_purification

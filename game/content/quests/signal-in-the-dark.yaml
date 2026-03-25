@@ -7,10 +7,12 @@ objectives:
     description: "Locate the hidden repeater station southeast of the valley."
     type: visit
     target: radio_tower
+    locationId: radio_tower
   - id: report_findings
     description: "Return to Ghost at Radio Tower Bravo with your findings."
     type: talk
     target: ghost
+    locationId: radio_tower
 rewards:
   karma: 5
   caps: 40

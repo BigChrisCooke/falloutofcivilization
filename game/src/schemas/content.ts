@@ -37,6 +37,7 @@ export const dialogueOptionSchema = z.object({
   karmaDelta: z.number().int().optional(),
   grantItems: z.array(grantItemSchema).optional(),
   companionRecruit: z.string().min(1).optional(),
+  capsCost: z.number().int().positive().optional(),
   returnToRoot: z.boolean().optional()
 });
 
@@ -62,7 +63,8 @@ export const questObjectiveSchema = z.object({
   id: z.string().min(1),
   description: z.string().min(1),
   type: z.enum(["talk", "fetch", "kill", "visit"]),
-  target: z.string().min(1)
+  target: z.string().min(1),
+  locationId: z.string().min(1).optional()
 });
 
 export const questSchema = z.object({
@@ -81,6 +83,24 @@ export const questSchema = z.object({
     locationId: z.string().min(1),
     label: z.string().min(1)
   }).optional()
+});
+
+// --- Weapon definition schema ---
+
+export const weaponCategoryEnum = z.enum(["pistol", "rifle", "shotgun", "melee", "energy", "heavy"]);
+export const damageTypeEnum = z.enum(["ballistic", "energy", "melee", "explosive"]);
+export const rarityEnum = z.enum(["common", "uncommon", "rare", "unique"]);
+
+export const weaponDefinitionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  category: weaponCategoryEnum,
+  damage: z.number().int().positive(),
+  damageType: damageTypeEnum,
+  weight: z.number().positive(),
+  value: z.number().int().nonnegative(),
+  rarity: rarityEnum,
+  description: z.string().min(1)
 });
 
 // --- World content schemas ---
@@ -240,6 +260,10 @@ export type QuestDefinition = z.infer<typeof questSchema>;
 export type RegionDefinition = z.infer<typeof regionSchema>;
 export type LocationDefinition = z.infer<typeof locationSchema>;
 export type OverworldMapDefinition = z.infer<typeof overworldMapSchema>;
+export type WeaponCategory = z.infer<typeof weaponCategoryEnum>;
+export type DamageType = z.infer<typeof damageTypeEnum>;
+export type Rarity = z.infer<typeof rarityEnum>;
+export type WeaponDefinition = z.infer<typeof weaponDefinitionSchema>;
 export type InteriorMapDefinition = z.infer<typeof interiorMapSchema>;
 export type CompanionDefinition = z.infer<typeof companionSchema>;
 export type CompanionStoryStage = z.infer<typeof companionStoryStageSchema>;

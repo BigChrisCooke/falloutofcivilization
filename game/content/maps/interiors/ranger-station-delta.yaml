@@ -240,5 +240,11 @@ loot:
     ownedBy: rangers
     x: 4
     y: 3
+  - id: service_rifle
+    label: Service Rifle
+    description: "A semi-automatic service rifle. Standard NCR military issue, but effective in anyone's hands."
+    ownedBy: rangers
+    x: 2
+    y: 2
 questHooks:
   - ranger_bounty

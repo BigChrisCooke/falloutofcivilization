@@ -98,11 +98,17 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
   const questMarkers: OverworldQuestMarkerNode[] = [];
 
   for (const quest of state.questState.definitions) {
-    if (!quest.mapMarker || !activeQuestIds.has(quest.id)) {
+    if (!activeQuestIds.has(quest.id)) {
       continue;
     }
 
-    const targetLocation = discoveredLocations.find((loc) => loc.id === quest.mapMarker!.locationId);
+    // Use activeMapMarker (points to next incomplete objective) with fallback to static mapMarker
+    const marker = quest.activeMapMarker ?? quest.mapMarker;
+    if (!marker) {
+      continue;
+    }
+
+    const targetLocation = discoveredLocations.find((loc) => loc.id === marker.locationId);
 
     if (!targetLocation) {
       continue;
@@ -113,7 +119,7 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
     questMarkers.push({
       id: `quest_${quest.id}`,
       questId: quest.id,
-      label: quest.mapMarker.label,
+      label: marker.label,
       point: targetLocation.position,
       markerPosition: {
         x: markerAnchor.x - 22,

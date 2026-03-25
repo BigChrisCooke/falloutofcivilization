@@ -273,5 +273,11 @@ loot:
     ownedBy: kings
     x: 3
     y: 5
+  - id: 357_magnum
+    label: ".357 Magnum"
+    description: "A .357 magnum revolver. The cylinder clicks with satisfying precision. A classic weapon for a classic wasteland."
+    ownedBy: kings
+    x: 6
+    y: 3
 questHooks:
   - kings_missing_courier

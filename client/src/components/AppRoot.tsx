@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { HexOverworld } from "./HexOverworld.js";
 import { InteriorMapPanel } from "./InteriorMapPanel.js";
 import { PipBoyOverlay } from "./PipBoyOverlay.js";
@@ -40,6 +40,21 @@ export function AppRoot() {
   const [activeDialog, setActiveDialog] = useState<DialogName>(null);
   const [saveConfirmation, setSaveConfirmation] = useState<string | null>(null);
   const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
+  const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
+  const prevLevelRef = useRef<number | null>(null);
+
+  const updateGameState = useCallback((newState: GameState) => {
+    setGameState((prev) => {
+      const prevLevel = prev?.playerCharacter.level ?? prevLevelRef.current;
+      const newLevel = newState.playerCharacter.level;
+      if (prevLevel !== null && newLevel > prevLevel) {
+        setLevelUpToast(newLevel);
+        setTimeout(() => setLevelUpToast(null), 3000);
+      }
+      prevLevelRef.current = newLevel;
+      return newState;
+    });
+  }, []);
 
   async function refreshSession() {
     setLoading(true);
@@ -60,7 +75,11 @@ export function AppRoot() {
       setSaves(savesResponse.saves);
 
       const stateResponse = await getGameState();
-      setGameState(stateResponse.saveLoaded ? stateResponse.state : null);
+      if (stateResponse.saveLoaded) {
+        updateGameState(stateResponse.state);
+      } else {
+        setGameState(null);
+      }
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : "Failed to restore session.");
     } finally {
@@ -149,7 +168,7 @@ export function AppRoot() {
 
     try {
       const response = await updateScreen(screen);
-      setGameState(response.state);
+      updateGameState(response.state);
     } catch (screenError) {
       setError(screenError instanceof Error ? screenError.message : "Failed to switch screen.");
     }
@@ -160,7 +179,7 @@ export function AppRoot() {
 
     try {
       const response = await enterLocation(locationId);
-      setGameState(response.state);
+      updateGameState(response.state);
     } catch (locationError) {
       setError(locationError instanceof Error ? locationError.message : "Failed to enter location.");
     }
@@ -171,7 +190,7 @@ export function AppRoot() {
 
     try {
       const response = await travel(x, y);
-      setGameState(response.state);
+      updateGameState(response.state);
     } catch (travelError) {
       setError(travelError instanceof Error ? travelError.message : "Failed to travel.");
     }
@@ -182,7 +201,7 @@ export function AppRoot() {
 
     try {
       const response = await moveInterior(x, y);
-      setGameState(response.state);
+      updateGameState(response.state);
     } catch (moveError) {
       setError(moveError instanceof Error ? moveError.message : "Failed to move inside the current area.");
     }
@@ -193,7 +212,7 @@ export function AppRoot() {
 
     try {
       const response = await exitInterior(exitId);
-      setGameState(response.state);
+      updateGameState(response.state);
     } catch (exitError) {
       setError(exitError instanceof Error ? exitError.message : "Failed to leave the current area.");
     }
@@ -371,7 +390,7 @@ export function AppRoot() {
               variant="location"
               onMove={(x, y) => handleInteriorMove(x, y)}
               onExit={(exitId) => void handleInteriorExit(exitId)}
-              onStateRefresh={(newState) => setGameState(newState)}
+              onStateRefresh={(newState) => updateGameState(newState)}
             />
           ) : gameState.worldState.current_screen === "vault" && gameState.currentInteriorMap ? (
             <InteriorMapPanel
@@ -379,7 +398,7 @@ export function AppRoot() {
               variant="vault"
               onMove={(x, y) => handleInteriorMove(x, y)}
               onExit={(exitId) => void handleInteriorExit(exitId)}
-              onStateRefresh={(newState) => setGameState(newState)}
+              onStateRefresh={(newState) => updateGameState(newState)}
             />
           ) : (
             <HexOverworld
@@ -427,6 +446,13 @@ export function AppRoot() {
           onSelectQuest={setSelectedQuestId}
         />
       ) : null}
+
+      {levelUpToast !== null && (
+        <div className="level-up-toast">
+          <div>LEVEL UP</div>
+          <div className="level-up-label">You are now Level {levelUpToast}</div>
+        </div>
+      )}
 
       {activeDialog === "saves" ? (
         <section className="dialog-backdrop" onClick={() => setActiveDialog(null)}>

@@ -7,10 +7,12 @@ objectives:
     description: "Find a compatible electromagnetic component — try the Gun Runner Depot or other pre-war facilities."
     type: fetch
     target: fusion_cell
+    locationId: gun_runner_depot
   - id: install_component
     description: "Return to the Solar Spire and install the component in the relay housing."
     type: talk
     target: caretaker_drone
+    locationId: solar_spire
 rewards:
   karma: 15
   caps: 80

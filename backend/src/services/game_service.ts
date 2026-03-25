@@ -95,6 +95,7 @@ export class GameService {
       playerCharacter: {
         name: playerCharacter.name,
         level: playerCharacter.level,
+        xp: playerCharacter.xp ?? 0,
         archetype: playerCharacter.archetype,
         special: playerCharacter.special_json
           ? safeJsonParse<Record<string, number> | null>(playerCharacter.special_json, null)
@@ -119,13 +120,32 @@ export class GameService {
             const completedIds = safeJsonParse<string[]>(questState.completed_quests_json, []);
             return activeIds.includes(q.id) || completedIds.includes(q.id);
           })
-          .map((q) => ({
-            id: q.id,
-            name: q.name,
-            description: q.description,
-            objectives: q.objectives.map((o) => ({ id: o.id, description: o.description, type: o.type, target: o.target })),
-            mapMarker: q.mapMarker ?? null
-          }))
+          .map((q) => {
+            const isQuestCompleted = safeJsonParse<string[]>(questState.completed_quests_json, []).includes(q.id);
+            const objectives = q.objectives.map((o) => {
+              let completed = false;
+              if (isQuestCompleted) {
+                completed = true;
+              } else if (o.type === "fetch") {
+                completed = collectedItemIds.includes(o.target);
+              } else if (o.type === "visit" || o.type === "kill") {
+                completed = normalizedState.discoveredLocationIds.includes(o.target);
+              }
+              return { id: o.id, description: o.description, type: o.type, target: o.target, locationId: o.locationId, completed };
+            });
+            const nextObjective = objectives.find((o) => !o.completed);
+            const activeMapMarker = nextObjective?.locationId
+              ? { locationId: nextObjective.locationId, label: nextObjective.description }
+              : q.mapMarker ?? null;
+            return {
+              id: q.id,
+              name: q.name,
+              description: q.description,
+              objectives,
+              mapMarker: q.mapMarker ?? null,
+              activeMapMarker
+            };
+          })
       },
       factionStanding: safeJsonParse<Record<string, number>>(factionStanding.standings_json, {}),
       inventory: inventoryRows.map((row) => ({
@@ -156,6 +176,17 @@ export class GameService {
         atPlayerPosition:
           normalizedState.worldState.player_x === location.position.x &&
           normalizedState.worldState.player_y === location.position.y
+      })),
+      weaponCatalog: content.weapons.map((w) => ({
+        id: w.id,
+        name: w.name,
+        category: w.category,
+        damage: w.damage,
+        damageType: w.damageType,
+        weight: w.weight,
+        value: w.value,
+        rarity: w.rarity,
+        description: w.description
       }))
     };
   }
@@ -398,6 +429,7 @@ export class GameService {
       throw new Error("Travel is limited to adjacent hexes inside the explored map bounds.");
     }
 
+    const previousLocationCount = normalizedExploration.discoveredLocationIds.length;
     const revealedState = revealExploration(
       overworldMap,
       regionLocations,
@@ -425,6 +457,12 @@ export class GameService {
         updated_at: now
       }
     );
+
+    // Award XP for newly discovered locations (25 XP each)
+    const newLocationCount = revealedState.discoveredLocationIds.length - previousLocationCount;
+    if (newLocationCount > 0) {
+      this.saveRepo.awardXp(saveId, newLocationCount * 25);
+    }
   }
 
   public moveInterior(saveId: string, x: number, y: number): void {
@@ -485,8 +523,10 @@ export class GameService {
         ? { x: worldState.player_x, y: worldState.player_y }
         : getInteriorSpawnPoint(interiorMap);
 
-    if (currentPosition.x !== exit.x || currentPosition.y !== exit.y) {
-      throw new Error("Move onto the exit tile before leaving the current area.");
+    const dx = Math.abs(currentPosition.x - exit.x);
+    const dy = Math.abs(currentPosition.y - exit.y);
+    if (dx > 1 || dy > 1) {
+      throw new Error("Move closer to the exit before leaving the current area.");
     }
 
     const location = getInteriorLocation(content, worldState.current_location_id);

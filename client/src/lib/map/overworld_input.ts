@@ -91,5 +91,14 @@ export function resolveInteractionTarget(scene: OverworldSceneModel, worldPoint:
     };
   }
 
+  // Allow clicking on undiscovered (fog) tiles to explore toward them
+  if (!tile.discovered) {
+    return {
+      kind: "fog",
+      point: tile.point,
+      tileKey: tile.key
+    };
+  }
+
   return { kind: "none" };
 }

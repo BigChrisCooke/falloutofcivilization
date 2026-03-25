@@ -7,7 +7,7 @@ position:
   y: 5
 interiorMapId: vault_47_home
 factionTags:
-  - vault-dwellers
+  - vault_dwellers
 questTags:
   - intro
 encounterFlags:

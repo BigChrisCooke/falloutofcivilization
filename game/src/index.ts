@@ -6,6 +6,7 @@ export {
 } from "./content/load_game_content.js";
 export {
   companionSchema,
+  damageTypeEnum,
   dialogueNodeSchema,
   dialogueOptionSchema,
   dialogueTreeSchema,
@@ -14,6 +15,7 @@ export {
   overworldMapSchema,
   questObjectiveSchema,
   questSchema,
+  rarityEnum,
   regionSchema,
   specialGateSchema,
   specialStatEnum,
@@ -21,6 +23,9 @@ export {
   type CompanionDefinition,
   type CompanionReactionLine,
   type CompanionStoryStage,
+  weaponCategoryEnum,
+  weaponDefinitionSchema,
+  type DamageType,
   type DialogueNode,
   type DialogueOption,
   type DialogueTree,
@@ -29,9 +34,12 @@ export {
   type OverworldMapDefinition,
   type QuestDefinition,
   type QuestObjective,
+  type Rarity,
   type RegionDefinition,
   type SpecialGate,
-  type SpecialStat
+  type SpecialStat,
+  type WeaponCategory,
+  type WeaponDefinition
 } from "./schemas/content.js";
 export { getHexesInRadius, hexDistance, toTileKey, type HexPoint } from "./rules/hex.js";
 export { isPassableTile } from "./tiles.js";

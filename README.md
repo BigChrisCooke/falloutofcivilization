@@ -76,6 +76,60 @@ If you want to change:
 6. Open the vault panel.
 7. Enter a placeholder location backed by authored content and persisted state.
 
+## Git Cheat Sheet
+
+### Save your work (commit)
+
+```bash
+# 1. See what you've changed
+git status
+
+# 2. Stage the files you want to save
+git add -A                    # stages everything
+# OR stage specific files:
+git add client/src/components/AppRoot.tsx backend/src/services/game_service.ts
+
+# 3. Commit with a message describing what you did
+git commit -m "fix quest markers and add XP system"
+```
+
+### Push to GitHub
+
+```bash
+# Push your commits to the remote repository
+git push
+```
+
+### Pull the latest changes (if working from multiple machines)
+
+```bash
+git pull
+```
+
+### Undo mistakes
+
+```bash
+# Undo changes to a single file (before staging)
+git checkout -- path/to/file.ts
+
+# Unstage a file (after git add, before commit)
+git reset HEAD path/to/file.ts
+
+# See what changed in a file
+git diff path/to/file.ts
+```
+
+### Quick daily workflow
+
+```bash
+git pull                              # get latest
+# ... make your changes ...
+npm run build && npm run test         # make sure nothing is broken
+git add -A                            # stage everything
+git commit -m "describe what changed" # save it
+git push                              # send to GitHub
+```
+
 ## Project Notes
 
 - Authored game content lives under `game/content/`.
