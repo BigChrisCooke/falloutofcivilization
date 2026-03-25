@@ -16,17 +16,19 @@ export function createAuthRouter(authService: AuthService, config: AppConfig): R
   router.post("/register", async (request, response) => {
     try {
       const credentials = credentialsSchema.parse(request.body);
-      const user = await authService.register(credentials.username, credentials.password);
-      const session = authService.createSession(user.id);
+      const { user, session } = await authService.registerWithSession(credentials.username, credentials.password);
 
       response.setHeader("Set-Cookie", createSessionCookie(config, session.id, session.expires_at - Date.now()));
       response.status(201).json({
         user
       });
     } catch (error) {
-      const message = error instanceof ZodError
+      const message =
+        error instanceof ZodError
           ? error.issues.map((issue) => issue.message).join(", ")
-          : error instanceof Error ? error.message : "Registration failed.";
+          : error instanceof Error
+            ? error.message
+            : "Registration failed.";
       response.status(400).json({ error: message });
     }
   });
@@ -34,23 +36,25 @@ export function createAuthRouter(authService: AuthService, config: AppConfig): R
   router.post("/login", async (request, response) => {
     try {
       const credentials = credentialsSchema.parse(request.body);
-      const user = await authService.login(credentials.username, credentials.password);
-      const session = authService.createSession(user.id);
+      const { user, session } = await authService.loginWithSession(credentials.username, credentials.password);
 
       response.setHeader("Set-Cookie", createSessionCookie(config, session.id, session.expires_at - Date.now()));
       response.json({
         user
       });
     } catch (error) {
-      const message = error instanceof ZodError
+      const message =
+        error instanceof ZodError
           ? error.issues.map((issue) => issue.message).join(", ")
-          : error instanceof Error ? error.message : "Login failed.";
+          : error instanceof Error
+            ? error.message
+            : "Login failed.";
       response.status(400).json({ error: message });
     }
   });
 
-  router.post("/logout", requireAuth, (request, response) => {
-    authService.logout(request.sessionId!);
+  router.post("/logout", requireAuth, async (request, response) => {
+    await authService.logout(request.sessionId!);
     response.setHeader("Set-Cookie", clearSessionCookie(config));
     response.status(204).send();
   });

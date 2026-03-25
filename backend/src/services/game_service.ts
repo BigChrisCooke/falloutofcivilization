@@ -1,22 +1,9 @@
-import type Database from "better-sqlite3";
-
+import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
-
-function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
-  if (json === null || json === undefined) {
-    return fallback;
-  }
-
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    console.warn("Failed to parse stored JSON, using fallback:", json.slice(0, 80));
-    return fallback;
-  }
-}
 import { SaveRepo } from "../repos/save_repo.js";
+import type { MapDiscoveryRow, WorldStateRow } from "../shared/types.js";
 import { getGameContent } from "./content_service.js";
 import { DialogueService } from "./dialogue_service.js";
 import {
@@ -35,31 +22,35 @@ import {
   getInteriorMap,
   getInteriorSpawnPoint
 } from "./interior_state.js";
-import type { MapDiscoveryRow, WorldStateRow } from "../shared/types.js";
 
-export class GameService {
-  private readonly saveRepo: SaveRepo;
-  private readonly gameStateRepo: GameStateRepo;
-  private readonly inventoryRepo: InventoryRepo;
-  private readonly companionRepo: CompanionRepo;
-  private readonly dialogueService: DialogueService;
-
-  public constructor(db: Database.Database) {
-    this.saveRepo = new SaveRepo(db);
-    this.gameStateRepo = new GameStateRepo(db);
-    this.inventoryRepo = new InventoryRepo(db);
-    this.companionRepo = new CompanionRepo(db);
-    this.dialogueService = new DialogueService(db);
+function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
+  if (json === null || json === undefined) {
+    return fallback;
   }
 
-  public getState(saveId: string) {
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    console.warn("Failed to parse stored JSON, using fallback:", json.slice(0, 80));
+    return fallback;
+  }
+}
+
+export class GameService {
+  private readonly saveRepo = new SaveRepo();
+  private readonly gameStateRepo = new GameStateRepo();
+  private readonly inventoryRepo = new InventoryRepo();
+  private readonly companionRepo = new CompanionRepo();
+  private readonly dialogueService = new DialogueService();
+
+  public async getState(saveId: string) {
     const content = getGameContent();
-    const save = this.saveRepo.findById(saveId);
-    const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
-    const worldState = this.gameStateRepo.getWorldState(saveId);
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
-    const questState = this.gameStateRepo.getQuestState(saveId);
-    const factionStanding = this.gameStateRepo.getFactionStanding(saveId);
+    const save = await this.saveRepo.findById(saveId);
+    const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
+    const factionStanding = await this.gameStateRepo.getFactionStanding(saveId);
 
     if (!save || !playerCharacter || !worldState || !mapDiscovery || !questState || !factionStanding) {
       throw new Error("Save state is incomplete.");
@@ -72,7 +63,7 @@ export class GameService {
     const enteredLocationIds = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
     const normalizedState =
       region && overworldMap && isOnOverworld
-        ? this.ensureExplorationState(saveId, worldState, mapDiscovery)
+        ? await this.ensureExplorationState(saveId, worldState, mapDiscovery)
         : {
             worldState,
             mapDiscovery,
@@ -86,10 +77,10 @@ export class GameService {
       ? content.interiorMaps.find((candidate) => candidate.id === worldState.current_map_id) ?? null
       : null;
 
-    const inventoryRows = this.inventoryRepo.getAll(saveId);
+    const inventoryRows = await this.inventoryRepo.getAll(saveId);
     const collectedItemIds = inventoryRows.map((row) => row.item_id);
     const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
-    const companionRows = this.companionRepo.getAll(saveId);
+    const companionRows = await this.companionRepo.getAll(saveId);
 
     return {
       save,
@@ -134,7 +125,15 @@ export class GameService {
               } else if (o.type === "kill") {
                 completed = normalizedState.discoveredLocationIds.includes(o.target);
               }
-              return { id: o.id, description: o.description, type: o.type, target: o.target, locationId: o.locationId, completed };
+
+              return {
+                id: o.id,
+                description: o.description,
+                type: o.type,
+                target: o.target,
+                locationId: o.locationId,
+                completed
+              };
             });
             const nextObjective = objectives.find((o) => !o.completed);
             const activeMapMarker = nextObjective?.locationId
@@ -195,14 +194,14 @@ export class GameService {
     };
   }
 
-  public recordCollectedAction(saveId: string, actionId: string): void {
-    const questState = this.gameStateRepo.getQuestState(saveId);
+  public async recordCollectedAction(saveId: string, actionId: string): Promise<void> {
+    const questState = await this.gameStateRepo.getQuestState(saveId);
     if (!questState) return;
 
     const collected = safeJsonParse<string[]>(questState.collected_actions_json, []);
     if (!collected.includes(actionId)) {
       collected.push(actionId);
-      this.gameStateRepo.updateQuestState({
+      await this.gameStateRepo.updateQuestState({
         ...questState,
         collected_actions_json: JSON.stringify(collected),
         updated_at: Date.now()
@@ -210,9 +209,11 @@ export class GameService {
     }
   }
 
-  public checkCompanionStoryProgression(saveId: string): { companionId: string; newStage: number; stageTitle: string; dialogueTreeId: string } | null {
+  public async checkCompanionStoryProgression(
+    saveId: string
+  ): Promise<{ companionId: string; newStage: number; stageTitle: string; dialogueTreeId: string } | null> {
     const content = getGameContent();
-    const companions = this.companionRepo.getAll(saveId);
+    const companions = await this.companionRepo.getAll(saveId);
     const companion = companions[0];
     if (!companion) return null;
 
@@ -223,11 +224,11 @@ export class GameService {
     const nextStage = companionDef.storyStages[nextStageIndex];
     if (!nextStage) return null;
 
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
     const discoveredLocationIds = mapDiscovery
       ? safeJsonParse<string[]>(mapDiscovery.discovered_locations_json, [])
       : [];
-    const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+    const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
     const karma = playerCharacter?.karma ?? 0;
 
     const trigger = nextStage.triggerCondition;
@@ -244,7 +245,7 @@ export class GameService {
 
     if (!triggered) return null;
 
-    this.companionRepo.updateStoryStage(saveId, companion.companion_id, nextStageIndex);
+    await this.companionRepo.updateStoryStage(saveId, companion.companion_id, nextStageIndex);
 
     return {
       companionId: companion.companion_id,
@@ -254,9 +255,18 @@ export class GameService {
     };
   }
 
-  public getCompanionStoryDialogue(saveId: string, companionId: string): { dialogue: { rootNodeId: string; nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }> }; stageTitle: string } | null {
+  public async getCompanionStoryDialogue(
+    saveId: string,
+    companionId: string
+  ): Promise<{
+    dialogue: {
+      rootNodeId: string;
+      nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+    };
+    stageTitle: string;
+  } | null> {
     const content = getGameContent();
-    const companion = this.companionRepo.find(saveId, companionId);
+    const companion = await this.companionRepo.find(saveId, companionId);
     if (!companion || companion.departed) return null;
 
     const companionDef = content.companions.find((c) => c.id === companionId);
@@ -268,12 +278,11 @@ export class GameService {
     const dialogueTree = companionDef.storyDialogues[currentStage.dialogueTreeId];
     if (!dialogueTree) return null;
 
-    // Resolve effective root node via conditionalRoots (e.g. karma-based branching)
     let effectiveRootNodeId = dialogueTree.rootNodeId;
     if (dialogueTree.conditionalRoots && dialogueTree.conditionalRoots.length > 0) {
-      const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+      const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
       const karma = playerCharacter?.karma ?? 0;
-      const questState = this.gameStateRepo.getQuestState(saveId);
+      const questState = await this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
 
       for (const condition of dialogueTree.conditionalRoots) {
@@ -281,6 +290,7 @@ export class GameService {
           effectiveRootNodeId = condition.nodeId;
           break;
         }
+
         if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
           effectiveRootNodeId = condition.nodeId;
           break;
@@ -288,9 +298,8 @@ export class GameService {
       }
     }
 
-    // Mark this stage as viewed so the "new story" indicator disappears
     if (companion.story_stage_viewed < companion.story_stage) {
-      this.companionRepo.markStoryStageViewed(saveId, companionId, companion.story_stage);
+      await this.companionRepo.markStoryStageViewed(saveId, companionId, companion.story_stage);
     }
 
     return {
@@ -299,9 +308,9 @@ export class GameService {
     };
   }
 
-  public updateScreen(saveId: string, screen: "overworld" | "vault"): void {
+  public async updateScreen(saveId: string, screen: "overworld" | "vault"): Promise<void> {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
     if (!worldState) {
       throw new Error("World state not found.");
     }
@@ -341,7 +350,7 @@ export class GameService {
             y: overworldPosition.y
           };
 
-    this.gameStateRepo.updateWorldState({
+    await this.gameStateRepo.updateWorldState({
       ...worldState,
       current_screen: screen,
       current_location_id: screen === "overworld" ? null : vaultLocation?.id ?? null,
@@ -353,143 +362,144 @@ export class GameService {
     });
   }
 
-  public enterLocation(saveId: string, locationId: string): void {
-    const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+  public async enterLocation(saveId: string, locationId: string): Promise<void> {
+    await withTransaction(async () => {
+      const content = getGameContent();
+      const worldState = await this.gameStateRepo.getWorldState(saveId);
+      const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
 
-    if (!worldState || !mapDiscovery) {
-      throw new Error("World state not found.");
-    }
+      if (!worldState || !mapDiscovery) {
+        throw new Error("World state not found.");
+      }
 
-    const region = getRegion(content, worldState.current_region_id);
-    const regionLocations = getRegionLocations(content, region.id);
-    const startingLocation = getStartingLocation(content, region, regionLocations);
-    const overworldMap = getOverworldMap(content, region);
-    const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
-      playerX: worldState.player_x,
-      playerY: worldState.player_y,
-      discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
-      discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
-    });
-    const location = regionLocations.find((candidate) => candidate.id === locationId);
+      const region = getRegion(content, worldState.current_region_id);
+      const regionLocations = getRegionLocations(content, region.id);
+      const startingLocation = getStartingLocation(content, region, regionLocations);
+      const overworldMap = getOverworldMap(content, region);
+      const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
+        playerX: worldState.player_x,
+        playerY: worldState.player_y,
+        discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
+        discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
+      });
+      const location = regionLocations.find((candidate) => candidate.id === locationId);
 
-    if (!location || !location.interiorMapId) {
-      throw new Error("That location cannot be entered.");
-    }
+      if (!location || !location.interiorMapId) {
+        throw new Error("That location cannot be entered.");
+      }
 
-    if (!normalizedExploration.discoveredLocationIds.includes(location.id)) {
-      throw new Error("That location has not been discovered yet.");
-    }
+      if (!normalizedExploration.discoveredLocationIds.includes(location.id)) {
+        throw new Error("That location has not been discovered yet.");
+      }
 
-    if (
-      normalizedExploration.playerPosition.x !== location.position.x ||
-      normalizedExploration.playerPosition.y !== location.position.y
-    ) {
-      throw new Error("Travel onto the location tile before entering it.");
-    }
+      if (
+        normalizedExploration.playerPosition.x !== location.position.x ||
+        normalizedExploration.playerPosition.y !== location.position.y
+      ) {
+        throw new Error("Travel onto the location tile before entering it.");
+      }
 
-    const spawnPoint = getInteriorSpawnPoint(getInteriorMap(content, location.interiorMapId));
-    const now = Date.now();
+      const spawnPoint = getInteriorSpawnPoint(getInteriorMap(content, location.interiorMapId));
+      const now = Date.now();
 
-    this.gameStateRepo.updateWorldState({
-      ...worldState,
-      current_screen: "location",
-      current_location_id: location.id,
-      current_map_id: location.interiorMapId,
-      current_panel: "location",
-      player_x: spawnPoint.x,
-      player_y: spawnPoint.y,
-      updated_at: now
-    });
-
-    // Record this location as entered (for visit objective tracking)
-    const enteredLocations = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
-    if (!enteredLocations.includes(location.id)) {
-      enteredLocations.push(location.id);
-      this.gameStateRepo.updateMapDiscovery({
-        ...mapDiscovery,
-        entered_locations_json: JSON.stringify(enteredLocations),
+      await this.gameStateRepo.updateWorldState({
+        ...worldState,
+        current_screen: "location",
+        current_location_id: location.id,
+        current_map_id: location.interiorMapId,
+        current_panel: "location",
+        player_x: spawnPoint.x,
+        player_y: spawnPoint.y,
         updated_at: now
       });
-    }
 
-    // Check companion story progression when entering a location
-    this.checkCompanionStoryProgression(saveId);
-  }
-
-  public travel(saveId: string, x: number, y: number): void {
-    const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
-
-    if (!worldState || !mapDiscovery) {
-      throw new Error("World state not found.");
-    }
-
-    const region = getRegion(content, worldState.current_region_id);
-    const regionLocations = getRegionLocations(content, region.id);
-    const startingLocation = getStartingLocation(content, region, regionLocations);
-    const overworldMap = getOverworldMap(content, region);
-    const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
-      playerX: worldState.player_x,
-      playerY: worldState.player_y,
-      discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
-      discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
-    });
-    const targetPosition = { x, y };
-
-    if (
-      normalizedExploration.playerPosition.x === targetPosition.x &&
-      normalizedExploration.playerPosition.y === targetPosition.y
-    ) {
-      return;
-    }
-
-    if (!canTravel(normalizedExploration.playerPosition, targetPosition, overworldMap)) {
-      throw new Error("Travel is limited to adjacent hexes inside the explored map bounds.");
-    }
-
-    const previousLocationCount = normalizedExploration.discoveredLocationIds.length;
-    const revealedState = revealExploration(
-      overworldMap,
-      regionLocations,
-      targetPosition,
-      normalizedExploration.discoveredLocationIds,
-      normalizedExploration.discoveredTileKeys
-    );
-    const now = Date.now();
-
-    this.gameStateRepo.updateExplorationState(
-      {
-        ...worldState,
-        current_screen: "overworld",
-        current_location_id: null,
-        current_map_id: region.mapId,
-        current_panel: null,
-        player_x: targetPosition.x,
-        player_y: targetPosition.y,
-        updated_at: now
-      },
-      {
-        save_id: saveId,
-        discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
-        discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
-        entered_locations_json: mapDiscovery.entered_locations_json,
-        updated_at: now
+      const enteredLocations = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
+      if (!enteredLocations.includes(location.id)) {
+        enteredLocations.push(location.id);
+        await this.gameStateRepo.updateMapDiscovery({
+          ...mapDiscovery,
+          entered_locations_json: JSON.stringify(enteredLocations),
+          updated_at: now
+        });
       }
-    );
 
-    // Award XP for newly discovered locations (25 XP each)
-    const newLocationCount = revealedState.discoveredLocationIds.length - previousLocationCount;
-    if (newLocationCount > 0) {
-      this.saveRepo.awardXp(saveId, newLocationCount * 25);
-    }
+      await this.checkCompanionStoryProgression(saveId);
+    });
   }
 
-  public moveInterior(saveId: string, x: number, y: number): void {
+  public async travel(saveId: string, x: number, y: number): Promise<void> {
+    await withTransaction(async () => {
+      const content = getGameContent();
+      const worldState = await this.gameStateRepo.getWorldState(saveId);
+      const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
+
+      if (!worldState || !mapDiscovery) {
+        throw new Error("World state not found.");
+      }
+
+      const region = getRegion(content, worldState.current_region_id);
+      const regionLocations = getRegionLocations(content, region.id);
+      const startingLocation = getStartingLocation(content, region, regionLocations);
+      const overworldMap = getOverworldMap(content, region);
+      const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
+        playerX: worldState.player_x,
+        playerY: worldState.player_y,
+        discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
+        discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
+      });
+      const targetPosition = { x, y };
+
+      if (
+        normalizedExploration.playerPosition.x === targetPosition.x &&
+        normalizedExploration.playerPosition.y === targetPosition.y
+      ) {
+        return;
+      }
+
+      if (!canTravel(normalizedExploration.playerPosition, targetPosition, overworldMap)) {
+        throw new Error("Travel is limited to adjacent hexes inside the explored map bounds.");
+      }
+
+      const previousLocationCount = normalizedExploration.discoveredLocationIds.length;
+      const revealedState = revealExploration(
+        overworldMap,
+        regionLocations,
+        targetPosition,
+        normalizedExploration.discoveredLocationIds,
+        normalizedExploration.discoveredTileKeys
+      );
+      const now = Date.now();
+
+      await this.gameStateRepo.updateExplorationState(
+        {
+          ...worldState,
+          current_screen: "overworld",
+          current_location_id: null,
+          current_map_id: region.mapId,
+          current_panel: null,
+          player_x: targetPosition.x,
+          player_y: targetPosition.y,
+          updated_at: now
+        },
+        {
+          save_id: saveId,
+          discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
+          discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
+          entered_locations_json: mapDiscovery.entered_locations_json,
+          updated_at: now
+        }
+      );
+
+      const newLocationCount = revealedState.discoveredLocationIds.length - previousLocationCount;
+      if (newLocationCount > 0) {
+        await this.saveRepo.awardXp(saveId, newLocationCount * 25);
+      }
+    });
+  }
+
+  public async moveInterior(saveId: string, x: number, y: number): Promise<void> {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
 
     if (!worldState) {
       throw new Error("World state not found.");
@@ -514,7 +524,7 @@ export class GameService {
       throw new Error("Interior movement is limited to adjacent passable hexes.");
     }
 
-    this.gameStateRepo.updateWorldState({
+    await this.gameStateRepo.updateWorldState({
       ...worldState,
       player_x: targetPosition.x,
       player_y: targetPosition.y,
@@ -522,9 +532,9 @@ export class GameService {
     });
   }
 
-  public exitInterior(saveId: string, exitId: string): void {
+  public async exitInterior(saveId: string, exitId: string): Promise<void> {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
 
     if (!worldState) {
       throw new Error("World state not found.");
@@ -553,13 +563,11 @@ export class GameService {
 
     const location = getInteriorLocation(content, worldState.current_location_id);
 
-    // Reset NPC dialogue positions back to root when leaving an area
-    this.dialogueService.resetAllDialoguePositions(saveId);
-
-    this.restoreOverworldFromLocation(saveId, worldState, location);
+    await this.dialogueService.resetAllDialoguePositions(saveId);
+    await this.restoreOverworldFromLocation(saveId, worldState, location);
   }
 
-  private ensureExplorationState(saveId: string, worldState: WorldStateRow, mapDiscovery: MapDiscoveryRow) {
+  private async ensureExplorationState(saveId: string, worldState: WorldStateRow, mapDiscovery: MapDiscoveryRow) {
     const content = getGameContent();
     const region = getRegion(content, worldState.current_region_id);
     const regionLocations = getRegionLocations(content, region.id);
@@ -595,7 +603,7 @@ export class GameService {
       updated_at: now
     };
 
-    this.gameStateRepo.updateExplorationState(nextWorldState, nextMapDiscovery);
+    await this.gameStateRepo.updateExplorationState(nextWorldState, nextMapDiscovery);
 
     return {
       worldState: nextWorldState,
@@ -605,36 +613,41 @@ export class GameService {
     };
   }
 
-  public recruitCompanion(saveId: string, companionId: string): void {
+  public async recruitCompanion(saveId: string, companionId: string): Promise<void> {
     const content = getGameContent();
     const companion = content.companions.find((c) => c.id === companionId);
     if (!companion) {
       throw new Error("Unknown companion.");
     }
 
-    const existing = this.companionRepo.find(saveId, companionId);
+    const existing = await this.companionRepo.find(saveId, companionId);
     if (existing && !existing.departed) {
       throw new Error("Companion is already recruited.");
     }
+
     if (existing && existing.departed) {
       throw new Error("This companion has departed and cannot be re-recruited.");
     }
 
-    this.companionRepo.recruit(saveId, companionId);
+    await this.companionRepo.recruit(saveId, companionId);
   }
 
-  public savePlayerSpecial(saveId: string, special: Record<string, number>): void {
-    const existing = this.saveRepo.findPlayerCharacter(saveId);
+  public async savePlayerSpecial(saveId: string, special: Record<string, number>): Promise<void> {
+    const existing = await this.saveRepo.findPlayerCharacter(saveId);
     if (!existing) throw new Error("Player character not found.");
     if (existing.special_json !== null) throw new Error("Character has already been created.");
-    this.saveRepo.updateSpecial(saveId, JSON.stringify(special));
+    await this.saveRepo.updateSpecial(saveId, JSON.stringify(special));
   }
 
-  private restoreOverworldFromLocation(saveId: string, worldState: WorldStateRow, location: { regionId: string; position: { x: number; y: number } }) {
+  private async restoreOverworldFromLocation(
+    saveId: string,
+    worldState: WorldStateRow,
+    location: { regionId: string; position: { x: number; y: number } }
+  ): Promise<void> {
     const content = getGameContent();
     const region = getRegion(content, location.regionId);
 
-    this.gameStateRepo.updateWorldState({
+    await this.gameStateRepo.updateWorldState({
       ...worldState,
       current_screen: "overworld",
       current_location_id: null,
@@ -645,7 +658,7 @@ export class GameService {
       updated_at: Date.now()
     });
 
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
 
     if (!mapDiscovery) {
       return;
@@ -661,7 +674,7 @@ export class GameService {
       safeJsonParse<string[]>(mapDiscovery.discovered_tiles_json, [])
     );
 
-    this.gameStateRepo.updateMapDiscovery({
+    await this.gameStateRepo.updateMapDiscovery({
       ...mapDiscovery,
       discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
       discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),

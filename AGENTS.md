@@ -1,6 +1,6 @@
 # Fallout Of Civilization
 
-Single-player browser RPG prototype. TypeScript monorepo with a Vite React client, Express API backend, shared `game/` rules and content package, SQLite persistence, and automated tests.
+Single-player browser RPG prototype. TypeScript monorepo with a Vite React client, Express API backend, shared `game/` rules and content package, dual-driver persistence, and automated tests.
 
 ## Current Phase
 
@@ -12,7 +12,7 @@ The current base is a Phase 1 vertical slice:
 - a stub overworld screen
 - a vault or home panel
 - one placeholder interior flow
-- SQLite persistence
+- backend persistence with SQLite for local/CI and PostgreSQL support for staging/live
 - authored content validation
 
 ## Architecture Rules
@@ -22,35 +22,37 @@ The current base is a Phase 1 vertical slice:
 - `game/` is the source of truth for authored content, schemas, and deterministic helpers.
 - Do not hardcode authoritative game content or branching rules in UI components.
 - Keep runtime save state separate from authored content files.
+- Keep all database driver usage inside `backend/src/db/`.
+- Treat repos plus the shared DB layer as the only runtime DB access path.
 
 ## Actual Repository Structure
 
 ```text
 ./
-├── client/
-│   ├── src/components/     # React UI components
-│   ├── src/lib/            # Client API calls, geometry, and scene helpers
-│   ├── src/main.tsx        # Vite React app entry point
-│   └── src/styles/         # Global styling
-├── backend/
-│   └── src/
-│       ├── controllers/    # Express route handlers
-│       ├── db/             # SQLite connection and migrations
-│       ├── middleware/     # Session/auth middleware
-│       ├── repos/          # SQLite access helpers
-│       ├── services/       # Domain logic
-│       ├── shared/         # Config and shared backend types
-│       └── __tests__/      # Vitest auth tests
-├── game/
-│   ├── content/            # YAML authored game content
-│   └── src/
-│       ├── content/        # Content loaders
-│       ├── schemas/        # Zod schemas
-│       └── __tests__/      # Content validation tests
-├── docs/todo/initial/      # Goal, stack, phases, and progress docs
-├── .claude/skills/         # Claude workflow guides
-├── package.json            # Workspace commands
-└── tsconfig.base.json      # Shared TypeScript config
+|-- client/
+|   |-- src/components/     # React UI components
+|   |-- src/lib/            # Client API calls, geometry, and scene helpers
+|   |-- src/main.tsx        # Vite React app entry point
+|   `-- src/styles/         # Global styling
+|-- backend/
+|   `-- src/
+|       |-- controllers/    # Express route handlers
+|       |-- db/             # Shared DB adapters, connection lifecycle, and migrations
+|       |-- middleware/     # Session/auth middleware
+|       |-- repos/          # Persistence helpers built on getDb()/withTransaction()
+|       |-- services/       # Domain logic
+|       |-- shared/         # Config and shared backend types
+|       `-- __tests__/      # Vitest backend tests and DB contract checks
+|-- game/
+|   |-- content/            # YAML authored game content
+|   `-- src/
+|       |-- content/        # Content loaders
+|       |-- schemas/        # Zod schemas
+|       `-- __tests__/      # Content validation tests
+|-- docs/todo/initial/      # Goal, stack, phases, and progress docs
+|-- .claude/skills/         # Claude workflow guides
+|-- package.json            # Workspace commands
+`-- tsconfig.base.json      # Shared TypeScript config
 ```
 
 ## Stack
@@ -66,6 +68,7 @@ The current base is a Phase 1 vertical slice:
 
 - Express
 - SQLite via `better-sqlite3`
+- PostgreSQL via `pg`
 - cookie-based sessions
 - `argon2` password hashing
 - Zod validation
@@ -82,6 +85,7 @@ If Chris wants to change:
 
 - UI layout or app shell behavior: start in `client/`
 - login, logout, sessions, or persistence: start in `backend/`
+- DB driver behavior, connection lifecycle, or transaction handling: start in `backend/src/db/`
 - a new location, map, or authored world content: start in `game/content/`
 - content formats or validation rules: start in `game/src/schemas/`
 - content loading behavior: start in `game/src/content/`
@@ -92,6 +96,30 @@ Do not:
 - add new authored locations directly in React components
 - store runtime player state in `game/content/`
 - treat `client/` as the source of truth for maps, quests, or progression
+- call `better-sqlite3` or `pg` directly outside `backend/src/db/` and approved DB tests
+
+## Persistence Rules
+
+- SQLite remains the default local and CI driver.
+- PostgreSQL must work for staging/live through the same repo and service layer.
+- Shared runtime SQL should be written once with `?` placeholders.
+- PostgreSQL placeholder conversion belongs in the Postgres adapter only.
+- Do not add broad SQL regex rewrites for generic functions, aggregates, or JSON expressions.
+- Audit runtime SQL for SQLite-only syntax before adding new persistence features.
+- Do not use `datetime('now')`, `json_extract`, `sqlite_master`, `PRAGMA`, `INSERT OR IGNORE`, `INSERT OR REPLACE`, `last_insert_rowid()`, or `AUTOINCREMENT` in production runtime SQL outside approved dialect-specific DB code.
+- Keep timestamp writes application-supplied and consistent with the existing epoch-millisecond model used by the backend.
+- Use `getDb()` and `withTransaction()` for runtime access and transaction scoping.
+- Multi-write gameplay flows should stay atomic through the shared transaction layer.
+
+## Migration Rules
+
+- Keep one ordered migration source under `backend/src/db/migrations/`.
+- Migration filenames must stay deterministically sortable.
+- Migrations should be SQLite-safe by default.
+- Use `@sqlite` and `@postgres` blocks only when SQL genuinely diverges.
+- Do not use `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` in SQLite branches.
+- If a PostgreSQL migration rebuilds a table or copies explicit ids into sequence-backed columns, repair the sequence with `setval(pg_get_serial_sequence(...), MAX(id), EXISTS(...))`.
+- Current runtime ids are UUID/TEXT based, so future sequence repair work is only needed if a sequence-backed table is introduced.
 
 ## Current Content Structure
 
@@ -111,6 +139,7 @@ Run these from the repo root:
 - `npm run dev`
 - `npm run build`
 - `npm run test`
+- `npm run test:postgres`
 - `npm run db:migrate`
 - `npm run content:validate`
 
@@ -127,6 +156,7 @@ Before commit or PR:
 2. Run `npm run test`
 3. Run `npm run content:validate`
 4. Run `npm run db:migrate` if database setup or migration behavior changed
+5. Run `npm run test:postgres` before deploy or when Postgres behavior, migrations, or adapter code changes
 
 Do not commit if the relevant checks fail.
 
@@ -167,5 +197,7 @@ These files should always match the real repo commands and structure.
 
 - `SQLITE_PATH` is relative to the `backend/` workspace when backend scripts run.
 - Root `.env` should be the source of environment configuration.
-- Content files define authored world data; SQLite stores runtime save state.
+- `DB_DRIVER=sqlite` is the default local workflow.
+- PostgreSQL uses `DATABASE_URL` first, then the discrete `POSTGRES_*` settings if needed.
+- Content files define authored world data; backend DB storage holds runtime save state.
 - The safe way to add a new enterable location is: add content, validate content, then wire any UI affordance if needed.

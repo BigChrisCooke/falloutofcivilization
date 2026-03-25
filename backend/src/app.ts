@@ -1,5 +1,4 @@
 import cors from "cors";
-import type Database from "better-sqlite3";
 import express, { type NextFunction, type Request, type Response } from "express";
 
 import { createAuthRouter } from "./controllers/auth_controller.js";
@@ -14,14 +13,14 @@ import { InventoryService } from "./services/inventory_service.js";
 import { SaveService } from "./services/save_service.js";
 import type { AppConfig } from "./shared/config.js";
 
-export function createApp(db: Database.Database, config: AppConfig) {
+export function createApp(config: AppConfig) {
   getGameContent();
 
-  const authService = new AuthService(db, config);
-  const saveService = new SaveService(db);
-  const gameService = new GameService(db);
-  const dialogueService = new DialogueService(db);
-  const inventoryService = new InventoryService(db);
+  const authService = new AuthService(config);
+  const saveService = new SaveService();
+  const gameService = new GameService();
+  const dialogueService = new DialogueService();
+  const inventoryService = new InventoryService();
   const app = express();
 
   app.use(

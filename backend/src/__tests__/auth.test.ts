@@ -1,29 +1,20 @@
-import Database from "better-sqlite3";
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
-import { runMigrations } from "../db/run_migrations.js";
-import type { AppConfig } from "../shared/config.js";
+import { cleanupTestDb, createTestConfig, resetTestDb } from "./test_utils.js";
 
 describe("auth flow", () => {
-  let db: Database.Database;
-  let config: AppConfig;
+  beforeEach(async () => {
+    await resetTestDb();
+  });
 
-  beforeEach(() => {
-    db = new Database(":memory:");
-    runMigrations(db);
-    config = {
-      port: 3001,
-      clientOrigin: "http://localhost:4321",
-      sqlitePath: ":memory:",
-      sessionTtlDays: 14,
-      cookieName: "foc_session"
-    };
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   it("registers a user and restores the session", async () => {
-    const app = createApp(db, config);
+    const app = createApp(createTestConfig());
     const agent = request.agent(app);
 
     const registerResponse = await agent.post("/api/auth/register").send({
@@ -42,7 +33,7 @@ describe("auth flow", () => {
   });
 
   it("logs an existing user in and rejects invalid credentials", async () => {
-    const app = createApp(db, config);
+    const app = createApp(createTestConfig());
     const registerAgent = request.agent(app);
 
     await registerAgent.post("/api/auth/register").send({

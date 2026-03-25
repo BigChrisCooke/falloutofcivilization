@@ -1,15 +1,8 @@
-import type Database from "better-sqlite3";
 import { toTileKey } from "../../../game/src/index.js";
 
+import { withTransaction } from "../db/connection.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { SaveRepo } from "../repos/save_repo.js";
-import { getGameContent } from "./content_service.js";
-import {
-  getOverworldMap,
-  getRegionLocations,
-  getStartingLocation,
-  revealExploration
-} from "./exploration_state.js";
 import type {
   FactionStandingRow,
   MapDiscoveryRow,
@@ -18,21 +11,23 @@ import type {
   SaveGameRow,
   WorldStateRow
 } from "../shared/types.js";
+import { getGameContent } from "./content_service.js";
+import {
+  getOverworldMap,
+  getRegionLocations,
+  getStartingLocation,
+  revealExploration
+} from "./exploration_state.js";
 
 export class SaveService {
-  private readonly saveRepo: SaveRepo;
-  private readonly gameStateRepo: GameStateRepo;
+  private readonly saveRepo = new SaveRepo();
+  private readonly gameStateRepo = new GameStateRepo();
 
-  public constructor(db: Database.Database) {
-    this.saveRepo = new SaveRepo(db);
-    this.gameStateRepo = new GameStateRepo(db);
-  }
-
-  public listSaves(userId: string): SaveGameRow[] {
+  public async listSaves(userId: string): Promise<SaveGameRow[]> {
     return this.saveRepo.listByUser(userId);
   }
 
-  public createSave(userId: string, saveName: string): SaveGameRow {
+  public async createSave(userId: string, saveName: string): Promise<SaveGameRow> {
     const content = getGameContent();
     const region = content.regions[0];
 
@@ -120,28 +115,32 @@ export class SaveService {
       updated_at: now
     };
 
-    this.saveRepo.create(save, playerCharacter);
-    this.gameStateRepo.createInitialState(worldState, mapDiscovery, questState, factionStanding);
+    await withTransaction(async () => {
+      await this.saveRepo.create(save, playerCharacter);
+      await this.gameStateRepo.createInitialState(worldState, mapDiscovery, questState, factionStanding);
+    });
 
     return save;
   }
 
-  public getSave(saveId: string): SaveGameRow | undefined {
+  public async getSave(saveId: string): Promise<SaveGameRow | undefined> {
     return this.saveRepo.findById(saveId);
   }
 
-  public touchSave(saveId: string): void {
-    this.saveRepo.touchSave(saveId);
+  public async touchSave(saveId: string): Promise<void> {
+    await this.saveRepo.touchSave(saveId);
   }
 
-  public deleteSave(userId: string, saveId: string): boolean {
-    const save = this.saveRepo.findById(saveId);
+  public async deleteSave(userId: string, saveId: string): Promise<boolean> {
+    return withTransaction(async () => {
+      const save = await this.saveRepo.findById(saveId);
 
-    if (!save || save.user_id !== userId) {
-      return false;
-    }
+      if (!save || save.user_id !== userId) {
+        return false;
+      }
 
-    this.saveRepo.deleteSave(saveId);
-    return true;
+      await this.saveRepo.deleteSave(saveId);
+      return true;
+    });
   }
 }

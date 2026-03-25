@@ -1,10 +1,8 @@
-import Database from "better-sqlite3";
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
-import { runMigrations } from "../db/run_migrations.js";
-import type { AppConfig } from "../shared/config.js";
+import { cleanupTestDb, createTestConfig, resetTestDb } from "./test_utils.js";
 
 interface HexPoint {
   x: number;
@@ -76,23 +74,16 @@ function findPath(from: HexPoint, to: HexPoint, width: number, height: number): 
 }
 
 describe("game flow", () => {
-  let db: Database.Database;
-  let config: AppConfig;
+  beforeEach(async () => {
+    await resetTestDb();
+  });
 
-  beforeEach(() => {
-    db = new Database(":memory:");
-    runMigrations(db);
-    config = {
-      port: 3001,
-      clientOrigin: "http://localhost:4321",
-      sqlitePath: ":memory:",
-      sessionTtlDays: 14,
-      cookieName: "foc_session"
-    };
+  afterEach(async () => {
+    await cleanupTestDb();
   });
 
   it("creates a save, tracks exploration, switches screens, and enters a location after travel", async () => {
-    const app = createApp(db, config);
+    const app = createApp(createTestConfig());
     const agent = request.agent(app);
 
     const registerResponse = await agent.post("/api/auth/register").send({
