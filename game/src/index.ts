@@ -43,3 +43,12 @@ export {
 } from "./schemas/content.js";
 export { getHexesInRadius, hexDistance, toTileKey, type HexPoint } from "./rules/hex.js";
 export { isPassableTile } from "./tiles.js";
+export {
+  SKILL_DEFINITIONS,
+  SKILL_IDS,
+  getSkillPointCost,
+  skillPointsPerLevel,
+  computeSkillValue,
+  computeAllSkillValues,
+  type SkillDefinition
+} from "./skills.js";

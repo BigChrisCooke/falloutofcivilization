@@ -1,0 +1,15 @@
+id: see_doc_mitchell
+name: "Get Your Head Checked"
+description: "Overseer Hale dragged you inside when you crawled up to the vault door barely conscious. She recommends visiting Doc Mitchell at the Dusty Spur Tavern to get your head checked."
+grantedBy: overseer_hale
+objectives:
+  - id: visit_doc_mitchell
+    description: "Visit Doc Mitchell at the Dusty Spur Tavern."
+    type: talk
+    target: old_timer
+    locationId: dusty_tavern
+rewards:
+  karma: 5
+mapMarker:
+  locationId: dusty_tavern
+  label: "Visit Doc Mitchell"

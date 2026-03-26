@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { GameState } from "../lib/api.js";
 import { getSpecialDescription } from "../lib/item_descriptions.js";
+import { SKILL_DEFINITIONS } from "../../../game/src/skills.js";
 
 type PipBoyTab = "stats" | "quests" | "companions" | "inventory" | "map" | "factions";
 
@@ -13,6 +14,14 @@ interface PipBoyOverlayProps {
   highlightedLocationId: string | null;
   onHighlightLocation: (locationId: string | null) => void;
 }
+
+const WEAPON_CATEGORY_LABELS: Record<string, string> = {
+  small_guns: "Small Guns",
+  big_guns: "Big Guns",
+  energy_weapons: "Energy Weapons",
+  melee_weapons: "Melee Weapons",
+  throwing: "Throwing"
+};
 
 const SPECIAL_LABELS: Record<string, string> = {
   str: "Strength",
@@ -109,6 +118,38 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                   <span className="xp-value">{state.playerCharacter.xp % 100}/100</span>
                 </div>
               </div>
+              {state.playerCharacter.skills && (
+                <div className="pipboy-section">
+                  <h3>
+                    Skills
+                    {state.playerCharacter.skills.unspentPoints > 0 && (
+                      <span className="skill-points-badge">{state.playerCharacter.skills.unspentPoints} pts</span>
+                    )}
+                  </h3>
+                  {(["combat", "active", "passive"] as const).map((category) => {
+                    const catSkills = SKILL_DEFINITIONS.filter((s) => s.category === category);
+                    const catLabel = category === "combat" ? "Combat" : category === "active" ? "Active" : "Passive";
+                    return (
+                      <div key={category} className="pipboy-skill-category">
+                        <h4 className="pipboy-skill-cat-title">{catLabel}</h4>
+                        {catSkills.map((def) => {
+                          const value = state.playerCharacter.skills!.values[def.id] ?? 0;
+                          const isTagged = state.playerCharacter.skills!.tagged.includes(def.id);
+                          return (
+                            <div key={def.id} className="pipboy-skill-row">
+                              <span className="pipboy-skill-name">
+                                {def.name}
+                                {isTagged && <span className="skill-tagged-badge">{"\u2605"}</span>}
+                              </span>
+                              <span className="pipboy-skill-value">{value}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -209,7 +250,7 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                   {weaponInfo && (
                     <div className="weapon-stats">
                       <p><strong>DMG</strong> {weaponInfo.damage} <span className="subtle">({weaponInfo.damageType})</span></p>
-                      <p><strong>Type</strong> {weaponInfo.category}</p>
+                      <p><strong>Type</strong> {WEAPON_CATEGORY_LABELS[weaponInfo.category] ?? weaponInfo.category}</p>
                       <p><strong>Weight</strong> {weaponInfo.weight} lbs</p>
                       <p><strong>Value</strong> {weaponInfo.value} caps</p>
                       <p><strong>Rarity</strong> {weaponInfo.rarity}</p>

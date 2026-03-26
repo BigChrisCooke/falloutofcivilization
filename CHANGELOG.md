@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-26
+[FEATURE] Full skill system — 20 skills across Combat, Active, and Passive categories derived from SPECIAL stats
+[FEATURE] Tagged Skills selection after character creation — choose 3 skills that improve at 2x rate
+[FEATURE] Skill point allocation UI with floating notification when unspent points are available
+[FEATURE] Quest failure system — dialogue options can fail quests, with red styling and toast notifications
+[FEATURE] Hidden quest objectives that reveal progressively as earlier steps complete
+[FEATURE] New quests: "Get Your Head Checked" (Doc Mitchell), "Rescue Danny" (The King), and "Vault Repairs" (Overseer Hale)
+[FEATURE] Inventory tag system — dialogue gates can require any item with a given tag (e.g. feed the dog any food item)
+[FEATURE] Fog-of-war pathfinding — click undiscovered tiles to walk into the fog up to 20 tiles
+[FEATURE] New saves start inside Vault 47 with opening narrative from Overseer Hale
+[FEATURE] Character creation chains into quest completion, tagged skills, and skill allocation
+[IMPROVEMENT] The King's Court and Dusty Spur dialogue trees significantly expanded with multi-state branching
+[IMPROVEMENT] Dusty Spur layout reworked — bar runs along top row, NPCs spread across the floor
+[IMPROVEMENT] "Old Timer" renamed to Doc Mitchell; Overseer Hale opening dialogue reworked
+[IMPROVEMENT] Weapon categories standardized to Fallout skill names (Small Guns, Energy Weapons, etc.)
+[IMPROVEMENT] Pip-Boy Stats tab now shows all 20 skills grouped by category with tagged-skill badges
+[IMPROVEMENT] Item actions on interactables hidden until player examines first
+[IMPROVEMENT] Quest-granting dialogue options auto-hidden when quest is already active, completed, or failed
+[IMPROVEMENT] Quest complete toast shown as floating overlay on interior map
+[IMPROVEMENT] Dialogue options that fail quests styled with red border warning
+[IMPROVEMENT] Cue Ball added as a throwable weapon at the Dusty Spur pool table
+[IMPROVEMENT] Bar tiles now impassable with darker visual color
+[FIX] `consumeItem` now works with tag-gated inventory checks, not just specific item IDs
+[FIX] `questFailed` condition now checked in dialogue conditional roots
+[FIX] Failed quests now persist correctly across session reloads
+[FIX] Inventory tag gate labels display the matched item name instead of blank
+
 ## [0.4.0] - 2026-03-25
 [FEATURE] Companion token renders on both interior and overworld maps with assigned color
 [FEATURE] Companion follows player movement, snapping to nearest unoccupied tile

@@ -1,0 +1,18 @@
+id: kings_rescue_danny
+name: "Rescue Danny"
+description: "The King has asked you to track down Danny, the missing Kings courier, and bring him home safely. Pacer wants to help."
+grantedBy: the_king
+objectives:
+  - id: find_danny
+    description: "Search for Danny along the east road."
+    type: visit
+    target: caravan_waystation
+    locationId: caravan_waystation
+rewards:
+  karma: 15
+  factionDeltas:
+    kings: 20
+  caps: 100
+mapMarker:
+  locationId: caravan_waystation
+  label: "Search for Danny"

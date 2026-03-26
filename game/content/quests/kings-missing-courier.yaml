@@ -13,11 +13,13 @@ objectives:
     type: fetch
     target: courier_satchel
     locationId: caravan_waystation
+    hidden: true
   - id: return_satchel
     description: "Return the courier's satchel to The King at Kings' Court."
     type: talk
     target: the_king
     locationId: kings_court
+    hidden: true
 rewards:
   karma: 10
   factionDeltas:

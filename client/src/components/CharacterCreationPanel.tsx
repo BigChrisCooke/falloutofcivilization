@@ -4,7 +4,7 @@ import type { GameState } from "../lib/api.js";
 import { savePlayerSpecial } from "../lib/api.js";
 
 interface CharacterCreationPanelProps {
-  onComplete: (state: GameState) => void;
+  onComplete: (state: GameState, questCompleted?: string) => void;
   onCancel: () => void;
   initialChoices?: string[];
 }
@@ -141,7 +141,7 @@ export function CharacterCreationPanel({ onComplete, onCancel, initialChoices }:
 
     try {
       const result = await savePlayerSpecial(special);
-      onComplete(result.state);
+      onComplete(result.state, result.questCompleted);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save.");
     } finally {
@@ -258,7 +258,7 @@ export function CharacterCreationPanel({ onComplete, onCancel, initialChoices }:
               disabled={saving}
               onClick={() => void handleConfirm()}
             >
-              {saving ? "Saving..." : "Confirm — Enter the Wasteland"}
+              {saving ? "Saving..." : "Complete"}
             </button>
           </div>
         </>

@@ -58,14 +58,51 @@ npcs:
     dialogue:
       rootNodeId: greeting
       conditionalRoots:
+        - questCompleted: kings_rescue_danny
+          nodeId: danny_safe_greeting
+        - questFailed: kings_rescue_danny
+          nodeId: danny_abandoned_greeting
         - questCompleted: kings_missing_courier
-          nodeId: post_quest_greeting
+          nodeId: post_courier_greeting
       nodes:
-        - id: post_quest_greeting
+        - id: post_courier_greeting
+          text: "*The King leans forward on his throne, expression serious but grateful.* Welcome back, friend. Getting that satchel back was solid work — the Kings won't forget it. But Danny's still out there somewhere. Pacer's been pacing — pun intended — ready to go after him."
+          options:
+            - id: offer_rescue
+              label: "I'll go find Danny myself."
+              questGrant: kings_rescue_danny
+              factionDelta: { factionId: kings, delta: 5 }
+              next: rescue_accepted
+            - id: decline_rescue
+              label: "I'm sure your people will find him."
+              questGrant: kings_rescue_danny
+              questFail: kings_rescue_danny
+              karmaDelta: -5
+              factionDelta: { factionId: kings, delta: -5 }
+              next: rescue_declined
+            - id: post_courier_ask_kings
+              label: "How are the Kings holding up?"
+              response: "Better, thanks to you. The satchel had dispatches we needed — courier routes are back on track. Now we just need Danny home safe."
+        - id: rescue_accepted
+          text: "*The King nods firmly.* Good. Pacer knows Danny's route better than anyone — he'll want to ride with you. Head east, past the old gas station. Danny's smart — if he's alive, he's hiding. Bring our boy home."
+          options: []
+        - id: rescue_declined
+          text: "*The King nods slowly.* I understand — you've done more than enough already. Pacer's organizing a search party as we speak. With any luck, they'll have Danny back before you know it."
+          options: []
+        - id: danny_abandoned_greeting
+          text: "*The King regards you coolly from his throne.* Pacer took some boys out and found Danny. He's alive — barely. Would've been nice if someone had helped, but we handled it ourselves. The Kings always do."
+          options:
+            - id: abandoned_sorry
+              label: "I'm sorry I didn't help."
+              response: "Words are cheap out here, friend. Danny's alive, that's what matters. But I won't lie — I expected better from you."
+            - id: abandoned_move_on
+              label: "Glad he's safe."
+              response: "*The King nods stiffly.* Yeah. No thanks to you. But we don't hold grudges forever. Prove yourself and maybe we'll move past it."
+        - id: danny_safe_greeting
           text: "*The King rises from his throne and spreads his arms wide.* There they are! The hero of the hour. Danny's back safe and sound, and the Kings owe you — big time. You've got a standing invitation in the Court. What can I do for you?"
           options:
             - id: post_ask_danny
-              label: "How's Danny doing?"
+              label: "How's Danny holding up?"
               response: "Shaken up, but alive. Pacer's been hovering over him like a mother deathclaw. The boy's got stories to tell now — and the Kings love a good story. You gave him a chance to tell them."
             - id: post_ask_kings
               label: "How are the Kings holding up?"
@@ -108,10 +145,25 @@ npcs:
           options:
             - id: ask_about_danny
               label: "What about Danny? Is he alright?"
-              response: "We'll send Pacer to retrace the route now that we know where to look. If Danny's out there, we'll find him. You've given us the lead we needed."
+              next: danny_concern
             - id: just_glad_to_help
               label: "Just doing the right thing."
-              response: "*The King nods slowly.* And that's exactly why the wasteland needs more people like you. You're welcome in the Court anytime."
+              next: danny_concern
+        - id: danny_concern
+          text: "The satchel's back, but Danny's still out there somewhere. Pacer's been wanting to go after him, but I can't spare the manpower. If someone were willing to retrace the route and find him..."
+          options:
+            - id: offer_rescue
+              label: "I'll go find Danny myself."
+              questGrant: kings_rescue_danny
+              factionDelta: { factionId: kings, delta: 5 }
+              next: rescue_accepted
+            - id: decline_rescue
+              label: "I'm sure your people will find him."
+              questGrant: kings_rescue_danny
+              questFail: kings_rescue_danny
+              karmaDelta: -5
+              factionDelta: { factionId: kings, delta: -5 }
+              next: rescue_declined
         - id: about_kings
           text: "We're a family. Started in Freeside — found an old building full of holotapes about a man called Elvis. The way he carried himself, the way people loved him... we figured the wasteland could use some of that. Style. Dignity. A code."
           options:
@@ -203,7 +255,41 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - questCompleted: kings_rescue_danny
+          nodeId: pacer_danny_safe
+        - questFailed: kings_rescue_danny
+          nodeId: pacer_danny_abandoned
+        - questCompleted: kings_missing_courier
+          nodeId: pacer_post_courier
       nodes:
+        - id: pacer_danny_abandoned
+          text: "*Pacer glares at you.* We found Danny ourselves. No thanks to you. I dragged that kid out of a raider hole while you were off doing whatever it is you do. Don't expect a warm welcome around here."
+          options:
+            - id: pacer_abandoned_sorry
+              label: "I'm sorry. I should have helped."
+              response: "Yeah. You should have. Danny almost didn't make it. *Pacer turns away.* We're done talking."
+            - id: pacer_abandoned_shrug
+              label: "He's alive, isn't he?"
+              response: "*Pacer's fists clench.* Barely. You've got some nerve. Get out of my sight before I do something The King wouldn't approve of."
+        - id: pacer_danny_safe
+          text: "*Pacer nods at you with something that might be respect.* Danny's back. Kid's shaken up, but he'll be alright. I've been keeping an eye on him. *He cracks his knuckles.* You did good, outsider. The Kings remember."
+          options:
+            - id: pacer_safe_ask_danny
+              label: "How's Danny really doing?"
+              response: "He's tough. Tougher than he looks. Give him a week and he'll be running routes again — though I might insist on going with him next time. Nobody messes with a Kings courier on my watch. Not again."
+            - id: pacer_safe_ask_role
+              label: "What's your role here?"
+              next: pacer_role
+        - id: pacer_post_courier
+          text: "*Pacer is pacing near the door, agitated.* You got the satchel back — good. But Danny's still out there. I'm ready to go after him the second the King gives the word."
+          options:
+            - id: pacer_courier_ask_danny
+              label: "Any idea where Danny might be?"
+              response: "East road, near the ridge. That's ambush country. If the Powder Gangers grabbed him, they'd have taken him somewhere to squeeze information out of him. Danny's smart — he'll stay alive as long as he can. But every hour counts."
+            - id: pacer_courier_ask_role
+              label: "What's your role here?"
+              next: pacer_role
         - id: greeting
           text: "*A heavyset man with slicked-back hair cracks his knuckles.* You're in the King's Court. Show respect or the door's that way. Your choice."
           options:

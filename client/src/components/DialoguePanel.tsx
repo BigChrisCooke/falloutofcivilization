@@ -13,6 +13,7 @@ interface DialoguePanelProps {
   onBeginCharCreation?: () => void;
   onOptionSelected?: (optionId: string) => void;
   onCompanionReaction?: (reaction: { companionId: string; reaction: string; departed: boolean }) => void;
+  onQuestCompleted?: (text: string) => void;
 }
 
 export function DialoguePanel({
@@ -24,7 +25,8 @@ export function DialoguePanel({
   onStateRefresh,
   onBeginCharCreation,
   onOptionSelected,
-  onCompanionReaction
+  onCompanionReaction,
+  onQuestCompleted
 }: DialoguePanelProps) {
   const [node, setNode] = useState<DialogueNode | null>(null);
   const [lastResponse, setLastResponse] = useState<string | null>(null);
@@ -98,6 +100,12 @@ export function DialoguePanel({
         setTimeout(() => setQuestNotification(null), 4000);
       }
 
+      if (result.questFailed) {
+        setQuestNotification(`Quest failed: ${result.questFailed.questName}`);
+        setQuestFlash(true);
+        setTimeout(() => { setQuestNotification(null); setQuestFlash(false); }, 4000);
+      }
+
       if (result.questCompleted) {
         const qc = result.questCompleted;
         const rewardParts: string[] = [];
@@ -110,9 +118,11 @@ export function DialoguePanel({
           rewardParts.push(`+${delta} ${faction}`);
         }
         const rewardText = rewardParts.length > 0 ? ` — ${rewardParts.join(", ")}` : "";
-        setQuestNotification(`Quest complete: ${qc.questName}${rewardText}`);
+        const toastText = `Quest complete: ${qc.questName}${rewardText}`;
+        setQuestNotification(toastText);
         setQuestFlash(true);
         setTimeout(() => setQuestFlash(false), 600);
+        onQuestCompleted?.(toastText);
       }
 
       if (result.companionReaction) {
@@ -188,7 +198,7 @@ export function DialoguePanel({
           .map((opt) => (
           <button
             key={opt.id}
-            className={`ghost-button interaction-option${opt.specialGateLabel ? " has-gate" : ""}${opt.grantsQuest ? " grants-quest" : ""}${opt.alreadySelected ? " is-selected" : ""}`}
+            className={`ghost-button interaction-option${opt.specialGateLabel ? " has-gate" : ""}${opt.grantsQuest ? " grants-quest" : ""}${opt.failsQuest ? " fails-quest" : ""}${opt.alreadySelected ? " is-selected" : ""}`}
             type="button"
             disabled={loading}
             onClick={() => handleOptionClick(opt.id)}

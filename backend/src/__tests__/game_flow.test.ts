@@ -113,30 +113,14 @@ describe("game flow", () => {
 
     expect(initialStateResponse.status).toBe(200);
     expect(initialStateResponse.body.saveLoaded).toBe(true);
-    expect(initialStateResponse.body.state.worldState.current_screen).toBe("overworld");
-    expect(initialStateResponse.body.state.worldState.player_x).toBe(4);
-    expect(initialStateResponse.body.state.worldState.player_y).toBe(5);
-    expect(initialStateResponse.body.state.locations.length).toBeGreaterThanOrEqual(4);
+    // New saves start inside Vault 47
+    expect(initialStateResponse.body.state.worldState.current_screen).toBe("location");
+    expect(initialStateResponse.body.state.worldState.player_x).toBe(2);
+    expect(initialStateResponse.body.state.worldState.player_y).toBe(2);
+    expect(initialStateResponse.body.state.currentLocation.id).toBe("vault_47");
+    expect(initialStateResponse.body.state.currentInteriorMap.id).toBe("vault_47_home");
     expect(initialStateResponse.body.state.mapDiscovery.discoveredLocationIds).toContain("vault_47");
     expect(initialStateResponse.body.state.mapDiscovery.discoveredTileKeys.length).toBeGreaterThan(1);
-
-    const blockedLocationResponse = await agent.post("/api/game/location/enter").send({
-      locationId: "dusty_tavern"
-    });
-
-    expect(blockedLocationResponse.status).toBe(400);
-    expect(blockedLocationResponse.body.error).toContain("not been discovered yet");
-
-    const vaultResponse = await agent.post("/api/game/screen").send({
-      screen: "vault"
-    });
-
-    expect(vaultResponse.status).toBe(200);
-    expect(vaultResponse.body.state.worldState.current_screen).toBe("vault");
-    expect(vaultResponse.body.state.currentLocation.id).toBe("vault_47");
-    expect(vaultResponse.body.state.currentInteriorMap.id).toBe("vault_47_home");
-    expect(vaultResponse.body.state.worldState.player_x).toBe(2);
-    expect(vaultResponse.body.state.worldState.player_y).toBe(2);
 
     const blockedVaultMoveResponse = await agent.post("/api/game/interior/move").send({
       x: 1,

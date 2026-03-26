@@ -1,0 +1,14 @@
+id: kings_danny_returned
+name: "Danny's Return"
+description: "The Kings sent Pacer to find Danny after you recovered the courier's satchel. Danny made it home safely."
+grantedBy: the_king
+objectives:
+  - id: danny_returns
+    description: "Danny returns to the Kings safely."
+    type: talk
+    target: the_king
+    locationId: kings_court
+rewards:
+  karma: 5
+  factionDeltas:
+    kings: 5

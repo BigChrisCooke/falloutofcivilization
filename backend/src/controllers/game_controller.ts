@@ -38,6 +38,7 @@ const collectItemSchema = z.object({
   ownedBy: z.string().nullable().optional(),
   quantity: z.number().int().min(1).optional(),
   description: z.string().nullable().optional(),
+  tags: z.array(z.string()).nullable().optional(),
   actionId: z.string().min(1).optional()
 });
 
@@ -194,10 +195,48 @@ export function createGameRouter(gameService: GameService, dialogueService: Dial
         response.status(400).json({ error: "SPECIAL points must total 30." });
         return;
       }
-      gameService.savePlayerSpecial(request.currentSaveId, payload);
-      response.json({ state: gameService.getState(request.currentSaveId) });
+      const result = gameService.savePlayerSpecial(request.currentSaveId, payload);
+      response.json({ state: gameService.getState(request.currentSaveId), questCompleted: result.questCompleted });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to save character.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/skills/tag", (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+    try {
+      const skillIds = request.body as string[];
+      if (!Array.isArray(skillIds)) {
+        response.status(400).json({ error: "Expected an array of skill IDs." });
+        return;
+      }
+      gameService.setTaggedSkills(request.currentSaveId, skillIds);
+      response.json({ state: gameService.getState(request.currentSaveId) });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to set tagged skills.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/skills/allocate", (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+    try {
+      const allocations = request.body as Record<string, number>;
+      if (typeof allocations !== "object" || allocations === null) {
+        response.status(400).json({ error: "Expected an object of skill allocations." });
+        return;
+      }
+      gameService.allocateSkillPoints(request.currentSaveId, allocations);
+      response.json({ state: gameService.getState(request.currentSaveId) });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to allocate skill points.");
       response.status(400).json({ error: message });
     }
   });
@@ -216,7 +255,8 @@ export function createGameRouter(gameService: GameService, dialogueService: Dial
         payload.label,
         payload.ownedBy ?? null,
         payload.quantity ?? 1,
-        payload.description ?? null
+        payload.description ?? null,
+        payload.tags ?? null
       );
 
       if (payload.actionId) {

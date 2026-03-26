@@ -113,11 +113,12 @@ export class GameStateRepo {
   public updateQuestState(questState: QuestStateRow): void {
     this.db
       .prepare(
-        "UPDATE quest_state SET active_quests_json = ?, completed_quests_json = ?, dialogue_state_json = ?, collected_actions_json = ?, updated_at = ? WHERE save_id = ?"
+        "UPDATE quest_state SET active_quests_json = ?, completed_quests_json = ?, failed_quests_json = ?, dialogue_state_json = ?, collected_actions_json = ?, updated_at = ? WHERE save_id = ?"
       )
       .run(
         questState.active_quests_json,
         questState.completed_quests_json,
+        questState.failed_quests_json,
         questState.dialogue_state_json,
         questState.collected_actions_json,
         questState.updated_at,

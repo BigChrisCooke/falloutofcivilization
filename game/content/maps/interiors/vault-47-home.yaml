@@ -29,6 +29,7 @@ interactables:
           itemId: emergency_rations
           label: "Emergency Rations"
           description: "Vacuum-sealed Vault-Tec rations. The label promises 'complete nutrition in every bite.' They taste like cardboard and desperation, but they'll keep you alive."
+          tags: [food]
         response: "You grab the vacuum-sealed rations from the footlocker. Vault-Tec brand — still edible after 200 years, which says something about the ingredients."
       - id: take_photograph
         label: Take Faded Photograph
@@ -56,24 +57,52 @@ npcs:
     dialogue:
       rootNodeId: greeting
       conditionalRoots:
+        - questCompleted: vault_47_repairs_pending
+          nodeId: post_quest_greeting_v2
         - questCompleted: save_vault_47
-          nodeId: post_quest_greeting
+          nodeId: post_quest_greeting_v1
       nodes:
-        - id: post_quest_greeting
+        - id: post_quest_greeting_v1
           text: "Welcome back. Thanks to you, the vault's holding steady — power core is stabilized and the water recycler is running clean. You've earned your place here. Need anything?"
           options:
-            - id: post_ask_status
+            - id: post_go_doc_mitchell
+              label: "You mentioned a Doc Mitchell at the Dusty Spur. I should go see him."
+              questGrant: see_doc_mitchell
+              next: doc_mitchell_accepted
+            - id: post_ask_status_v1
               label: "How are the vault systems doing?"
-              response: "Better than they've been in years. That repair kit you found bought us real time. I'm working on a more permanent fix, but for now — we're alive. That's what matters."
-            - id: post_ask_outside
+              questGrant: vault_47_repairs_pending
+              response: "I'm still working on it. These things take time — fusion cells don't repair themselves. Come back later and I should have an update for you."
+            - id: post_ask_outside_v1
               label: "Any news from outside?"
               response: "Radio chatter's been picking up. Sounds like the valley is getting busier — more factions moving in, more tension. Be careful out there. But you already know that."
-            - id: post_ask_advice
+            - id: post_ask_advice_v1
+              label: "Any advice for what I should do next?"
+              response: "Explore. Help people. Make allies — you'll need them. The Dusty Spur Tavern is a good place to pick up work. And keep an eye on the notice boards around the valley."
+        - id: post_quest_greeting_v2
+          text: "Welcome back. The vault's doing well — better than it has in years. What can I do for you?"
+          options:
+            - id: post_go_doc_mitchell_v2
+              label: "You mentioned a Doc Mitchell at the Dusty Spur. I should go see him."
+              questGrant: see_doc_mitchell
+              next: doc_mitchell_accepted
+            - id: post_ask_status_v2
+              label: "How are the vault systems doing?"
+              questComplete: vault_47_repairs_pending
+              response: "Better than they've been in years. That repair kit you found bought us real time. I'm working on a more permanent fix, but for now — we're alive. That's what matters."
+            - id: post_ask_outside_v2
+              label: "Any news from outside?"
+              response: "Radio chatter's been picking up. Sounds like the valley is getting busier — more factions moving in, more tension. Be careful out there. But you already know that."
+            - id: post_ask_advice_v2
               label: "Any advice for what I should do next?"
               response: "Explore. Help people. Make allies — you'll need them. The Dusty Spur Tavern is a good place to pick up work. And keep an eye on the notice boards around the valley."
         - id: greeting
-          text: "You're awake. Good. The vault's systems are failing and you're the only one left who can do anything about it. I'm Overseer Hale — or what's left of the title. Tap on objects and people to interact with them — like you just did with me."
+          text: "Ah, you're awake. I dragged you inside when you crawled up to the vault door, you were barely conscious. I thought you were a gonner. I'm Overseer Hale — or what's left of the title. There's a tavern down the road — the Dusty Spur. A man they call Doc Mitchell has medical know-how. You should get your head checked before anything else. Tap on objects and people to interact with them — like you just did with me."
           options:
+            - id: go_doc_mitchell
+              label: "I'll go find Doc Mitchell."
+              questGrant: see_doc_mitchell
+              next: doc_mitchell_accepted
             - id: ask_vault
               label: "What happened to everyone?"
               next: vault_history
@@ -217,6 +246,15 @@ npcs:
               label: "Ooh! Adventure! Me go find fix-it stuff!"
               questGrant: save_vault_47
               next: quest_accepted_dumb
+        - id: doc_mitchell_accepted
+          text: "Good idea. Head south once you're outside — follow the road to the Dusty Spur Tavern. Doc Mitchell has medical know-how. Get your head checked before anything else. Grab anything useful from the stash before you go."
+          options:
+            - id: doc_mitchell_on_it
+              label: "I'm on it. I'll be back."
+              response: "Be careful out there. The wasteland is dangerous, but you've already proven you're tougher than it looks."
+            - id: doc_mitchell_ask_tips
+              label: "Any survival tips before I head out?"
+              next: survival_tips
         - id: quest_complete
           text: "*Hale's eyes widen.* That's — yes! A makeshift repair kit with a fusion cell adapter. This is exactly what we need. *She immediately starts working.* The power core will hold for another year at least. The water filters... I can jury-rig something. You've saved this vault. You've saved both of us. Thank you."
           options:
@@ -240,3 +278,4 @@ loot:
 questHooks:
   - intro_return_home
   - save_vault_47
+  - vault_47_repairs_pending

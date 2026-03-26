@@ -60,6 +60,7 @@ loot:
   - id: canned_food
     label: Canned Dog Food
     description: "A can of pre-war dog food. The label features a disturbingly happy cartoon dog. In the wasteland, beggars can't be choosers."
+    tags: [food]
     x: 5
     y: 1
   - id: toy_car

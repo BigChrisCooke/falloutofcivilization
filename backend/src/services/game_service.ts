@@ -17,6 +17,7 @@ function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
   }
 }
 import { SaveRepo } from "../repos/save_repo.js";
+import { SKILL_DEFINITIONS, SKILL_IDS, getSkillPointCost, computeAllSkillValues } from "../../../game/src/skills.js";
 import { getGameContent } from "./content_service.js";
 import { DialogueService } from "./dialogue_service.js";
 import {
@@ -101,7 +102,22 @@ export class GameService {
         special: playerCharacter.special_json
           ? safeJsonParse<Record<string, number> | null>(playerCharacter.special_json, null)
           : null,
-        karma: playerCharacter.karma ?? 0
+        karma: playerCharacter.karma ?? 0,
+        skills: playerCharacter.special_json
+          ? (() => {
+              const special = safeJsonParse<Record<string, number>>(playerCharacter.special_json, {});
+              const allocated = safeJsonParse<Record<string, number>>(playerCharacter.skills_json, {});
+              const tagged = safeJsonParse<string[]>(playerCharacter.tagged_skills_json, []);
+              const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
+              return {
+                values: computeAllSkillValues(special, allocated),
+                allocated,
+                tagged,
+                unspentPoints: playerCharacter.unspent_skill_points ?? 0,
+                needsTagSelection: tagged.length === 0 && completedQuests.includes("see_doc_mitchell")
+              };
+            })()
+          : null
       },
       worldState: normalizedState.worldState,
       region,
@@ -115,15 +131,17 @@ export class GameService {
       questState: {
         active: safeJsonParse<string[]>(questState.active_quests_json, []),
         completed: safeJsonParse<string[]>(questState.completed_quests_json, []),
+        failed: safeJsonParse<string[]>(questState.failed_quests_json, []),
         definitions: content.quests
           .filter((q) => {
             const activeIds = safeJsonParse<string[]>(questState.active_quests_json, []);
             const completedIds = safeJsonParse<string[]>(questState.completed_quests_json, []);
-            return activeIds.includes(q.id) || completedIds.includes(q.id);
+            const failedIds = safeJsonParse<string[]>(questState.failed_quests_json, []);
+            return activeIds.includes(q.id) || completedIds.includes(q.id) || failedIds.includes(q.id);
           })
           .map((q) => {
             const isQuestCompleted = safeJsonParse<string[]>(questState.completed_quests_json, []).includes(q.id);
-            const objectives = q.objectives.map((o) => {
+            const rawObjectives = q.objectives.map((o) => {
               let completed = false;
               if (isQuestCompleted) {
                 completed = true;
@@ -134,8 +152,16 @@ export class GameService {
               } else if (o.type === "kill") {
                 completed = normalizedState.discoveredLocationIds.includes(o.target);
               }
-              return { id: o.id, description: o.description, type: o.type, target: o.target, locationId: o.locationId, completed };
+              return { id: o.id, description: o.description, type: o.type, target: o.target, locationId: o.locationId, completed, hidden: o.hidden ?? false };
             });
+            // Hidden objectives reveal progressively: show when completed,
+            // or when the preceding objective is completed (next-up reveal)
+            const objectives = rawObjectives.filter((o, index) => {
+              if (!o.hidden) return true;
+              if (o.completed) return true;
+              if (index > 0 && rawObjectives[index - 1]!.completed) return true;
+              return false;
+            }).map(({ hidden: _h, ...rest }) => rest);
             const nextObjective = objectives.find((o) => !o.completed);
             const activeMapMarker = nextObjective?.locationId
               ? { locationId: nextObjective.locationId, label: nextObjective.description }
@@ -275,9 +301,14 @@ export class GameService {
       const karma = playerCharacter?.karma ?? 0;
       const questState = this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+      const failed = safeJsonParse<string[]>(questState?.failed_quests_json, []);
 
       for (const condition of dialogueTree.conditionalRoots) {
         if (condition.questCompleted && completed.includes(condition.questCompleted)) {
+          effectiveRootNodeId = condition.nodeId;
+          break;
+        }
+        if (condition.questFailed && failed.includes(condition.questFailed)) {
           effectiveRootNodeId = condition.nodeId;
           break;
         }
@@ -480,10 +511,10 @@ export class GameService {
       }
     );
 
-    // Award XP for newly discovered locations (25 XP each)
+    // Award XP for newly discovered locations (20 XP each)
     const newLocationCount = revealedState.discoveredLocationIds.length - previousLocationCount;
     if (newLocationCount > 0) {
-      this.saveRepo.awardXp(saveId, newLocationCount * 25);
+      this.saveRepo.awardXp(saveId, newLocationCount * 20);
     }
   }
 
@@ -623,11 +654,42 @@ export class GameService {
     this.companionRepo.recruit(saveId, companionId);
   }
 
-  public savePlayerSpecial(saveId: string, special: Record<string, number>): void {
+  public savePlayerSpecial(saveId: string, special: Record<string, number>): { questCompleted?: string } {
     const existing = this.saveRepo.findPlayerCharacter(saveId);
     if (!existing) throw new Error("Player character not found.");
     if (existing.special_json !== null) throw new Error("Character has already been created.");
     this.saveRepo.updateSpecial(saveId, JSON.stringify(special));
+
+    // Award initial skill points for level 1: 5 + 2 * INT
+    const initialSkillPoints = 5 + 2 * (special.int ?? 5);
+    this.saveRepo.awardSkillPoints(saveId, initialSkillPoints);
+
+    // Auto-complete the "see Doc Mitchell" quest if active
+    const questState = this.gameStateRepo.getQuestState(saveId);
+    let questCompleted: string | undefined;
+    if (questState) {
+      const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
+      if (activeQuests.includes("see_doc_mitchell")) {
+        const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
+        const nextActive = activeQuests.filter((id) => id !== "see_doc_mitchell");
+        completedQuests.push("see_doc_mitchell");
+        this.gameStateRepo.updateQuestState({
+          ...questState,
+          active_quests_json: JSON.stringify(nextActive),
+          completed_quests_json: JSON.stringify(completedQuests),
+          updated_at: Date.now()
+        });
+        // Award quest rewards: 75 XP, 5 karma
+        this.saveRepo.awardXp(saveId, 75);
+        const pc = this.saveRepo.findPlayerCharacter(saveId);
+        if (pc) {
+          this.saveRepo.updateKarma(saveId, pc.karma + 5);
+        }
+        questCompleted = "Get Your Head Checked";
+      }
+    }
+
+    return { questCompleted };
   }
 
   private restoreOverworldFromLocation(saveId: string, worldState: WorldStateRow, location: { regionId: string; position: { x: number; y: number } }) {
@@ -668,5 +730,64 @@ export class GameService {
       entered_locations_json: mapDiscovery.entered_locations_json,
       updated_at: Date.now()
     });
+  }
+
+  public setTaggedSkills(saveId: string, skillIds: string[]): void {
+    if (skillIds.length !== 3) {
+      throw new Error("You must choose exactly 3 tagged skills.");
+    }
+    const uniqueIds = new Set(skillIds);
+    if (uniqueIds.size !== 3) {
+      throw new Error("Tagged skills must be unique.");
+    }
+    for (const id of skillIds) {
+      if (!SKILL_IDS.includes(id)) {
+        throw new Error(`Unknown skill: ${id}`);
+      }
+    }
+    const pc = this.saveRepo.findPlayerCharacter(saveId);
+    if (!pc) throw new Error("Player character not found.");
+    if (pc.tagged_skills_json !== null) {
+      throw new Error("Tagged skills have already been chosen.");
+    }
+    this.saveRepo.setTaggedSkills(saveId, JSON.stringify(skillIds));
+  }
+
+  public allocateSkillPoints(saveId: string, allocations: Record<string, number>): void {
+    const pc = this.saveRepo.findPlayerCharacter(saveId);
+    if (!pc) throw new Error("Player character not found.");
+    if (!pc.special_json) throw new Error("Character creation not complete.");
+
+    const special = safeJsonParse<Record<string, number>>(pc.special_json, {});
+    const currentAllocated = safeJsonParse<Record<string, number>>(pc.skills_json, {});
+    const taggedSkills = safeJsonParse<string[]>(pc.tagged_skills_json, []);
+    let remaining = pc.unspent_skill_points ?? 0;
+
+    const newAllocated = { ...currentAllocated };
+
+    for (const [skillId, points] of Object.entries(allocations)) {
+      if (points <= 0) continue;
+      if (!SKILL_IDS.includes(skillId)) {
+        throw new Error(`Unknown skill: ${skillId}`);
+      }
+
+      const def = SKILL_DEFINITIONS.find((s) => s.id === skillId)!;
+      const isTagged = taggedSkills.includes(skillId);
+      const baseValue = def.initialValue(special);
+      let currentTotal = baseValue + (newAllocated[skillId] ?? 0);
+
+      for (let i = 0; i < points; i++) {
+        const cost = getSkillPointCost(currentTotal);
+        if (remaining < cost) {
+          throw new Error(`Not enough skill points to raise ${def.name}.`);
+        }
+        remaining -= cost;
+        const gain = isTagged ? 2 : 1;
+        newAllocated[skillId] = (newAllocated[skillId] ?? 0) + gain;
+        currentTotal += gain;
+      }
+    }
+
+    this.saveRepo.updateSkills(saveId, JSON.stringify(newAllocated), remaining);
   }
 }

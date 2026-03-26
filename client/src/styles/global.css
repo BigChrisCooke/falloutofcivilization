@@ -455,6 +455,10 @@ h2 {
   border-color: rgba(100, 255, 150, 0.3);
 }
 
+.interaction-option.fails-quest {
+  border-color: rgba(255, 100, 100, 0.3);
+}
+
 .interaction-option.is-selected {
   opacity: 0.5;
   font-style: italic;
@@ -486,6 +490,192 @@ h2 {
   50% { background: rgba(255, 224, 102, 0.35); }
   100% { background: rgba(255, 224, 102, 0.25); color: #ffe066; }
 }
+
+/* ── Quest Toast (floating, outside dialogue) ─────────── */
+.quest-toast {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(100, 255, 150, 0.15);
+  color: #64ff96;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(100, 255, 150, 0.3);
+  z-index: 1000;
+  animation: toast-slide-in 0.3s ease-out, toast-fade-out 0.5s 3.5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes toast-slide-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-1rem); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes toast-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ── Skill Points Notification ───────────────────────── */
+.skill-points-notify {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(100, 255, 150, 0.15);
+  color: #64ff96;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(100, 255, 150, 0.3);
+  cursor: pointer;
+  z-index: 50;
+  animation: toast-slide-in 0.3s ease-out;
+}
+.skill-points-notify:hover {
+  background: rgba(100, 255, 150, 0.25);
+}
+
+/* ── Tagged Skills Panel ─────────────────────────────── */
+.tagged-skills-panel { text-align: left; }
+.tagged-skills-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.skill-category-group { margin-bottom: 1rem; }
+.skill-category-title {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-strong);
+  margin-bottom: 0.4rem;
+}
+.skill-tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.skill-tag-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.skill-tag-option:hover:not(.is-disabled) { border-color: var(--accent-strong); }
+.skill-tag-option.is-selected {
+  border-color: #64ff96;
+  background: rgba(100, 255, 150, 0.1);
+  color: #64ff96;
+}
+.skill-tag-option.is-disabled { opacity: 0.4; cursor: not-allowed; }
+.skill-tag-name { font-weight: 600; }
+.skill-tag-stats { color: var(--text-muted); font-size: 0.7rem; }
+.skill-tag-value { font-family: monospace; }
+.skill-tag-check { color: #64ff96; }
+.tagged-count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ── Skill Allocation Panel ──────────────────────────── */
+.skill-allocation-panel { text-align: left; }
+.skill-alloc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+.skill-points-remaining {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #64ff96;
+}
+.skill-alloc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.skill-alloc-info { display: flex; flex-direction: column; gap: 0.1rem; }
+.skill-alloc-name { font-size: 0.8rem; font-weight: 500; }
+.skill-alloc-stat { font-size: 0.68rem; color: var(--text-muted); }
+.skill-alloc-controls { display: flex; align-items: center; gap: 0.3rem; }
+.skill-alloc-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.skill-alloc-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.skill-alloc-btn:hover:not(:disabled) { border-color: var(--accent-strong); }
+.skill-alloc-value {
+  font-family: monospace;
+  font-size: 0.82rem;
+  min-width: 3.5rem;
+  text-align: right;
+}
+.skill-alloc-value.has-pending { color: #64ff96; }
+.skill-alloc-delta { font-size: 0.7rem; color: #64ff96; }
+.skill-alloc-cost {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  min-width: 2rem;
+  text-align: right;
+}
+.skill-tagged-badge {
+  font-size: 0.6rem;
+  background: rgba(100, 255, 150, 0.15);
+  color: #64ff96;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.skill-points-badge {
+  font-size: 0.68rem;
+  background: rgba(100, 255, 150, 0.15);
+  color: #64ff96;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.2rem;
+  margin-left: 0.4rem;
+  font-weight: 600;
+}
+
+/* ── Pip-Boy Skills Display ──────────────────────────── */
+.pipboy-skill-category { margin-bottom: 0.6rem; }
+.pipboy-skill-cat-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-strong);
+  margin-bottom: 0.2rem;
+}
+.pipboy-skill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.15rem 0;
+  font-size: 0.78rem;
+}
+.pipboy-skill-name { color: var(--text-primary); }
+.pipboy-skill-value { font-family: monospace; color: var(--text-primary); }
 
 .faction-standing {
   font-size: 0.74rem;

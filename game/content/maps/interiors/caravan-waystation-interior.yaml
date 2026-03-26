@@ -290,6 +290,7 @@ loot:
   - id: trail_mix
     label: Trail Mix
     description: "A pouch of caravan trail mix — dried brahmin jerky, mutfruit pieces, and roasted nuts. Trail-tested nutrition."
+    tags: [food]
     x: 5
     y: 1
   - id: courier_satchel

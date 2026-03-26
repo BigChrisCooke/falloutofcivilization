@@ -70,18 +70,21 @@ export class SaveService {
       archetype: "survivor",
       special_json: null,
       karma: 0,
+      skills_json: null,
+      tagged_skills_json: null,
+      unspent_skill_points: 0,
       created_at: now
     };
 
     const worldState: WorldStateRow = {
       save_id: save.id,
-      current_screen: "overworld",
+      current_screen: "location",
       current_region_id: region.id,
-      current_location_id: null,
-      current_map_id: region.mapId,
-      current_panel: null,
-      player_x: startingLocation.position.x,
-      player_y: startingLocation.position.y,
+      current_location_id: "vault_47",
+      current_map_id: "vault_47_home",
+      current_panel: "location",
+      player_x: 2,
+      player_y: 2,
       updated_at: now
     };
 
@@ -89,7 +92,7 @@ export class SaveService {
       save_id: save.id,
       discovered_locations_json: JSON.stringify(explorationState.discoveredLocationIds),
       discovered_tiles_json: JSON.stringify(explorationState.discoveredTileKeys),
-      entered_locations_json: JSON.stringify([]),
+      entered_locations_json: JSON.stringify(["vault_47"]),
       updated_at: now
     };
 
@@ -97,6 +100,7 @@ export class SaveService {
       save_id: save.id,
       active_quests_json: JSON.stringify([]),
       completed_quests_json: JSON.stringify([]),
+      failed_quests_json: JSON.stringify([]),
       dialogue_state_json: JSON.stringify({}),
       collected_actions_json: JSON.stringify([]),
       updated_at: now

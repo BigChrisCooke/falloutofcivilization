@@ -37,6 +37,7 @@ interactables:
           itemId: fancy_lads_snack_cakes
           label: "Fancy Lads Snack Cakes"
           description: "Pre-war packaged snack cakes. The mascot on the box looks suspiciously cheerful for a product that survived nuclear apocalypse. Still edible. Probably."
+          tags: [food]
         response: "You pull a miraculously intact box of Fancy Lads Snack Cakes from behind the stand. 200 years old and still sealed. Some things are built to last."
   - id: back_room_cache
     type: container

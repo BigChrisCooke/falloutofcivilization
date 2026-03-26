@@ -53,7 +53,8 @@ export class InventoryService {
     label: string,
     ownedBy: string | null,
     quantity: number,
-    description: string | null = null
+    description: string | null = null,
+    tags: string[] | null = null
   ): CollectItemResult {
     const now = Date.now();
     const row: PlayerInventoryRow = {
@@ -63,6 +64,7 @@ export class InventoryService {
       owned_by: ownedBy,
       quantity,
       description,
+      tags: tags ? JSON.stringify(tags) : null,
       collected_at: now
     };
 

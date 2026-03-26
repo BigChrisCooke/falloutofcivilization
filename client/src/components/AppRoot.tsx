@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { HexOverworld } from "./HexOverworld.js";
 import { InteriorMapPanel } from "./InteriorMapPanel.js";
 import { PipBoyOverlay } from "./PipBoyOverlay.js";
+import { SkillAllocationPanel } from "./SkillAllocationPanel.js";
 
 import {
   createSave,
@@ -42,6 +43,7 @@ export function AppRoot() {
   const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
   const [highlightedLocationId, setHighlightedLocationId] = useState<string | null>(null);
   const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
+  const [showOverworldSkills, setShowOverworldSkills] = useState(false);
   const prevLevelRef = useRef<number | null>(null);
 
   const updateGameState = useCallback((newState: GameState) => {
@@ -402,14 +404,35 @@ export function AppRoot() {
               onStateRefresh={(newState) => updateGameState(newState)}
             />
           ) : (
-            <HexOverworld
-              state={gameState}
-              selectedQuestId={selectedQuestId}
-              highlightedLocationId={highlightedLocationId}
-              onHighlightLocation={setHighlightedLocationId}
-              onTravel={(x, y) => handleTravel(x, y)}
-              onEnterLocation={(locationId) => void handleEnterLocation(locationId)}
-            />
+            <div style={{ position: "relative" }}>
+              <HexOverworld
+                state={gameState}
+                selectedQuestId={selectedQuestId}
+                highlightedLocationId={highlightedLocationId}
+                onHighlightLocation={setHighlightedLocationId}
+                onTravel={(x, y) => handleTravel(x, y)}
+                onEnterLocation={(locationId) => void handleEnterLocation(locationId)}
+              />
+              {showOverworldSkills && gameState.playerCharacter.skills && (
+                <SkillAllocationPanel
+                  state={gameState}
+                  onComplete={(newState) => {
+                    setShowOverworldSkills(false);
+                    updateGameState(newState);
+                  }}
+                  onClose={() => setShowOverworldSkills(false)}
+                />
+              )}
+              {!showOverworldSkills && gameState.playerCharacter.skills && gameState.playerCharacter.skills.unspentPoints > 0 && (
+                <button
+                  className="skill-points-notify"
+                  type="button"
+                  onClick={() => setShowOverworldSkills(true)}
+                >
+                  {gameState.playerCharacter.skills.unspentPoints} skill points available
+                </button>
+              )}
+            </div>
           )}
         </>
       )}

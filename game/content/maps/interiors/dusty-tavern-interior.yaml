@@ -3,12 +3,12 @@ name: The Dusty Spur Tavern
 theme: wasteland_tavern
 layout:
   - [wall, wall, wall, wall, wall, wall, wall, wall, wall, wall]
-  - [wall, bar, bar, bar, floor, floor, floor, floor, floor, wall]
-  - [wall, floor, floor, floor, floor, floor, table, floor, floor, wall]
-  - [wall, floor, table, floor, rug, rug, floor, floor, notice, wall]
-  - [wall, floor, floor, floor, rug, rug, floor, table, floor, wall]
-  - [wall, floor, floor, pool, floor, floor, floor, floor, floor, wall]
-  - [wall, floor, floor, floor, floor, floor, floor, console, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, bar, bar, bar, bar, bar, bar, bar, bar, wall]
+  - [wall, pool, floor, floor, floor, floor, floor, floor, notice, wall]
+  - [wall, console, table, floor, rug, rug, floor, table, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, floor, floor, floor, floor, wall]
   - [wall, floor, floor, floor, floor, floor, floor, floor, floor, wall]
   - [wall, floor, floor, floor, floor, floor, floor, floor, floor, wall]
   - [wall, cache, floor, floor, floor, floor, floor, floor, cache, wall]
@@ -44,9 +44,9 @@ interactables:
       - id: play_pool
         label: Play Pool
         response: "You rack the balls and take a shot. The cue ball wobbles on the uneven surface and sinks into a pocket. The dog watches you with what seems like pity. You decide to quit while you're behind."
-      - id: steal_felt
-        label: Steal Felt
-        steal: { itemId: pool_felt, label: "Pool Table Felt", description: "A square of green felt from a pool table. Soft, durable, and almost certainly stolen.", ownedBy: dusty_spur_tavern }
+      - id: steal_cue_ball
+        label: Steal Cue Ball
+        steal: { itemId: cue_ball, label: "Cue Ball", description: "A solid resin cue ball from a pre-war pool table. Surprisingly heavy for its size. Makes a satisfying crack when it connects with something — or someone.", ownedBy: dusty_spur_tavern }
   - id: jukebox
     type: jukebox
     label: Jukebox
@@ -77,9 +77,9 @@ interactables:
         label: Read the Reactor Warning
         response: "'DO NOT APPROACH THE REACTOR COMPLEX AT NIGHT. Something is coming out of there. Not ghouls. Worse. Two scavengers dead this month. — Anonymous.' The handwriting is shaky."
 npcs:
-  # ── Old Timer ──────────────────────────────────────────────
+  # ── Doc Mitchell ───────────────────────────────────────────
   - id: old_timer
-    name: "Old Timer"
+    name: "Doc Mitchell"
     disposition: friendly
     x: 8
     y: 8
@@ -207,8 +207,8 @@ npcs:
     name: Mina
     disposition: friendly
     factionId: dusty_spur_tavern
-    x: 2
-    y: 2
+    x: 5
+    y: 1
     dialogue:
       rootNodeId: greeting
       nodes:
@@ -216,7 +216,7 @@ npcs:
           text: "Well now, a new face in the Dusty Spur. Name's Mina. I run this place — or what's left of it."
           options:
             - id: thank_mina
-              label: "The Old Timer said I should thank you — for patching me up."
+              label: "Doc Mitchell said I should thank you — for patching me up."
               grantItems:
                 - { itemId: stimpak, label: "Stimpak" }
               next: mina_thanks
@@ -313,8 +313,8 @@ npcs:
     name: "Private Reyes"
     disposition: neutral
     factionId: ncr
-    x: 4
-    y: 2
+    x: 3
+    y: 3
     dialogue:
       rootNodeId: greeting
       conditionalRoots:
@@ -413,8 +413,8 @@ npcs:
     name: "Decanus Varro"
     disposition: hostile
     factionId: caesar_legion
-    x: 5
-    y: 2
+    x: 4
+    y: 3
     dialogue:
       rootNodeId: greeting
       nodes:
@@ -472,8 +472,8 @@ npcs:
     name: "Vera — Gun Runner Rep"
     disposition: neutral
     factionId: gun_runners
-    x: 6
-    y: 2
+    x: 5
+    y: 3
     dialogue:
       rootNodeId: greeting
       nodes:
@@ -530,8 +530,8 @@ npcs:
     name: "Frankie (The Kings)"
     disposition: friendly
     factionId: kings
-    x: 7
-    y: 2
+    x: 6
+    y: 3
     dialogue:
       rootNodeId: greeting
       conditionalRoots:
@@ -627,8 +627,8 @@ npcs:
     name: "Boxcars"
     disposition: hostile
     factionId: powder_gangers
-    x: 8
-    y: 2
+    x: 7
+    y: 3
     dialogue:
       rootNodeId: greeting
       nodes:
@@ -794,7 +794,7 @@ npcs:
               next: examine_response
             - id: feed_dog
               label: "Feed the dog."
-              next: feed_response
+              next: feed_check
             - id: int_dog
               label: "Check the dog for parasites and injuries."
               specialGate: { stat: int, min: 7 }
@@ -812,6 +812,23 @@ npcs:
         - id: examine_response
           text: "A scraggly-eared mutt, lean but bright-eyed. Collar reads 'Scavenge'. Someone loved this dog once. Maybe still does."
           options: []
+        - id: feed_check
+          text: "*Scavenge sniffs your pockets hopefully, tail wagging...*"
+          options:
+            - id: give_food
+              label: "Share some food with Scavenge."
+              inventoryTagGate: { tag: food }
+              consumeItem: true
+              next: feed_happy
+            - id: no_food
+              label: "Sorry boy, I don't have anything."
+              next: feed_response
+        - id: feed_happy
+          text: "*Scavenge devours the food in three bites, then looks up at you with pure adoration. His tail wags so hard his whole body shakes. You've made a friend for life.*"
+          options:
+            - id: feed_happy_pet
+              label: "Good boy."
+              response: "*Scavenge barks once — sharp and happy — then leans against your leg. The wasteland just got a little warmer.*"
         - id: feed_response
           text: "*Scavenge sniffs hopefully... you don't have any food. He looks at you with quiet dignity and lies back down.*"
           options: []
@@ -826,14 +843,14 @@ loot:
     label: Sunset Sarsaparilla
     description: "A bottle of Sunset Sarsaparilla. The label promises 'That special blend of 17 herbs and spices.' It's flat and warm, but it's still sarsaparilla."
     ownedBy: dusty_spur_tavern
-    x: 1
-    y: 3
+    x: 5
+    y: 2
   - id: nuka_cola
     label: Nuka-Cola
     description: "A bottle of Nuka-Cola. Still faintly glowing after two centuries. The caffeine alone could restart a heart."
     ownedBy: dusty_spur_tavern
     x: 3
-    y: 3
+    y: 2
   - id: whiskey
     label: Rotgut Whiskey
     description: "A bottle of locally distilled rotgut. The label is handwritten and just says 'WHISKEY' in aggressive capitals."
@@ -843,9 +860,10 @@ loot:
   - id: brahmin_milk
     label: Brahmin Milk
     description: "A bottle of brahmin milk. Surprisingly fresh. Don't think too hard about the two-headed cow it came from."
+    tags: [food]
     ownedBy: dusty_spur_tavern
-    x: 1
-    y: 4
+    x: 7
+    y: 6
   - id: dog_turd
     label: Fresh Dog Turd
     description: "A fresh pile of wasteland dog droppings. Why would anyone pick this up? ...Why did YOU pick this up?"

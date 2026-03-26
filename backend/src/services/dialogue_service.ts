@@ -86,6 +86,7 @@ export interface DialogueSelectResult {
   nextNode: FilteredDialogueNode | null;
   questGranted: QuestDefinition | null;
   questCompleted: QuestCompletionResult | null;
+  questFailed: { questId: string; questName: string } | null;
   karmaDelta: number;
   factionDelta: { factionId: string; delta: number } | null;
   companionRecruited: string | null;
@@ -206,6 +207,7 @@ export class DialogueService {
       nextNode: null,
       questGranted: null,
       questCompleted: null,
+      questFailed: null,
       karmaDelta: 0,
       factionDelta: null,
       companionRecruited: null,
@@ -250,6 +252,13 @@ export class DialogueService {
         }
       }
 
+      if (option.questFail) {
+        result.questFailed = this.failQuest(saveId, option.questFail);
+        if (result.questFailed) {
+          result.stateUpdated = true;
+        }
+      }
+
       if (option.karmaDelta) {
         result.karmaDelta = option.karmaDelta;
         this.adjustKarma(saveId, option.karmaDelta);
@@ -267,9 +276,17 @@ export class DialogueService {
         result.stateUpdated = true;
       }
 
-      if (option.consumeItem && option.inventoryGate) {
-        this.inventoryRepo.removeItem(saveId, option.inventoryGate.itemId);
-        result.stateUpdated = true;
+      if (option.consumeItem) {
+        if (option.inventoryGate) {
+          this.inventoryRepo.removeItem(saveId, option.inventoryGate.itemId);
+          result.stateUpdated = true;
+        } else if (option.inventoryTagGate) {
+          const taggedItem = this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
+          if (taggedItem) {
+            this.inventoryRepo.removeItem(saveId, taggedItem.item_id);
+            result.stateUpdated = true;
+          }
+        }
       }
 
       // Grant items (non-purchase grants are first-time only)
@@ -401,11 +418,15 @@ export class DialogueService {
     if (dialogue.conditionalRoots && dialogue.conditionalRoots.length > 0) {
       const questState = this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+      const failed = safeJsonParse<string[]>(questState?.failed_quests_json, []);
       const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
       const karma = playerCharacter?.karma ?? 0;
 
       for (const condition of dialogue.conditionalRoots) {
         if (condition.questCompleted && completed.includes(condition.questCompleted)) {
+          return condition.nodeId;
+        }
+        if (condition.questFailed && failed.includes(condition.questFailed)) {
           return condition.nodeId;
         }
         if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
@@ -463,12 +484,17 @@ export class DialogueService {
   }
 
   private passesInventoryGate(option: DialogueOption, saveId: string): boolean {
-    if (!option.inventoryGate) {
-      return true;
+    if (option.inventoryGate) {
+      const item = this.inventoryRepo.findItem(saveId, option.inventoryGate.itemId);
+      return !!item;
     }
 
-    const item = this.inventoryRepo.findItem(saveId, option.inventoryGate.itemId);
-    return !!item;
+    if (option.inventoryTagGate) {
+      const item = this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
+      return !!item;
+    }
+
+    return true;
   }
 
   private formatGateLabel(option: DialogueOption, saveId: string): string | null {
@@ -476,6 +502,11 @@ export class DialogueService {
       const item = this.inventoryRepo.findItem(saveId, option.inventoryGate.itemId);
       const itemLabel = item?.label ?? option.inventoryGate.itemId;
       return `Requires: ${itemLabel}`;
+    }
+
+    if (option.inventoryTagGate) {
+      const item = this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
+      return item ? `Uses: ${item.label}` : null;
     }
 
     if (!option.specialGate) {
@@ -508,6 +539,21 @@ export class DialogueService {
     return activeQuests.includes(option.questGate.questId) || completedQuests.includes(option.questGate.questId);
   }
 
+  /** Hide options whose questGrant quest is already active or completed. */
+  private passesQuestGrantFilter(option: DialogueOption, saveId: string): boolean {
+    if (!option.questGrant) {
+      return true;
+    }
+
+    const questState = this.gameStateRepo.getQuestState(saveId);
+    if (!questState) return true;
+
+    const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
+    const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
+    const failedQuests = safeJsonParse<string[]>(questState.failed_quests_json, []);
+    return !activeQuests.includes(option.questGrant) && !completedQuests.includes(option.questGrant) && !failedQuests.includes(option.questGrant);
+  }
+
   private filterNode(
     node: DialogueNode,
     dialogue: DialogueTree,
@@ -520,8 +566,9 @@ export class DialogueService {
     const filteredOptions = node.options
       .filter((option) =>
         this.passesGate(option, special) &&
-        (saveId ? this.passesInventoryGate(option, saveId) : !option.inventoryGate) &&
-        (saveId ? this.passesQuestGate(option, saveId) : !option.questGate)
+        (saveId ? this.passesInventoryGate(option, saveId) : (!option.inventoryGate && !option.inventoryTagGate)) &&
+        (saveId ? this.passesQuestGate(option, saveId) : !option.questGate) &&
+        (saveId ? this.passesQuestGrantFilter(option, saveId) : true)
       )
       .map((option) => {
         const capsCost = option.capsCost ?? null;
@@ -537,6 +584,7 @@ export class DialogueService {
           hasResponse: !!option.response,
           hasNext: !!option.next,
           grantsQuest: option.questGrant ?? null,
+          failsQuest: option.questFail ?? null,
           returnToRoot: option.returnToRoot ?? false,
           alreadySelected: selectedOptionIds.includes(option.id),
           capsCost,
@@ -553,6 +601,7 @@ export class DialogueService {
         hasResponse: false,
         hasNext: true,
         grantsQuest: null,
+        failsQuest: null,
         returnToRoot: true,
         alreadySelected: false,
         capsCost: null,
@@ -691,10 +740,46 @@ export class DialogueService {
       }
     }
 
-    // Award 50 XP for quest completion
-    this.saveRepo.awardXp(saveId, 50);
+    // Award 75 XP for quest completion
+    this.saveRepo.awardXp(saveId, 75);
 
     return result;
+  }
+
+  private failQuest(saveId: string, questId: string): { questId: string; questName: string } | null {
+    const content = getGameContent();
+    const questDef = content.quests.find((q) => q.id === questId);
+
+    if (!questDef) {
+      return null;
+    }
+
+    const questState = this.gameStateRepo.getQuestState(saveId);
+    if (!questState) {
+      return null;
+    }
+
+    const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
+    const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
+    const failedQuests = safeJsonParse<string[]>(questState.failed_quests_json, []);
+
+    // Already completed or failed
+    if (completedQuests.includes(questId) || failedQuests.includes(questId)) {
+      return null;
+    }
+
+    // Move from active to failed
+    const nextActive = activeQuests.filter((id) => id !== questId);
+    failedQuests.push(questId);
+
+    this.gameStateRepo.updateQuestState({
+      ...questState,
+      active_quests_json: JSON.stringify(nextActive),
+      failed_quests_json: JSON.stringify(failedQuests),
+      updated_at: Date.now()
+    });
+
+    return { questId, questName: questDef.name };
   }
 
   private revealQuestMarkerLocation(saveId: string, locationId: string): void {

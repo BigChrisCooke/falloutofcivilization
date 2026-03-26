@@ -30,6 +30,7 @@ export interface DialogueOption {
   hasResponse: boolean;
   hasNext: boolean;
   grantsQuest: string | null;
+  failsQuest: string | null;
   returnToRoot: boolean;
   alreadySelected: boolean;
   capsCost: number | null;
@@ -69,6 +70,7 @@ export interface DialogueSelectResult {
   nextNode: DialogueNode | null;
   questGranted: { id: string; name: string; description: string } | null;
   questCompleted: QuestCompletionResult | null;
+  questFailed: { questId: string; questName: string } | null;
   karmaDelta: number;
   factionDelta: { factionId: string; delta: number } | null;
   companionRecruited: string | null;
@@ -106,6 +108,13 @@ export interface GameState {
       int: number; agl: number; lck: number;
     } | null;
     karma: number;
+    skills: {
+      values: Record<string, number>;
+      allocated: Record<string, number>;
+      tagged: string[];
+      unspentPoints: number;
+      needsTagSelection: boolean;
+    } | null;
   };
   worldState: {
     current_screen: "overworld" | "vault" | "location";
@@ -147,8 +156,8 @@ export interface GameState {
         id: string;
         label: string;
         response?: string;
-        steal?: { itemId: string; label: string; ownedBy?: string; quantity?: number; description?: string };
-        grant?: { itemId: string; label: string; quantity?: number; description?: string };
+        steal?: { itemId: string; label: string; ownedBy?: string; quantity?: number; description?: string; tags?: string[] };
+        grant?: { itemId: string; label: string; quantity?: number; description?: string; tags?: string[] };
       }>;
     }>;
     npcs: Array<{
@@ -175,7 +184,7 @@ export interface GameState {
         }>;
       };
     }>;
-    loot: Array<{ id: string; label: string; ownedBy?: string; description?: string }>;
+    loot: Array<{ id: string; label: string; ownedBy?: string; description?: string; tags?: string[] }>;
     questHooks: string[];
   } | null;
   mapDiscovery: {
@@ -185,6 +194,7 @@ export interface GameState {
   questState: {
     active: string[];
     completed: string[];
+    failed: string[];
     definitions: QuestSummary[];
   };
   inventory: Array<{
@@ -327,10 +337,24 @@ export function exitInterior(exitId: string): Promise<{ state: GameState }> {
   });
 }
 
-export function savePlayerSpecial(special: Record<string, number>): Promise<{ state: GameState }> {
+export function savePlayerSpecial(special: Record<string, number>): Promise<{ state: GameState; questCompleted?: string }> {
   return request("/api/game/character/special", {
     method: "POST",
     body: JSON.stringify(special)
+  });
+}
+
+export function setTaggedSkills(skillIds: string[]): Promise<{ state: GameState }> {
+  return request("/api/game/skills/tag", {
+    method: "POST",
+    body: JSON.stringify(skillIds)
+  });
+}
+
+export function allocateSkillPoints(allocations: Record<string, number>): Promise<{ state: GameState }> {
+  return request("/api/game/skills/allocate", {
+    method: "POST",
+    body: JSON.stringify(allocations)
   });
 }
 
@@ -354,11 +378,12 @@ export function collectItem(
   ownedBy?: string | null,
   quantity?: number,
   description?: string | null,
-  actionId?: string
+  actionId?: string,
+  tags?: string[] | null
 ): Promise<{ result: { karmaDelta: number; factionDelta: { factionId: string; delta: number } | null; companionReaction: { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null }; state: GameState }> {
   return request("/api/game/inventory/collect", {
     method: "POST",
-    body: JSON.stringify({ itemId, label, ownedBy: ownedBy ?? null, quantity: quantity ?? 1, description: description ?? null, actionId: actionId ?? undefined })
+    body: JSON.stringify({ itemId, label, ownedBy: ownedBy ?? null, quantity: quantity ?? 1, description: description ?? null, actionId: actionId ?? undefined, tags: tags ?? null })
   });
 }
 

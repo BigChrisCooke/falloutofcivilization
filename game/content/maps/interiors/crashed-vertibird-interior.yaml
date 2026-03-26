@@ -175,6 +175,7 @@ loot:
   - id: military_ration
     label: Military Ration
     description: "A military Meal Ready to Eat, still vacuum-sealed. The US Army built these to survive anything — including the apocalypse, apparently."
+    tags: [food]
     x: 4
     y: 1
   - id: laser_rifle

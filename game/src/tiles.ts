@@ -6,7 +6,7 @@
  * This is safer for content authoring — new tile types are passable
  * unless explicitly blocked here.
  */
-const BLOCKING_TILES = new Set(["wall", "rock", "metal"]);
+const BLOCKING_TILES = new Set(["wall", "rock", "metal", "bar"]);
 
 export function isPassableTile(tile: string | null): boolean {
   return tile !== null && !BLOCKING_TILES.has(tile);

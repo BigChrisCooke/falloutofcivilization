@@ -1,7 +1,18 @@
-# Pistols
+# Throwing
+- id: cue_ball
+  name: Cue Ball
+  category: throwing
+  damage: 8
+  damageType: melee
+  weight: 0.5
+  value: 5
+  rarity: common
+  description: "A solid resin cue ball from a pre-war pool table. Surprisingly heavy for its size. Makes a satisfying crack when it connects with something — or someone."
+
+# Small Guns — Pistols
 - id: 9mm_pistol
   name: 9mm Pistol
-  category: pistol
+  category: small_guns
   damage: 18
   damageType: ballistic
   weight: 2.5
@@ -11,7 +22,7 @@
 
 - id: 10mm_pistol
   name: 10mm Pistol
-  category: pistol
+  category: small_guns
   damage: 22
   damageType: ballistic
   weight: 3.5
@@ -21,7 +32,7 @@
 
 - id: 357_magnum
   name: .357 Magnum Revolver
-  category: pistol
+  category: small_guns
   damage: 36
   damageType: ballistic
   weight: 4.0
@@ -29,10 +40,10 @@
   rarity: uncommon
   description: "A double-action revolver with serious stopping power. Six rounds of .357 magnum will put down most things that aren't wearing power armor. The kick is enough to remind you you're alive."
 
-# Energy Pistols
+# Energy Weapons — Pistols
 - id: laser_pistol
   name: Laser Pistol
-  category: energy
+  category: energy_weapons
   damage: 28
   damageType: energy
   weight: 3.5
@@ -42,7 +53,7 @@
 
 - id: plasma_pistol
   name: Plasma Pistol
-  category: energy
+  category: energy_weapons
   damage: 42
   damageType: energy
   weight: 3.5
@@ -50,10 +61,10 @@
   rarity: rare
   description: "A compact plasma weapon that fires superheated bolts of ionized gas. The projectiles are slow but hit like a freight train. One good shot will turn a raider into a puddle of green goo."
 
-# Rifles
+# Small Guns — Rifles
 - id: pipe_rifle
   name: Pipe Rifle
-  category: rifle
+  category: small_guns
   damage: 20
   damageType: ballistic
   weight: 5.5
@@ -63,7 +74,7 @@
 
 - id: hunting_rifle
   name: Hunting Rifle
-  category: rifle
+  category: small_guns
   damage: 52
   damageType: ballistic
   weight: 7.5
@@ -73,7 +84,7 @@
 
 - id: service_rifle
   name: Service Rifle
-  category: rifle
+  category: small_guns
   damage: 38
   damageType: ballistic
   weight: 6.0
@@ -81,9 +92,10 @@
   rarity: uncommon
   description: "Standard-issue NCR infantry weapon. Semi-automatic, chambered in 5.56mm. Mass-produced and reliable. Every NCR trooper carries one, and most of them even know how to use it."
 
+# Energy Weapons — Rifles
 - id: laser_rifle
   name: Laser Rifle
-  category: energy
+  category: energy_weapons
   damage: 48
   damageType: energy
   weight: 7.0
@@ -93,7 +105,7 @@
 
 - id: plasma_rifle
   name: Plasma Rifle
-  category: energy
+  category: energy_weapons
   damage: 65
   damageType: energy
   weight: 8.0
@@ -101,10 +113,10 @@
   rarity: rare
   description: "A military-grade plasma rifle recovered from a pre-war armory. The superheated plasma bolts can melt through power armor given enough shots. The recoil compensation system still works, barely."
 
-# Shotguns
+# Small Guns — Shotguns
 - id: sawed_off_shotgun
   name: Sawed-Off Shotgun
-  category: shotgun
+  category: small_guns
   damage: 45
   damageType: ballistic
   weight: 4.5
@@ -114,7 +126,7 @@
 
 - id: combat_shotgun
   name: Combat Shotgun
-  category: shotgun
+  category: small_guns
   damage: 55
   damageType: ballistic
   weight: 7.0
@@ -122,10 +134,10 @@
   rarity: uncommon
   description: "A semi-automatic shotgun with an 8-round drum magazine. Pre-war military issue, designed for close-quarters combat. The drum feed mechanism is finicky, but when it works, nothing clears a hallway faster."
 
-# Melee
+# Melee Weapons
 - id: combat_knife
   name: Combat Knife
-  category: melee
+  category: melee_weapons
   damage: 15
   damageType: melee
   weight: 1.0
@@ -135,7 +147,7 @@
 
 - id: baseball_bat
   name: Baseball Bat
-  category: melee
+  category: melee_weapons
   damage: 20
   damageType: melee
   weight: 3.0
@@ -145,7 +157,7 @@
 
 - id: tire_iron
   name: Tire Iron
-  category: melee
+  category: melee_weapons
   damage: 18
   damageType: melee
   weight: 4.0
@@ -155,7 +167,7 @@
 
 - id: super_sledge
   name: Super Sledge
-  category: melee
+  category: melee_weapons
   damage: 60
   damageType: melee
   weight: 12.0
@@ -165,7 +177,7 @@
 
 - id: power_fist
   name: Power Fist
-  category: melee
+  category: melee_weapons
   damage: 45
   damageType: melee
   weight: 6.0
@@ -173,10 +185,10 @@
   rarity: rare
   description: "A pneumatic gauntlet that delivers hydraulically-powered punches. Strap it on, make a fist, and let the servos do the work. The Brotherhood developed these for a reason — sometimes you need to punch through a wall."
 
-# Unique weapons
+# Unique Weapons
 - id: lucky_357
   name: '"Lucky"'
-  category: pistol
+  category: small_guns
   damage: 42
   damageType: ballistic
   weight: 4.0
@@ -186,7 +198,7 @@
 
 - id: this_machine
   name: '"This Machine"'
-  category: rifle
+  category: small_guns
   damage: 58
   damageType: ballistic
   weight: 8.5

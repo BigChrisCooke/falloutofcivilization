@@ -31,6 +31,9 @@ export interface PlayerCharacterRow {
   archetype: string;
   special_json: string | null;
   karma: number;
+  skills_json: string | null;
+  tagged_skills_json: string | null;
+  unspent_skill_points: number;
   created_at: number;
 }
 
@@ -58,6 +61,7 @@ export interface QuestStateRow {
   save_id: string;
   active_quests_json: string;
   completed_quests_json: string;
+  failed_quests_json: string;
   dialogue_state_json: string;
   collected_actions_json: string;
   updated_at: number;
@@ -70,6 +74,7 @@ export interface PlayerInventoryRow {
   owned_by: string | null;
   quantity: number;
   description: string | null;
+  tags?: string | null;
   collected_at: number;
 }
 

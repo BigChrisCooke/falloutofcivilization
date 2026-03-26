@@ -25,14 +25,25 @@ export class InventoryRepo {
       .get(saveId, itemId) as PlayerInventoryRow | undefined;
   }
 
+  public findItemByTag(saveId: string, tag: string): PlayerInventoryRow | undefined {
+    const rows = this.db
+      .prepare("SELECT * FROM player_inventory WHERE save_id = ? AND tags IS NOT NULL")
+      .all(saveId) as PlayerInventoryRow[];
+
+    return rows.find((row) => {
+      const tags: string[] = JSON.parse(row.tags ?? "[]");
+      return tags.includes(tag);
+    });
+  }
+
   public addItem(row: PlayerInventoryRow): void {
     this.db
       .prepare(
-        `INSERT INTO player_inventory (save_id, item_id, label, owned_by, quantity, description, collected_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO player_inventory (save_id, item_id, label, owned_by, quantity, description, tags, collected_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (save_id, item_id) DO UPDATE SET quantity = quantity + excluded.quantity`
       )
-      .run(row.save_id, row.item_id, row.label, row.owned_by, row.quantity, row.description, row.collected_at);
+      .run(row.save_id, row.item_id, row.label, row.owned_by, row.quantity, row.description, row.tags ?? null, row.collected_at);
   }
 
   public removeItem(saveId: string, itemId: string): void {

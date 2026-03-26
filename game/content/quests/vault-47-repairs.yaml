@@ -1,0 +1,10 @@
+id: vault_47_repairs_pending
+name: "Vault Repairs"
+description: "Overseer Hale is working on permanent repairs to the vault systems. Check back with her later."
+grantedBy: overseer_hale
+objectives:
+  - id: check_back
+    description: "Check back with Overseer Hale about the vault repairs."
+    type: talk
+    target: overseer_hale
+    locationId: vault_47

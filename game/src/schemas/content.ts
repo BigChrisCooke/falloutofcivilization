@@ -27,9 +27,11 @@ export const dialogueOptionSchema = z.object({
   specialGate: specialGateSchema.optional(),
   questGate: z.object({ questId: z.string().min(1) }).optional(),
   inventoryGate: z.object({ itemId: z.string().min(1) }).optional(),
+  inventoryTagGate: z.object({ tag: z.string().min(1) }).optional(),
   consumeItem: z.boolean().optional(),
   questGrant: z.string().min(1).optional(),
   questComplete: z.string().min(1).optional(),
+  questFail: z.string().min(1).optional(),
   factionDelta: z.object({
     factionId: z.string().min(1),
     delta: z.number().int()
@@ -51,6 +53,7 @@ export const dialogueTreeSchema = z.object({
   rootNodeId: z.string().min(1),
   conditionalRoots: z.array(z.object({
     questCompleted: z.string().min(1).optional(),
+    questFailed: z.string().min(1).optional(),
     karmaMin: z.number().int().optional(),
     nodeId: z.string().min(1)
   })).optional(),
@@ -64,7 +67,8 @@ export const questObjectiveSchema = z.object({
   description: z.string().min(1),
   type: z.enum(["talk", "fetch", "kill", "visit"]),
   target: z.string().min(1),
-  locationId: z.string().min(1).optional()
+  locationId: z.string().min(1).optional(),
+  hidden: z.boolean().optional()
 });
 
 export const questSchema = z.object({
@@ -87,7 +91,7 @@ export const questSchema = z.object({
 
 // --- Weapon definition schema ---
 
-export const weaponCategoryEnum = z.enum(["pistol", "rifle", "shotgun", "melee", "energy", "heavy"]);
+export const weaponCategoryEnum = z.enum(["small_guns", "big_guns", "energy_weapons", "melee_weapons", "throwing"]);
 export const damageTypeEnum = z.enum(["ballistic", "energy", "melee", "explosive"]);
 export const rarityEnum = z.enum(["common", "uncommon", "rare", "unique"]);
 
@@ -178,13 +182,15 @@ export const interiorMapSchema = z.object({
             label: z.string().min(1),
             ownedBy: z.string().min(1).optional(),
             quantity: z.number().int().min(1).default(1),
-            description: z.string().optional()
+            description: z.string().optional(),
+            tags: z.array(z.string()).optional()
           }).optional(),
           grant: z.object({
             itemId: z.string().min(1),
             label: z.string().min(1),
             quantity: z.number().int().min(1).default(1),
-            description: z.string().optional()
+            description: z.string().optional(),
+            tags: z.array(z.string()).optional()
           }).optional()
         })
       ).optional()
@@ -207,6 +213,7 @@ export const interiorMapSchema = z.object({
       label: z.string().min(1),
       ownedBy: z.string().min(1).optional(),
       description: z.string().optional(),
+      tags: z.array(z.string()).optional(),
       x: z.number().int().optional(),
       y: z.number().int().optional()
     })

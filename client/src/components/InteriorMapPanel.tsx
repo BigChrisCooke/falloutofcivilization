@@ -8,6 +8,8 @@ import { useRetainedMapRuntime } from "../lib/map/map_runtime.js";
 import { CharacterCreationPanel } from "./CharacterCreationPanel.js";
 import { DialoguePanel } from "./DialoguePanel.js";
 import { PlayerPanel } from "./PlayerPanel.js";
+import { SkillAllocationPanel } from "./SkillAllocationPanel.js";
+import { TaggedSkillsPanel } from "./TaggedSkillsPanel.js";
 
 interface InteriorMapPanelProps {
   state: GameState;
@@ -26,8 +28,12 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
   const [activeLootId, setActiveLootId] = useState<string | null>(null);
   const [activeInteractableId, setActiveInteractableId] = useState<string | null>(null);
   const [interactableResponse, setInteractableResponse] = useState<string | null>(null);
+  const [examinedInteractables, setExaminedInteractables] = useState<Set<string>>(new Set());
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
   const [showPlayerPanel, setShowPlayerPanel] = useState(false);
+  const [questToast, setQuestToast] = useState<string | null>(null);
+  const [showTaggedSkills, setShowTaggedSkills] = useState(false);
+  const [showSkillAllocation, setShowSkillAllocation] = useState(false);
   const [oldTimerChoices, setOldTimerChoices] = useState<string[]>([]);
   const [companionDialogue, setCompanionDialogue] = useState<{
     companionName: string;
@@ -55,9 +61,9 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map?.id, state.playerCharacter.special]);
 
-  async function handleCollectItem(itemId: string, label: string, ownedBy?: string, quantity?: number, description?: string, actionId?: string) {
+  async function handleCollectItem(itemId: string, label: string, ownedBy?: string, quantity?: number, description?: string, actionId?: string, tags?: string[]) {
     try {
-      const { result, state: newState } = await collectItem(itemId, label, ownedBy, quantity, description, actionId);
+      const { result, state: newState } = await collectItem(itemId, label, ownedBy, quantity, description, actionId, tags);
       onStateRefresh(newState);
 
       if (result.companionReaction) {
@@ -170,9 +176,17 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
         {showCharacterCreation && (
           <CharacterCreationPanel
             initialChoices={oldTimerChoices}
-            onComplete={(newState) => {
+            onComplete={(newState, questCompleted) => {
               setShowCharacterCreation(false);
               onStateRefresh(newState);
+              if (questCompleted) {
+                setQuestToast(`Quest complete: ${questCompleted}`);
+                setTimeout(() => setQuestToast(null), 4000);
+                // Show tagged skills selection after a short delay
+                if (newState.playerCharacter.skills?.needsTagSelection) {
+                  setTimeout(() => setShowTaggedSkills(true), 1500);
+                }
+              }
             }}
             onCancel={() => setShowCharacterCreation(false)}
           />
@@ -204,6 +218,10 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
                 departed: reaction.departed
               });
             }}
+            onQuestCompleted={(text) => {
+              setQuestToast(text);
+              setTimeout(() => setQuestToast(null), 4000);
+            }}
           />
         )}
 
@@ -226,7 +244,7 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
               className={`primary-button${activeLootDef.ownedBy ? " steal-button" : ""}`}
               type="button"
               onClick={() => {
-                void handleCollectItem(activeLootDef.id, activeLootDef.label, activeLootDef.ownedBy, undefined, activeLootDef.description);
+                void handleCollectItem(activeLootDef.id, activeLootDef.label, activeLootDef.ownedBy, undefined, activeLootDef.description, undefined, activeLootDef.tags);
                 setActiveLootId(null);
               }}
             >
@@ -255,6 +273,11 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
               {(activeInteractable.actions ?? []).map((action) => {
                 const alreadyCollected =
                   (action.steal || action.grant) && collectedActions.has(action.id);
+                const isItemAction = !!(action.steal || action.grant);
+                const hasBeenExamined = examinedInteractables.has(activeInteractable.id);
+
+                // Hide item actions until an examine-type action has been clicked
+                if (isItemAction && !hasBeenExamined) return null;
 
                 return (
                   <button
@@ -265,13 +288,14 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
                     onClick={() => {
                       if (alreadyCollected) return;
                       if (action.steal) {
-                        void handleCollectItem(action.steal.itemId, action.steal.label, action.steal.ownedBy, action.steal.quantity, action.steal.description, action.id);
+                        void handleCollectItem(action.steal.itemId, action.steal.label, action.steal.ownedBy, action.steal.quantity, action.steal.description, action.id, action.steal.tags);
                         setInteractableResponse(action.response ?? `Took ${action.steal.label}.`);
                       } else if (action.grant) {
-                        void handleCollectItem(action.grant.itemId, action.grant.label, undefined, action.grant.quantity, action.grant.description, action.id);
+                        void handleCollectItem(action.grant.itemId, action.grant.label, undefined, action.grant.quantity, action.grant.description, action.id, action.grant.tags);
                         setInteractableResponse(action.response ?? `Received ${action.grant.label}.`);
                       } else if (action.response) {
                         setInteractableResponse(action.response);
+                        setExaminedInteractables((prev) => new Set(prev).add(activeInteractable.id));
                       }
                     }}
                   >
@@ -369,6 +393,49 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
             state={state}
             onClose={() => setShowPlayerPanel(false)}
           />
+        )}
+
+        {/* Tagged Skills Selection */}
+        {showTaggedSkills && (
+          <TaggedSkillsPanel
+            special={state.playerCharacter.special!}
+            onComplete={(newState) => {
+              setShowTaggedSkills(false);
+              onStateRefresh(newState);
+              // If skill points are available after tagging, prompt allocation
+              if (newState.playerCharacter.skills && newState.playerCharacter.skills.unspentPoints > 0) {
+                setTimeout(() => setShowSkillAllocation(true), 500);
+              }
+            }}
+          />
+        )}
+
+        {/* Skill Allocation Panel */}
+        {showSkillAllocation && state.playerCharacter.skills && (
+          <SkillAllocationPanel
+            state={state}
+            onComplete={(newState) => {
+              setShowSkillAllocation(false);
+              onStateRefresh(newState);
+            }}
+            onClose={() => setShowSkillAllocation(false)}
+          />
+        )}
+
+        {/* Skill Points Notification */}
+        {!showSkillAllocation && !showTaggedSkills && !showCharacterCreation && state.playerCharacter.skills && state.playerCharacter.skills.unspentPoints > 0 && (
+          <button
+            className="skill-points-notify"
+            type="button"
+            onClick={() => setShowSkillAllocation(true)}
+          >
+            {state.playerCharacter.skills.unspentPoints} skill points available
+          </button>
+        )}
+
+        {/* Quest Toast */}
+        {questToast && (
+          <div className="quest-toast">{questToast}</div>
         )}
       </div>
 

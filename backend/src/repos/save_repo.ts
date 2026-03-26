@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 
+import { skillPointsPerLevel } from "../../../game/src/skills.js";
 import type { PlayerCharacterRow, SaveGameRow } from "../shared/types.js";
 
 export class SaveRepo {
@@ -80,6 +81,33 @@ export class SaveRepo {
     this.db
       .prepare("UPDATE player_characters SET xp = ?, level = ? WHERE save_id = ?")
       .run(newXp, newLevel, saveId);
+
+    // Award skill points on level-up
+    if (leveledUp && pc.special_json) {
+      const special = JSON.parse(pc.special_json) as Record<string, number>;
+      const levelsGained = newLevel - pc.level;
+      const pointsPerLvl = skillPointsPerLevel(special.int ?? 5);
+      this.awardSkillPoints(saveId, levelsGained * pointsPerLvl);
+    }
+
     return { newXp, newLevel, leveledUp };
+  }
+
+  public awardSkillPoints(saveId: string, amount: number): void {
+    this.db
+      .prepare("UPDATE player_characters SET unspent_skill_points = unspent_skill_points + ? WHERE save_id = ?")
+      .run(amount, saveId);
+  }
+
+  public updateSkills(saveId: string, skillsJson: string, unspentPoints: number): void {
+    this.db
+      .prepare("UPDATE player_characters SET skills_json = ?, unspent_skill_points = ? WHERE save_id = ?")
+      .run(skillsJson, unspentPoints, saveId);
+  }
+
+  public setTaggedSkills(saveId: string, taggedSkillsJson: string): void {
+    this.db
+      .prepare("UPDATE player_characters SET tagged_skills_json = ? WHERE save_id = ?")
+      .run(taggedSkillsJson, saveId);
   }
 }
