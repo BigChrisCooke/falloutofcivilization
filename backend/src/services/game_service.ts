@@ -1,14 +1,14 @@
 import { computeAllSkillValues, getSkillPointCost, SKILL_DEFINITIONS, SKILL_IDS } from "../../../game/src/skills.js";
+import { buildExplorationRoute, findPath, toTileKey, type HexPoint } from "../../../game/src/index.js";
 import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
 import { SaveRepo } from "../repos/save_repo.js";
-import type { MapDiscoveryRow, WorldStateRow } from "../shared/types.js";
+import type { MapDiscoveryRow, PlayerCharacterRow, QuestStateRow, WorldStateRow } from "../shared/types.js";
 import { getGameContent } from "./content_service.js";
 import { DialogueService } from "./dialogue_service.js";
 import {
-  canTravel,
   getOverworldMap,
   getRegion,
   getRegionLocations,
@@ -17,11 +17,12 @@ import {
   revealExploration
 } from "./exploration_state.js";
 import {
-  canMoveInterior,
   getInteriorExit,
   getInteriorLocation,
   getInteriorMap,
-  getInteriorSpawnPoint
+  getInteriorSpawnPoint,
+  getInteriorTile,
+  isPassableInteriorTile
 } from "./interior_state.js";
 
 function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
@@ -82,34 +83,16 @@ export class GameService {
     const collectedItemIds = inventoryRows.map((row) => row.item_id);
     const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
     const companionRows = await this.companionRepo.getAll(saveId);
+    const questStateView = this.buildQuestStateView(
+      questState,
+      collectedItemIds,
+      enteredLocationIds,
+      normalizedState.discoveredLocationIds
+    );
 
     return {
       save,
-      playerCharacter: {
-        name: playerCharacter.name,
-        level: playerCharacter.level,
-        xp: playerCharacter.xp ?? 0,
-        archetype: playerCharacter.archetype,
-        special: playerCharacter.special_json
-          ? safeJsonParse<Record<string, number> | null>(playerCharacter.special_json, null)
-          : null,
-        karma: playerCharacter.karma ?? 0,
-        skills: playerCharacter.special_json
-          ? (() => {
-              const special = safeJsonParse<Record<string, number>>(playerCharacter.special_json, {});
-              const allocated = safeJsonParse<Record<string, number>>(playerCharacter.skills_json, {});
-              const tagged = safeJsonParse<string[]>(playerCharacter.tagged_skills_json, []);
-              const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
-              return {
-                values: computeAllSkillValues(special, allocated),
-                allocated,
-                tagged,
-                unspentPoints: playerCharacter.unspent_skill_points ?? 0,
-                needsTagSelection: tagged.length === 0 && completedQuests.includes("see_doc_mitchell")
-              };
-            })()
-          : null
-      },
+      playerCharacter: this.buildPlayerCharacterView(playerCharacter, questState),
       worldState: normalizedState.worldState,
       region,
       overworldMap,
@@ -119,62 +102,7 @@ export class GameService {
         discoveredLocationIds: normalizedState.discoveredLocationIds,
         discoveredTileKeys: normalizedState.discoveredTileKeys
       },
-      questState: {
-        active: safeJsonParse<string[]>(questState.active_quests_json, []),
-        completed: safeJsonParse<string[]>(questState.completed_quests_json, []),
-        failed: safeJsonParse<string[]>(questState.failed_quests_json, []),
-        definitions: content.quests
-          .filter((q) => {
-            const activeIds = safeJsonParse<string[]>(questState.active_quests_json, []);
-            const completedIds = safeJsonParse<string[]>(questState.completed_quests_json, []);
-            const failedIds = safeJsonParse<string[]>(questState.failed_quests_json, []);
-            return activeIds.includes(q.id) || completedIds.includes(q.id) || failedIds.includes(q.id);
-          })
-          .map((q) => {
-            const isQuestCompleted = safeJsonParse<string[]>(questState.completed_quests_json, []).includes(q.id);
-            const rawObjectives = q.objectives.map((o) => {
-              let completed = false;
-              if (isQuestCompleted) {
-                completed = true;
-              } else if (o.type === "fetch") {
-                completed = collectedItemIds.includes(o.target);
-              } else if (o.type === "visit") {
-                completed = enteredLocationIds.includes(o.target);
-              } else if (o.type === "kill") {
-                completed = normalizedState.discoveredLocationIds.includes(o.target);
-              }
-              return {
-                id: o.id,
-                description: o.description,
-                type: o.type,
-                target: o.target,
-                locationId: o.locationId,
-                completed,
-                hidden: o.hidden ?? false
-              };
-            });
-            // Hidden objectives reveal progressively: show when completed,
-            // or when the preceding objective is completed (next-up reveal)
-            const objectives = rawObjectives.filter((o, index) => {
-              if (!o.hidden) return true;
-              if (o.completed) return true;
-              if (index > 0 && rawObjectives[index - 1]!.completed) return true;
-              return false;
-            }).map(({ hidden: _h, ...rest }) => rest);
-            const nextObjective = objectives.find((o) => !o.completed);
-            const activeMapMarker = nextObjective?.locationId
-              ? { locationId: nextObjective.locationId, label: nextObjective.description }
-              : q.mapMarker ?? null;
-            return {
-              id: q.id,
-              name: q.name,
-              description: q.description,
-              objectives,
-              mapMarker: q.mapMarker ?? null,
-              activeMapMarker
-            };
-          })
-      },
+      questState: questStateView,
       factionStanding: safeJsonParse<Record<string, number>>(factionStanding.standings_json, {}),
       inventory: inventoryRows.map((row) => ({
         id: row.item_id,
@@ -457,8 +385,8 @@ export class GameService {
     });
   }
 
-  public async travel(saveId: string, x: number, y: number): Promise<void> {
-    await withTransaction(async () => {
+  public async travel(saveId: string, x: number, y: number) {
+    const steps = await withTransaction(async () => {
       const content = getGameContent();
       const worldState = await this.gameStateRepo.getWorldState(saveId);
       const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
@@ -471,6 +399,10 @@ export class GameService {
       const regionLocations = getRegionLocations(content, region.id);
       const startingLocation = getStartingLocation(content, region, regionLocations);
       const overworldMap = getOverworldMap(content, region);
+      if (worldState.current_screen !== "overworld") {
+        throw new Error("Travel is only available on the overworld.");
+      }
+
       const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
         playerX: worldState.player_x,
         playerY: worldState.player_y,
@@ -478,26 +410,46 @@ export class GameService {
         discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
       });
       const targetPosition = { x, y };
-
-      if (
-        normalizedExploration.playerPosition.x === targetPosition.x &&
-        normalizedExploration.playerPosition.y === targetPosition.y
-      ) {
-        return;
-      }
-
-      if (!canTravel(normalizedExploration.playerPosition, targetPosition, overworldMap)) {
-        throw new Error("Travel is limited to adjacent hexes inside the explored map bounds.");
-      }
-
-      const previousLocationCount = normalizedExploration.discoveredLocationIds.length;
-      const revealedState = revealExploration(
-        overworldMap,
-        regionLocations,
+      const route = buildExplorationRoute(
+        normalizedExploration.playerPosition,
         targetPosition,
-        normalizedExploration.discoveredLocationIds,
-        normalizedExploration.discoveredTileKeys
+        normalizedExploration.discoveredTileKeys,
+        overworldMap.width,
+        overworldMap.height,
+        MAX_OVERWORLD_FOG_STEPS
       );
+
+      if (!route) {
+        throw new Error("That destination cannot be reached.");
+      }
+
+      let currentPosition = normalizedExploration.playerPosition;
+      let discoveredLocationIds = normalizedExploration.discoveredLocationIds;
+      let discoveredTileKeys = normalizedExploration.discoveredTileKeys;
+      const replaySteps: OverworldReplayStep[] = [];
+
+      for (const step of route.steps) {
+        const previousDiscoveredTiles = new Set(discoveredTileKeys);
+        const previousDiscoveredLocations = new Set(discoveredLocationIds);
+        const revealedState = revealExploration(
+          overworldMap,
+          regionLocations,
+          step,
+          discoveredLocationIds,
+          discoveredTileKeys
+        );
+
+        replaySteps.push({
+          position: step,
+          revealedTileKeys: revealedState.discoveredTileKeys.filter((tileKey) => !previousDiscoveredTiles.has(tileKey)),
+          discoveredLocationIds: revealedState.discoveredLocationIds.filter((locationId) => !previousDiscoveredLocations.has(locationId))
+        });
+
+        currentPosition = step;
+        discoveredLocationIds = revealedState.discoveredLocationIds;
+        discoveredTileKeys = revealedState.discoveredTileKeys;
+      }
+
       const now = Date.now();
 
       await this.gameStateRepo.updateExplorationState(
@@ -507,27 +459,35 @@ export class GameService {
           current_location_id: null,
           current_map_id: region.mapId,
           current_panel: null,
-          player_x: targetPosition.x,
-          player_y: targetPosition.y,
+          player_x: currentPosition.x,
+          player_y: currentPosition.y,
           updated_at: now
         },
         {
           save_id: saveId,
-          discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
-          discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
+          discovered_locations_json: JSON.stringify(discoveredLocationIds),
+          discovered_tiles_json: JSON.stringify(discoveredTileKeys),
           entered_locations_json: mapDiscovery.entered_locations_json,
           updated_at: now
         }
       );
 
-      const newLocationCount = revealedState.discoveredLocationIds.length - previousLocationCount;
+      const newLocationCount = discoveredLocationIds.length - normalizedExploration.discoveredLocationIds.length;
+
       if (newLocationCount > 0) {
         await this.saveRepo.awardXp(saveId, newLocationCount * 20);
       }
+
+      return replaySteps;
     });
+
+    return {
+      steps,
+      finalPatch: await this.getTravelRouteFinalPatch(saveId)
+    };
   }
 
-  public async moveInterior(saveId: string, x: number, y: number): Promise<void> {
+  public async moveInterior(saveId: string, x: number, y: number) {
     const content = getGameContent();
     const worldState = await this.gameStateRepo.getWorldState(saveId);
 
@@ -546,20 +506,42 @@ export class GameService {
         : getInteriorSpawnPoint(interiorMap);
     const targetPosition = { x, y };
 
-    if (currentPosition.x === targetPosition.x && currentPosition.y === targetPosition.y) {
-      return;
+    const passableSet = new Set<string>();
+
+    for (let rowIndex = 0; rowIndex < interiorMap.layout.length; rowIndex += 1) {
+      const row = interiorMap.layout[rowIndex] ?? [];
+
+      for (let columnIndex = 0; columnIndex < row.length; columnIndex += 1) {
+        const point = { x: columnIndex, y: rowIndex };
+
+        if (isPassableInteriorTile(getInteriorTile(point, interiorMap))) {
+          passableSet.add(toTileKey(point));
+        }
+      }
     }
 
-    if (!canMoveInterior(currentPosition, targetPosition, interiorMap)) {
-      throw new Error("Interior movement is limited to adjacent passable hexes.");
+    const route = findPath(currentPosition, targetPosition, passableSet);
+
+    if (!route) {
+      throw new Error("Interior movement is limited to reachable passable tiles.");
     }
 
-    await this.gameStateRepo.updateWorldState({
+    const finalPosition = route[route.length - 1] ?? currentPosition;
+    const nextWorldState = {
       ...worldState,
-      player_x: targetPosition.x,
-      player_y: targetPosition.y,
+      player_x: finalPosition.x,
+      player_y: finalPosition.y,
       updated_at: Date.now()
-    });
+    };
+
+    await this.gameStateRepo.updateWorldState(nextWorldState);
+
+    return {
+      steps: route.map((position) => ({ position })),
+      finalPatch: {
+        worldState: nextWorldState
+      }
+    };
   }
 
   public async exitInterior(saveId: string, exitId: string): Promise<void> {
@@ -640,6 +622,134 @@ export class GameService {
       mapDiscovery: nextMapDiscovery,
       discoveredLocationIds: normalizedExploration.discoveredLocationIds,
       discoveredTileKeys: normalizedExploration.discoveredTileKeys
+    };
+  }
+
+  private buildPlayerCharacterView(playerCharacter: PlayerCharacterRow, questState: QuestStateRow) {
+    return {
+      name: playerCharacter.name,
+      level: playerCharacter.level,
+      xp: playerCharacter.xp ?? 0,
+      archetype: playerCharacter.archetype,
+      special: playerCharacter.special_json
+        ? safeJsonParse<Record<string, number> | null>(playerCharacter.special_json, null)
+        : null,
+      karma: playerCharacter.karma ?? 0,
+      skills: playerCharacter.special_json
+        ? (() => {
+            const special = safeJsonParse<Record<string, number>>(playerCharacter.special_json, {});
+            const allocated = safeJsonParse<Record<string, number>>(playerCharacter.skills_json, {});
+            const tagged = safeJsonParse<string[]>(playerCharacter.tagged_skills_json, []);
+            const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
+
+            return {
+              values: computeAllSkillValues(special, allocated),
+              allocated,
+              tagged,
+              unspentPoints: playerCharacter.unspent_skill_points ?? 0,
+              needsTagSelection: tagged.length === 0 && completedQuests.includes("see_doc_mitchell")
+            };
+          })()
+        : null
+    };
+  }
+
+  private buildQuestStateView(
+    questState: QuestStateRow,
+    collectedItemIds: string[],
+    enteredLocationIds: string[],
+    discoveredLocationIds: string[]
+  ) {
+    const content = getGameContent();
+    const activeIds = safeJsonParse<string[]>(questState.active_quests_json, []);
+    const completedIds = safeJsonParse<string[]>(questState.completed_quests_json, []);
+    const failedIds = safeJsonParse<string[]>(questState.failed_quests_json, []);
+
+    return {
+      active: activeIds,
+      completed: completedIds,
+      failed: failedIds,
+      definitions: content.quests
+        .filter((quest) => activeIds.includes(quest.id) || completedIds.includes(quest.id) || failedIds.includes(quest.id))
+        .map((quest) => {
+          const isQuestCompleted = completedIds.includes(quest.id);
+          const rawObjectives = quest.objectives.map((objective) => {
+            let completed = false;
+            if (isQuestCompleted) {
+              completed = true;
+            } else if (objective.type === "fetch") {
+              completed = collectedItemIds.includes(objective.target);
+            } else if (objective.type === "visit") {
+              completed = enteredLocationIds.includes(objective.target);
+            } else if (objective.type === "kill") {
+              completed = discoveredLocationIds.includes(objective.target);
+            }
+
+            return {
+              id: objective.id,
+              description: objective.description,
+              type: objective.type,
+              target: objective.target,
+              locationId: objective.locationId,
+              completed,
+              hidden: objective.hidden ?? false
+            };
+          });
+          const objectives = rawObjectives
+            .filter((objective, index) => {
+              if (!objective.hidden) return true;
+              if (objective.completed) return true;
+              if (index > 0 && rawObjectives[index - 1]!.completed) return true;
+              return false;
+            })
+            .map(({ hidden: _hidden, ...objective }) => objective);
+          const nextObjective = objectives.find((objective) => !objective.completed);
+          const activeMapMarker = nextObjective?.locationId
+            ? { locationId: nextObjective.locationId, label: nextObjective.description }
+            : quest.mapMarker ?? null;
+
+          return {
+            id: quest.id,
+            name: quest.name,
+            description: quest.description,
+            objectives,
+            mapMarker: quest.mapMarker ?? null,
+            activeMapMarker
+          };
+        })
+    };
+  }
+
+  private async getTravelRouteFinalPatch(saveId: string) {
+    const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
+
+    if (!playerCharacter || !worldState || !mapDiscovery || !questState) {
+      throw new Error("Save state is incomplete.");
+    }
+
+    const normalizedState = await this.ensureExplorationState(saveId, worldState, mapDiscovery);
+    const inventoryRows = await this.inventoryRepo.getAll(saveId);
+    const collectedItemIds = inventoryRows.map((row) => row.item_id);
+    const enteredLocationIds = safeJsonParse<string[]>(normalizedState.mapDiscovery.entered_locations_json, []);
+
+    return {
+      playerCharacter: this.buildPlayerCharacterView(playerCharacter, questState),
+      worldState: normalizedState.worldState,
+      mapDiscovery: {
+        discoveredLocationIds: normalizedState.discoveredLocationIds,
+        discoveredTileKeys: normalizedState.discoveredTileKeys
+      },
+      questState: this.buildQuestStateView(
+        questState,
+        collectedItemIds,
+        enteredLocationIds,
+        normalizedState.discoveredLocationIds
+      ),
+      currentLocation: null,
+      currentInteriorMap: null
     };
   }
 
@@ -812,4 +922,16 @@ export class GameService {
       await this.saveRepo.updateSkills(saveId, JSON.stringify(newAllocated), remaining);
     });
   }
+}
+
+const MAX_OVERWORLD_FOG_STEPS = 20;
+
+interface OverworldReplayStep {
+  position: HexPoint;
+  revealedTileKeys: string[];
+  discoveredLocationIds: string[];
+}
+
+interface InteriorReplayStep {
+  position: HexPoint;
 }

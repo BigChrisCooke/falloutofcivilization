@@ -22,8 +22,13 @@ import {
   updateScreen,
   type AuthUser,
   type GameState,
+  type GameStatePatch,
+  type InteriorReplayStep,
+  type OverworldReplayStep,
   type SaveGame
 } from "../lib/api.js";
+import { delay, STEP_DELAY_MS } from "../lib/map/hex_pathfinding.js";
+import { applyGameStatePatch, applyInteriorReplayStep, applyOverworldReplayStep } from "../lib/game_state_patch.js";
 
 type AuthMode = "login" | "register";
 type DialogName = "settings" | "saves" | "pipboy" | null;
@@ -45,19 +50,66 @@ export function AppRoot() {
   const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
   const [showOverworldSkills, setShowOverworldSkills] = useState(false);
   const prevLevelRef = useRef<number | null>(null);
+  const movementLockedRef = useRef(false);
 
-  const updateGameState = useCallback((newState: GameState) => {
+  const commitGameState = useCallback((resolveNextState: (previousState: GameState | null) => GameState | null) => {
     setGameState((prev) => {
+      const nextState = resolveNextState(prev);
+
+      if (!nextState) {
+        return nextState;
+      }
+
       const prevLevel = prev?.playerCharacter.level ?? prevLevelRef.current;
-      const newLevel = newState.playerCharacter.level;
+      const newLevel = nextState.playerCharacter.level;
       if (prevLevel !== null && newLevel > prevLevel) {
         setLevelUpToast(newLevel);
         setTimeout(() => setLevelUpToast(null), 3000);
       }
       prevLevelRef.current = newLevel;
-      return newState;
+      return nextState;
     });
   }, []);
+
+  const updateGameState = useCallback((newState: GameState) => {
+    commitGameState(() => newState);
+  }, [commitGameState]);
+
+  const patchGameState = useCallback((patch: GameStatePatch) => {
+    commitGameState((previousState) => (previousState ? applyGameStatePatch(previousState, patch) : previousState));
+  }, [commitGameState]);
+
+  const replayOverworldRoute = useCallback(async (steps: OverworldReplayStep[]) => {
+    for (let index = 0; index < steps.length; index += 1) {
+      const step = steps[index];
+
+      if (!step) {
+        continue;
+      }
+
+      commitGameState((previousState) => (previousState ? applyOverworldReplayStep(previousState, step) : previousState));
+
+      if (index < steps.length - 1) {
+        await delay(STEP_DELAY_MS);
+      }
+    }
+  }, [commitGameState]);
+
+  const replayInteriorRoute = useCallback(async (steps: InteriorReplayStep[]) => {
+    for (let index = 0; index < steps.length; index += 1) {
+      const step = steps[index];
+
+      if (!step) {
+        continue;
+      }
+
+      commitGameState((previousState) => (previousState ? applyInteriorReplayStep(previousState, step) : previousState));
+
+      if (index < steps.length - 1) {
+        await delay(STEP_DELAY_MS);
+      }
+    }
+  }, [commitGameState]);
 
   async function refreshSession() {
     setLoading(true);
@@ -178,6 +230,10 @@ export function AppRoot() {
   }
 
   async function handleEnterLocation(locationId: string) {
+    if (movementLockedRef.current) {
+      return;
+    }
+
     setError(null);
 
     try {
@@ -188,29 +244,53 @@ export function AppRoot() {
     }
   }
 
-  async function handleTravel(x: number, y: number) {
+  async function handleTravel(x: number, y: number): Promise<boolean> {
+    if (movementLockedRef.current) {
+      return false;
+    }
+
     setError(null);
+    movementLockedRef.current = true;
 
     try {
       const response = await travel(x, y);
-      updateGameState(response.state);
+      await replayOverworldRoute(response.replay.steps);
+      patchGameState(response.replay.finalPatch);
+      return response.replay.finalPatch.worldState.player_x === x && response.replay.finalPatch.worldState.player_y === y;
     } catch (travelError) {
       setError(travelError instanceof Error ? travelError.message : "Failed to travel.");
+      return false;
+    } finally {
+      movementLockedRef.current = false;
     }
   }
 
-  async function handleInteriorMove(x: number, y: number) {
+  async function handleInteriorMove(x: number, y: number): Promise<boolean> {
+    if (movementLockedRef.current) {
+      return false;
+    }
+
     setError(null);
+    movementLockedRef.current = true;
 
     try {
       const response = await moveInterior(x, y);
-      updateGameState(response.state);
+      await replayInteriorRoute(response.replay.steps);
+      patchGameState(response.replay.finalPatch);
+      return response.replay.finalPatch.worldState.player_x === x && response.replay.finalPatch.worldState.player_y === y;
     } catch (moveError) {
       setError(moveError instanceof Error ? moveError.message : "Failed to move inside the current area.");
+      return false;
+    } finally {
+      movementLockedRef.current = false;
     }
   }
 
   async function handleInteriorExit(exitId: string) {
+    if (movementLockedRef.current) {
+      return;
+    }
+
     setError(null);
 
     try {

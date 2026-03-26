@@ -14,7 +14,7 @@ import { TaggedSkillsPanel } from "./TaggedSkillsPanel.js";
 interface InteriorMapPanelProps {
   state: GameState;
   variant: "vault" | "location";
-  onMove: (x: number, y: number) => Promise<void>;
+  onMove: (x: number, y: number) => Promise<boolean>;
   onExit: (exitId: string) => void;
   onStateRefresh: (state: GameState) => void;
 }

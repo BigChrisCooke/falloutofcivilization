@@ -8,7 +8,7 @@ interface HexOverworldProps {
   selectedQuestId?: string | null;
   highlightedLocationId: string | null;
   onHighlightLocation: (locationId: string | null) => void;
-  onTravel: (x: number, y: number) => Promise<void>;
+  onTravel: (x: number, y: number) => Promise<boolean>;
   onEnterLocation: (locationId: string) => void;
 }
 

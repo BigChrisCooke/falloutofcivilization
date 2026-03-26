@@ -73,6 +73,16 @@ function findPath(from: HexPoint, to: HexPoint, width: number, height: number): 
   throw new Error("No path found across the overworld.");
 }
 
+function expectContiguousRoute(steps: Array<{ position: HexPoint }>, start: HexPoint): void {
+  let current = start;
+
+  for (const step of steps) {
+    const neighbors = getNeighbors(current, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+    expect(neighbors).toContainEqual(step.position);
+    current = step.position;
+  }
+}
+
 describe("game flow", () => {
   beforeEach(async () => {
     await resetTestDb();
@@ -119,7 +129,7 @@ describe("game flow", () => {
     });
 
     expect(blockedVaultMoveResponse.status).toBe(400);
-    expect(blockedVaultMoveResponse.body.error).toContain("adjacent passable hexes");
+    expect(blockedVaultMoveResponse.body.error).toContain("reachable passable tiles");
 
     const vaultMoveResponse = await agent.post("/api/game/interior/move").send({
       x: 2,
@@ -127,8 +137,11 @@ describe("game flow", () => {
     });
 
     expect(vaultMoveResponse.status).toBe(200);
-    expect(vaultMoveResponse.body.state.worldState.player_x).toBe(2);
-    expect(vaultMoveResponse.body.state.worldState.player_y).toBe(3);
+    expect(vaultMoveResponse.body).not.toHaveProperty("state");
+    expect(Object.keys(vaultMoveResponse.body.replay).sort()).toEqual(["finalPatch", "steps"]);
+    expect(vaultMoveResponse.body.replay.steps).toEqual([{ position: { x: 2, y: 3 } }]);
+    expect(vaultMoveResponse.body.replay.finalPatch.worldState.player_x).toBe(2);
+    expect(vaultMoveResponse.body.replay.finalPatch.worldState.player_y).toBe(3);
 
     const vaultExitResponse = await agent.post("/api/game/interior/exit").send({
       exitId: "to_frontier_valley"
@@ -165,16 +178,30 @@ describe("game flow", () => {
       backToWorldResponse.body.state.overworldMap.height
     );
 
-    let latestTravelResponse = backToWorldResponse;
+    const travelResponse = await agent.post("/api/game/travel").send(dustyTavern.position);
 
-    for (const step of path) {
-      latestTravelResponse = await agent.post("/api/game/travel").send(step);
-      expect(latestTravelResponse.status).toBe(200);
-    }
-
-    expect(latestTravelResponse.body.state.worldState.player_x).toBe(dustyTavern.position.x);
-    expect(latestTravelResponse.body.state.worldState.player_y).toBe(dustyTavern.position.y);
-    expect(latestTravelResponse.body.state.mapDiscovery.discoveredLocationIds).toContain("dusty_tavern");
+    expect(travelResponse.status).toBe(200);
+    expect(travelResponse.body).not.toHaveProperty("state");
+    expect(Object.keys(travelResponse.body.replay).sort()).toEqual(["finalPatch", "steps"]);
+    expect(Object.keys(travelResponse.body.replay.finalPatch).sort()).toEqual([
+      "currentInteriorMap",
+      "currentLocation",
+      "mapDiscovery",
+      "playerCharacter",
+      "questState",
+      "worldState"
+    ]);
+    expect(travelResponse.body.replay.finalPatch).not.toHaveProperty("weaponCatalog");
+    expect(travelResponse.body.replay.finalPatch).not.toHaveProperty("locations");
+    expect(travelResponse.body.replay.steps).toHaveLength(path.length);
+    expect(travelResponse.body.replay.steps[path.length - 1]).toEqual({
+      position: dustyTavern.position,
+      revealedTileKeys: expect.any(Array),
+      discoveredLocationIds: expect.any(Array)
+    });
+    expect(travelResponse.body.replay.finalPatch.worldState.player_x).toBe(dustyTavern.position.x);
+    expect(travelResponse.body.replay.finalPatch.worldState.player_y).toBe(dustyTavern.position.y);
+    expect(travelResponse.body.replay.finalPatch.mapDiscovery.discoveredLocationIds).toContain("dusty_tavern");
 
     const locationResponse = await agent.post("/api/game/location/enter").send({
       locationId: "dusty_tavern"
@@ -189,12 +216,17 @@ describe("game flow", () => {
 
     const tavernMoveResponse = await agent.post("/api/game/interior/move").send({
       x: 8,
-      y: 9
+      y: 8
     });
 
     expect(tavernMoveResponse.status).toBe(200);
-    expect(tavernMoveResponse.body.state.worldState.player_x).toBe(8);
-    expect(tavernMoveResponse.body.state.worldState.player_y).toBe(9);
+    expect(tavernMoveResponse.body).not.toHaveProperty("state");
+    expect(Object.keys(tavernMoveResponse.body.replay).sort()).toEqual(["finalPatch", "steps"]);
+    expect(tavernMoveResponse.body.replay.steps).toHaveLength(2);
+    expectContiguousRoute(tavernMoveResponse.body.replay.steps, { x: 8, y: 10 });
+    expect(tavernMoveResponse.body.replay.steps[1]).toEqual({ position: { x: 8, y: 8 } });
+    expect(tavernMoveResponse.body.replay.finalPatch.worldState.player_x).toBe(8);
+    expect(tavernMoveResponse.body.replay.finalPatch.worldState.player_y).toBe(8);
 
     const tavernExitBlockedResponse = await agent.post("/api/game/interior/exit").send({
       exitId: "to_frontier_valley"
@@ -215,5 +247,44 @@ describe("game flow", () => {
 
     expect(savesResponse.status).toBe(200);
     expect(savesResponse.body.saves).toHaveLength(1);
+  });
+
+  it("rejects invalid route destinations without changing persisted position", async () => {
+    const app = createApp(createTestConfig());
+    const agent = request.agent(app);
+
+    await agent.post("/api/auth/register").send({
+      username: "ranger",
+      password: "desertwatch11"
+    });
+    await agent.post("/api/saves").send({
+      name: "Route Guard"
+    });
+    await agent.post("/api/game/interior/move").send({
+      x: 2,
+      y: 3
+    });
+    await agent.post("/api/game/interior/exit").send({
+      exitId: "to_frontier_valley"
+    });
+
+    const beforeStateResponse = await agent.get("/api/game/state");
+
+    expect(beforeStateResponse.status).toBe(200);
+    expect(beforeStateResponse.body.saveLoaded).toBe(true);
+
+    const travelResponse = await agent.post("/api/game/travel").send({
+      x: 99,
+      y: 99
+    });
+
+    expect(travelResponse.status).toBe(400);
+    expect(travelResponse.body.error).toContain("cannot be reached");
+
+    const afterStateResponse = await agent.get("/api/game/state");
+
+    expect(afterStateResponse.status).toBe(200);
+    expect(afterStateResponse.body.state.worldState.player_x).toBe(beforeStateResponse.body.state.worldState.player_x);
+    expect(afterStateResponse.body.state.worldState.player_y).toBe(beforeStateResponse.body.state.worldState.player_y);
   });
 });

@@ -2,88 +2,44 @@ import { Container } from "pixi.js";
 
 import { syncOverworldScene, createOverworldLayerContainers, type OverworldLayerContainers, type OverworldRetainedNodes } from "./overworld_layers.js";
 import { resolveHoverTile, resolveInteractionTarget } from "./overworld_input.js";
-import { bestStepToward, findPath, delay, STEP_DELAY_MS, type GridPoint } from "./hex_pathfinding.js";
 import type { OverworldSceneModel } from "./types.js";
 import type { RetainedMapRuntimeAdapter } from "./map_runtime.js";
 
 export interface OverworldRuntimeHandlers {
-  onTravel: (x: number, y: number) => Promise<void>;
+  onTravel: (x: number, y: number) => Promise<boolean>;
   onEnterLocation: (locationId: string) => void;
 }
 
-/** Incremented each time a new walk begins; older walks check this to self-cancel. */
 let walkGeneration = 0;
+let walkLocked = false;
 
-function buildPassableSet(scene: OverworldSceneModel): Set<string> {
-  const set = new Set<string>();
-  for (const tile of scene.tiles) {
-    if (tile.discovered) {
-      set.add(`${tile.point.x},${tile.point.y}`);
-    }
-  }
-  return set;
-}
-
-/** All valid tile coordinates on the map (discovered or not). */
-function buildAllTilesSet(scene: OverworldSceneModel): Set<string> {
-  const set = new Set<string>();
-  for (const tile of scene.tiles) {
-    set.add(`${tile.point.x},${tile.point.y}`);
-  }
-  return set;
-}
-
-/**
- * Find the discovered tile closest to the target that the player can reach.
- * This is the "frontier" — the edge of known territory nearest to where we want to go.
- */
-function findFrontierTile(from: GridPoint, target: GridPoint, passableSet: Set<string>): GridPoint | null {
-  let best: GridPoint | null = null;
-  let bestPathLen = Infinity;
-  let bestTargetDist = Infinity;
-
-  for (const key of passableSet) {
-    const [px, py] = key.split(",").map(Number);
-    const point = { x: px, y: py };
-
-    // Prefer discovered tiles that are close to the target
-    const dx = point.x - target.x;
-    const dy = point.y - target.y;
-    const targetDist = Math.abs(dx) + Math.abs(dy); // rough distance
-
-    // Skip tiles that aren't closer to target than what we've found
-    if (targetDist > bestTargetDist) continue;
-
-    const path = findPath(from, point, passableSet);
-    if (!path) continue;
-
-    if (targetDist < bestTargetDist || (targetDist === bestTargetDist && path.length < bestPathLen)) {
-      bestTargetDist = targetDist;
-      bestPathLen = path.length;
-      best = point;
-    }
-  }
-
-  return best;
-}
-
-async function walkPath(
-  path: GridPoint[],
+async function runTravel(
+  destination: { x: number; y: number },
   generation: number,
-  handlers: OverworldRuntimeHandlers
-): Promise<boolean> {
-  for (const step of path) {
-    if (walkGeneration !== generation) return false;
+  handlers: OverworldRuntimeHandlers,
+  onArrive?: () => void
+) {
+  if (walkLocked) {
+    return;
+  }
 
-    await handlers.onTravel(step.x, step.y);
+  walkLocked = true;
 
-    if (walkGeneration !== generation) return false;
+  try {
+    const arrived = await handlers.onTravel(destination.x, destination.y);
 
-    if (step !== path[path.length - 1]) {
-      await delay(STEP_DELAY_MS);
+    if (walkGeneration !== generation) {
+      return;
+    }
+
+    if (arrived) {
+      onArrive?.();
+    }
+  } finally {
+    if (walkGeneration === generation) {
+      walkLocked = false;
     }
   }
-  return true;
 }
 
 export const overworldRuntimeAdapter: RetainedMapRuntimeAdapter<
@@ -102,180 +58,32 @@ export const overworldRuntimeAdapter: RetainedMapRuntimeAdapter<
   resolveHover: (scene, worldPoint) => resolveHoverTile(scene, worldPoint),
   resolveInteraction: (scene, worldPoint) => resolveInteractionTarget(scene, worldPoint),
   applyInteraction: (target, handlers, scene) => {
-    if (target.kind === "tile") {
-      const myGeneration = ++walkGeneration;
-      const from: GridPoint = scene.courier.point;
-      const passableSet = buildPassableSet(scene);
-      const path = findPath(from, target.point, passableSet);
-
-      if (path && path.length > 0) {
-        void walkPath(path, myGeneration, handlers);
-        return;
-      }
-
-      // No connected path through discovered tiles — use fog exploration
-      const allTiles = buildAllTilesSet(scene);
-      const targetPoint = target.point;
-      const frontier = findFrontierTile(from, targetPoint, passableSet);
-      if (!frontier) return;
-
-      const pathToFrontier = findPath(from, frontier, passableSet);
-
-      void (async () => {
-        if (pathToFrontier && pathToFrontier.length > 0) {
-          const arrived = await walkPath(pathToFrontier, myGeneration, handlers);
-          if (!arrived || walkGeneration !== myGeneration) return;
-        }
-
-        let current = frontier;
-        const maxFogSteps = 20;
-        for (let step = 0; step < maxFogSteps; step++) {
-          if (walkGeneration !== myGeneration) return;
-          if (current.x === targetPoint.x && current.y === targetPoint.y) return;
-
-          const next = bestStepToward(current, targetPoint, allTiles);
-          if (!next || (next.x === current.x && next.y === current.y)) return;
-
-          await delay(STEP_DELAY_MS);
-          if (walkGeneration !== myGeneration) return;
-
-          try {
-            await handlers.onTravel(next.x, next.y);
-          } catch {
-            return;
-          }
-
-          current = next;
-        }
-      })();
-
+    if (walkLocked) {
       return;
     }
 
-    if (target.kind === "fog") {
+    if (target.kind === "tile" || target.kind === "fog") {
       const myGeneration = ++walkGeneration;
-      const from: GridPoint = scene.courier.point;
-      const passableSet = buildPassableSet(scene);
-      const allTiles = buildAllTilesSet(scene);
-      const targetPoint = target.point;
-
-      // Phase 1: walk to the frontier (closest discovered tile to target)
-      const frontier = findFrontierTile(from, targetPoint, passableSet);
-      if (!frontier) return;
-
-      const pathToFrontier = findPath(from, frontier, passableSet);
-
-      void (async () => {
-        // Walk the discovered path to the frontier
-        if (pathToFrontier && pathToFrontier.length > 0) {
-          const arrived = await walkPath(pathToFrontier, myGeneration, handlers);
-          if (!arrived || walkGeneration !== myGeneration) return;
-        }
-
-        // Phase 2: step-by-step into the fog toward the target
-        let current = frontier;
-        const maxFogSteps = 20; // safety limit
-        for (let step = 0; step < maxFogSteps; step++) {
-          if (walkGeneration !== myGeneration) return;
-          if (current.x === targetPoint.x && current.y === targetPoint.y) return;
-
-          const next = bestStepToward(current, targetPoint, allTiles);
-          if (!next) return;
-          // Don't step backward onto current position
-          if (next.x === current.x && next.y === current.y) return;
-
-          await delay(STEP_DELAY_MS);
-          if (walkGeneration !== myGeneration) return;
-
-          try {
-            await handlers.onTravel(next.x, next.y);
-          } catch {
-            return; // backend rejected the move (e.g. out of bounds)
-          }
-
-          current = next;
-        }
-      })();
-
+      void runTravel(target.point, myGeneration, handlers);
       return;
     }
 
     if (target.kind === "location") {
-      // Cancel any in-progress walk, then walk to location tile and enter
-      const myGeneration = ++walkGeneration;
-      const from: GridPoint = scene.courier.point;
-      const location = scene.locations.find((l) => l.id === target.locationId);
-      if (!location) return;
+      const location = scene.locations.find((candidate) => candidate.id === target.locationId);
 
-      const locPoint: GridPoint = location.point;
-      const fromKey = `${from.x},${from.y}`;
-      const locKey = `${locPoint.x},${locPoint.y}`;
+      if (!location) {
+        return;
+      }
 
-      if (fromKey === locKey) {
-        // Already on the tile — enter immediately
+      if (location.isCurrent) {
         handlers.onEnterLocation(target.locationId);
         return;
       }
 
-      const passableSet = buildPassableSet(scene);
-
-      // If the location tile is discovered, try pathfinding directly
-      if (passableSet.has(locKey)) {
-        const path = findPath(from, locPoint, passableSet);
-        if (path && path.length > 0) {
-          void (async () => {
-            const arrived = await walkPath(path, myGeneration, handlers);
-            if (arrived && walkGeneration === myGeneration) {
-              handlers.onEnterLocation(target.locationId);
-            }
-          })();
-          return;
-        }
-        // No connected path through discovered tiles — fall through to fog exploration
-      }
-
-      // Location tile is undiscovered or unreachable — use fog exploration to reach it
-      const allTiles = buildAllTilesSet(scene);
-      const frontier = findFrontierTile(from, locPoint, passableSet);
-      if (!frontier) return;
-
-      const pathToFrontier = findPath(from, frontier, passableSet);
-
-      void (async () => {
-        if (pathToFrontier && pathToFrontier.length > 0) {
-          const arrived = await walkPath(pathToFrontier, myGeneration, handlers);
-          if (!arrived || walkGeneration !== myGeneration) return;
-        }
-
-        let current = frontier;
-        const maxFogSteps = 20;
-        for (let step = 0; step < maxFogSteps; step++) {
-          if (walkGeneration !== myGeneration) return;
-          if (current.x === locPoint.x && current.y === locPoint.y) {
-            handlers.onEnterLocation(target.locationId);
-            return;
-          }
-
-          const next = bestStepToward(current, locPoint, allTiles);
-          if (!next || (next.x === current.x && next.y === current.y)) return;
-
-          await delay(STEP_DELAY_MS);
-          if (walkGeneration !== myGeneration) return;
-
-          try {
-            await handlers.onTravel(next.x, next.y);
-          } catch {
-            return;
-          }
-
-          current = next;
-        }
-
-        // Arrived after fog steps
-        if (walkGeneration === myGeneration && current.x === locPoint.x && current.y === locPoint.y) {
-          handlers.onEnterLocation(target.locationId);
-        }
-      })();
+      const myGeneration = ++walkGeneration;
+      void runTravel(location.point, myGeneration, handlers, () => {
+        handlers.onEnterLocation(target.locationId);
+      });
     }
   },
   animate: (retainedNodes, scene, tick) => {

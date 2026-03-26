@@ -42,6 +42,16 @@ export {
   type WeaponDefinition
 } from "./schemas/content.js";
 export { getHexesInRadius, hexDistance, toTileKey, type HexPoint } from "./rules/hex.js";
+export {
+  bestStepToward,
+  buildExplorationRoute,
+  findFrontierTile,
+  findNearestAdjacentTile,
+  findPath,
+  hexNeighbors,
+  type ExplorationRouteResult,
+  type GridPoint
+} from "./rules/pathfinding.js";
 export { isPassableTile } from "./tiles.js";
 export {
   SKILL_DEFINITIONS,

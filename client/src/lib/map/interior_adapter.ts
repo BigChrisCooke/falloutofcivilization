@@ -3,12 +3,12 @@ import { Container } from "pixi.js";
 import { hexDistance } from "../iso.js";
 import { resolveInteriorHover, resolveInteriorInteractionTarget } from "./interior_input.js";
 import { syncInteriorScene, createInteriorLayerContainers, type InteriorLayerContainers, type InteriorRetainedNodes } from "./interior_layers.js";
-import { findPath, findNearestAdjacentTile, delay, STEP_DELAY_MS, type GridPoint } from "./hex_pathfinding.js";
+import { findNearestAdjacentTile, findPath, type GridPoint } from "./hex_pathfinding.js";
 import type { InteriorSceneModel } from "./types.js";
 import type { RetainedMapRuntimeAdapter } from "./map_runtime.js";
 
 export interface InteriorRuntimeHandlers {
-  onMove: (x: number, y: number) => Promise<void>;
+  onMove: (x: number, y: number) => Promise<boolean>;
   onExit: (exitId: string) => void;
   onNpcClick: (npcId: string) => void;
   onLootClick: (lootId: string) => void;
@@ -19,46 +19,60 @@ export interface InteriorRuntimeHandlers {
 
 const MAX_INTERACT_DISTANCE = 2;
 
-/** Incremented each time a new walk begins; older walks check this to self-cancel. */
 let walkGeneration = 0;
+let walkLocked = false;
 
 function buildPassableSet(scene: InteriorSceneModel): Set<string> {
   const set = new Set<string>();
+
   for (const tile of scene.tiles) {
     if (tile.isPassable) {
       set.add(`${tile.point.x},${tile.point.y}`);
     }
   }
+
   return set;
 }
 
 function buildNpcBlockedSet(scene: InteriorSceneModel): Set<string> {
   const set = new Set<string>();
+
   for (const marker of scene.markers) {
     if (marker.kind === "npc") {
       set.add(`${marker.point.x},${marker.point.y}`);
     }
   }
+
   return set;
 }
 
-async function walkPath(
-  path: GridPoint[],
+async function runMove(
+  destination: GridPoint,
   generation: number,
-  handlers: InteriorRuntimeHandlers
-): Promise<boolean> {
-  for (const step of path) {
-    if (walkGeneration !== generation) return false;
+  handlers: InteriorRuntimeHandlers,
+  onArrive?: () => void
+) {
+  if (walkLocked) {
+    return;
+  }
 
-    await handlers.onMove(step.x, step.y);
+  walkLocked = true;
 
-    if (walkGeneration !== generation) return false;
+  try {
+    const arrived = await handlers.onMove(destination.x, destination.y);
 
-    if (step !== path[path.length - 1]) {
-      await delay(STEP_DELAY_MS);
+    if (walkGeneration !== generation) {
+      return;
+    }
+
+    if (arrived) {
+      onArrive?.();
+    }
+  } finally {
+    if (walkGeneration === generation) {
+      walkLocked = false;
     }
   }
-  return true;
 }
 
 export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
@@ -77,109 +91,127 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
   resolveHover: (scene, worldPoint) => resolveInteriorHover(scene, worldPoint),
   resolveInteraction: (scene, worldPoint) => resolveInteriorInteractionTarget(scene, worldPoint),
   applyInteraction: (target, handlers, scene) => {
+    if (walkLocked) {
+      return;
+    }
+
     const from: GridPoint = scene.courier.point;
     const passableSet = buildPassableSet(scene);
     const npcBlocked = buildNpcBlockedSet(scene);
 
     if (target.kind === "tile") {
-      const myGeneration = ++walkGeneration;
       const path = findPath(from, target.point, passableSet, npcBlocked);
-      if (!path || path.length === 0) return;
 
-      void walkPath(path, myGeneration, handlers);
+      if (!path) {
+        return;
+      }
+
+      const myGeneration = ++walkGeneration;
+      void runMove(target.point, myGeneration, handlers);
       return;
     }
 
-    // Any non-tile interaction cancels walking
-    walkGeneration++;
-
     if (target.kind === "exit") {
-      const dist = hexDistance(from, { x: Number(target.tileKey.split(",")[0]), y: Number(target.tileKey.split(",")[1]) });
-      if (dist <= MAX_INTERACT_DISTANCE) {
+      const [x = 0, y = 0] = target.tileKey.split(",").map(Number);
+      const distance = hexDistance(from, { x, y });
+
+      if (distance <= MAX_INTERACT_DISTANCE) {
         handlers.onExit(target.exitId);
       }
+
       return;
     }
 
     if (target.kind === "npc") {
-      const marker = scene.markers.find((m) => m.kind === "npc" && m.id === target.npcId);
-      if (!marker) return;
+      const marker = scene.markers.find((candidate) => candidate.kind === "npc" && candidate.id === target.npcId);
 
-      const dist = hexDistance(from, marker.point);
-      if (dist <= MAX_INTERACT_DISTANCE) {
-        // Already close enough — open dialogue
+      if (!marker) {
+        return;
+      }
+
+      if (hexDistance(from, marker.point) <= MAX_INTERACT_DISTANCE) {
         handlers.onNpcClick(target.npcId);
         return;
       }
 
-      // Walk to nearest tile adjacent to NPC, then interact
+      const adjacentTile = findNearestAdjacentTile(from, marker.point, passableSet, npcBlocked);
+
+      if (!adjacentTile) {
+        return;
+      }
+
+      const path = findPath(from, adjacentTile, passableSet, npcBlocked);
+
+      if (!path) {
+        return;
+      }
+
       const myGeneration = ++walkGeneration;
-      const adj = findNearestAdjacentTile(from, marker.point, passableSet, npcBlocked);
-      if (!adj) return;
-
-      const path = findPath(from, adj, passableSet, npcBlocked);
-      if (!path || path.length === 0) return;
-
-      void (async () => {
-        const arrived = await walkPath(path, myGeneration, handlers);
-        if (arrived && walkGeneration === myGeneration) {
-          handlers.onNpcClick(target.npcId);
-        }
-      })();
+      void runMove(adjacentTile, myGeneration, handlers, () => {
+        handlers.onNpcClick(target.npcId);
+      });
       return;
     }
 
     if (target.kind === "loot") {
-      const marker = scene.markers.find((m) => m.kind === "loot" && m.id === target.lootId);
-      if (!marker) return;
+      const marker = scene.markers.find((candidate) => candidate.kind === "loot" && candidate.id === target.lootId);
 
-      const dist = hexDistance(from, marker.point);
-      if (dist <= MAX_INTERACT_DISTANCE) {
+      if (!marker) {
+        return;
+      }
+
+      if (hexDistance(from, marker.point) <= MAX_INTERACT_DISTANCE) {
         handlers.onLootClick(target.lootId);
         return;
       }
 
-      // Walk to nearest adjacent tile, then interact
+      const adjacentTile = findNearestAdjacentTile(from, marker.point, passableSet, npcBlocked);
+
+      if (!adjacentTile) {
+        return;
+      }
+
+      const path = findPath(from, adjacentTile, passableSet, npcBlocked);
+
+      if (!path) {
+        return;
+      }
+
       const myGeneration = ++walkGeneration;
-      const adj = findNearestAdjacentTile(from, marker.point, passableSet, npcBlocked);
-      if (!adj) return;
-
-      const path = findPath(from, adj, passableSet, npcBlocked);
-      if (!path || path.length === 0) return;
-
-      void (async () => {
-        const arrived = await walkPath(path, myGeneration, handlers);
-        if (arrived && walkGeneration === myGeneration) {
-          handlers.onLootClick(target.lootId);
-        }
-      })();
+      void runMove(adjacentTile, myGeneration, handlers, () => {
+        handlers.onLootClick(target.lootId);
+      });
       return;
     }
 
     if (target.kind === "interactable") {
-      const marker = scene.markers.find((m) => m.kind === "interactable" && m.id === target.interactableId);
-      if (!marker) return;
+      const marker = scene.markers.find((candidate) => candidate.kind === "interactable" && candidate.id === target.interactableId);
 
-      const dist = hexDistance(from, marker.point);
-      if (dist <= MAX_INTERACT_DISTANCE) {
+      if (!marker) {
+        return;
+      }
+
+      if (hexDistance(from, marker.point) <= MAX_INTERACT_DISTANCE) {
         handlers.onInteractableClick(target.interactableId);
         return;
       }
 
-      // Walk to nearest adjacent tile, then interact
+      const adjacentTile = findNearestAdjacentTile(from, marker.point, passableSet, npcBlocked);
+
+      if (!adjacentTile) {
+        return;
+      }
+
+      const path = findPath(from, adjacentTile, passableSet, npcBlocked);
+
+      if (!path) {
+        return;
+      }
+
       const myGeneration = ++walkGeneration;
-      const adj = findNearestAdjacentTile(from, marker.point, passableSet, npcBlocked);
-      if (!adj) return;
-
-      const path = findPath(from, adj, passableSet, npcBlocked);
-      if (!path || path.length === 0) return;
-
-      void (async () => {
-        const arrived = await walkPath(path, myGeneration, handlers);
-        if (arrived && walkGeneration === myGeneration) {
-          handlers.onInteractableClick(target.interactableId);
-        }
-      })();
+      void runMove(adjacentTile, myGeneration, handlers, () => {
+        handlers.onInteractableClick(target.interactableId);
+      });
       return;
     }
 

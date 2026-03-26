@@ -223,6 +223,47 @@ export interface GameState {
   weaponCatalog: WeaponDefinition[];
 }
 
+export interface OverworldReplayStep {
+  position: {
+    x: number;
+    y: number;
+  };
+  revealedTileKeys: string[];
+  discoveredLocationIds: string[];
+}
+
+export interface InteriorReplayStep {
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+export interface TravelRouteFinalPatch {
+  playerCharacter: GameState["playerCharacter"];
+  worldState: GameState["worldState"];
+  mapDiscovery: GameState["mapDiscovery"];
+  questState: GameState["questState"];
+  currentLocation: null;
+  currentInteriorMap: null;
+}
+
+export interface InteriorRouteFinalPatch {
+  worldState: GameState["worldState"];
+}
+
+export type GameStatePatch = TravelRouteFinalPatch | InteriorRouteFinalPatch;
+
+export interface OverworldRouteReplay {
+  steps: OverworldReplayStep[];
+  finalPatch: TravelRouteFinalPatch;
+}
+
+export interface InteriorRouteReplay {
+  steps: InteriorReplayStep[];
+  finalPatch: InteriorRouteFinalPatch;
+}
+
 interface SessionResponse {
   authenticated: boolean;
   user: AuthUser | null;
@@ -346,14 +387,14 @@ export function enterLocation(locationId: string): Promise<{ state: GameState }>
   });
 }
 
-export function travel(x: number, y: number): Promise<{ state: GameState }> {
+export function travel(x: number, y: number): Promise<{ replay: OverworldRouteReplay }> {
   return request("/api/game/travel", {
     method: "POST",
     body: JSON.stringify({ x, y })
   });
 }
 
-export function moveInterior(x: number, y: number): Promise<{ state: GameState }> {
+export function moveInterior(x: number, y: number): Promise<{ replay: InteriorRouteReplay }> {
   return request("/api/game/interior/move", {
     method: "POST",
     body: JSON.stringify({ x, y })

@@ -140,9 +140,9 @@ export function createGameRouter(
 
     try {
       const payload = travelSchema.parse(request.body);
-      await gameService.travel(request.currentSaveId, payload.x, payload.y);
+      const replay = await gameService.travel(request.currentSaveId, payload.x, payload.y);
       response.json({
-        state: await gameService.getState(request.currentSaveId)
+        replay
       });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to travel.");
@@ -158,9 +158,9 @@ export function createGameRouter(
 
     try {
       const payload = travelSchema.parse(request.body);
-      await gameService.moveInterior(request.currentSaveId, payload.x, payload.y);
+      const replay = await gameService.moveInterior(request.currentSaveId, payload.x, payload.y);
       response.json({
-        state: await gameService.getState(request.currentSaveId)
+        replay
       });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to move inside the current area.");
