@@ -35,7 +35,7 @@ The repo expects a root `.env` file.
 
 Browser-safe frontend runtime config:
 
-- `VITE_API_BASE_URL`: optional browser API base URL override, default `http://localhost:6201` for local dev and same-origin empty in Docker/Render
+- `VITE_API_BASE_URL`: optional browser API base URL override; local Vite dev proxies `/api` to `BACKEND_PORT` by default, and Docker/Render use same-origin empty by default
 - `VITE_APP_RELEASE`: optional browser-visible release label used by Docker/Render runtime config
 
 Server/runtime variables:

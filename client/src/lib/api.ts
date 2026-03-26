@@ -229,6 +229,37 @@ interface SessionResponse {
   currentSaveId: string | null;
 }
 
+function isJsonResponse(response: Response): boolean {
+  return (response.headers.get("content-type") ?? "").toLowerCase().includes("application/json");
+}
+
+async function getResponseError(response: Response, path: string): Promise<string> {
+  if (isJsonResponse(response)) {
+    const payload = (await response.json().catch(() => ({ error: "Request failed." }))) as { error?: string };
+    return payload.error ?? "Request failed.";
+  }
+
+  const payload = (await response.text().catch(() => "")).trimStart();
+  if (payload.startsWith("<")) {
+    return `API request to ${path} returned HTML instead of JSON. Check the local dev proxy or API base URL configuration.`;
+  }
+
+  return payload || "Request failed.";
+}
+
+async function parseJsonResponse<T>(response: Response, path: string): Promise<T> {
+  if (isJsonResponse(response)) {
+    return (await response.json()) as T;
+  }
+
+  const payload = (await response.text().catch(() => "")).trimStart();
+  if (payload.startsWith("<")) {
+    throw new Error(`API request to ${path} returned HTML instead of JSON. Check the local dev proxy or API base URL configuration.`);
+  }
+
+  throw new Error(`API request to ${path} returned a non-JSON response.`);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     credentials: "include",
@@ -240,15 +271,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => ({ error: "Request failed." }))) as { error?: string };
-    throw new Error(payload.error ?? "Request failed.");
+    throw new Error(await getResponseError(response, path));
   }
 
   if (response.status === 204) {
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  return parseJsonResponse<T>(response, path);
 }
 
 export function getSession(): Promise<SessionResponse> {
