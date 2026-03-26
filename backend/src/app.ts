@@ -1,5 +1,7 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import cors from "cors";
-import type Database from "better-sqlite3";
 import express, { type NextFunction, type Request, type Response } from "express";
 
 import { createAuthRouter } from "./controllers/auth_controller.js";
@@ -14,15 +16,20 @@ import { InventoryService } from "./services/inventory_service.js";
 import { SaveService } from "./services/save_service.js";
 import type { AppConfig } from "./shared/config.js";
 
-export function createApp(db: Database.Database, config: AppConfig) {
+export function createApp(config: AppConfig) {
   getGameContent();
 
-  const authService = new AuthService(db, config);
-  const saveService = new SaveService(db);
-  const gameService = new GameService(db);
-  const dialogueService = new DialogueService(db);
-  const inventoryService = new InventoryService(db);
+  const authService = new AuthService(config);
+  const saveService = new SaveService();
+  const gameService = new GameService();
+  const dialogueService = new DialogueService();
+  const inventoryService = new InventoryService();
   const app = express();
+  const clientIndexPath = path.join(config.clientDistPath, "index.html");
+
+  if (config.trustProxy) {
+    app.set("trust proxy", 1);
+  }
 
   app.use(
     cors({
@@ -40,6 +47,13 @@ export function createApp(db: Database.Database, config: AppConfig) {
   app.use("/api/auth", createAuthRouter(authService, config));
   app.use("/api/saves", createSaveRouter(authService, saveService));
   app.use("/api/game", createGameRouter(gameService, dialogueService, inventoryService));
+
+  if (existsSync(clientIndexPath)) {
+    app.use(express.static(config.clientDistPath));
+    app.get(/^(?!\/api(?:\/|$)).*/u, (_request, response) => {
+      response.sendFile(clientIndexPath);
+    });
+  }
 
   app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
     if (error instanceof SyntaxError && "body" in error) {

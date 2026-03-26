@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { DialogueNode, DialogueSelectResult, GameState } from "../lib/api.js";
-import { getDialogueNode, selectDialogueOption } from "../lib/api.js";
+import { getDialogueNode, resetDialogue, selectDialogueOption } from "../lib/api.js";
 
 interface DialoguePanelProps {
   npcId: string;
@@ -60,25 +60,8 @@ export function DialoguePanel({
     // Handle the auto-injected return-to-root option
     if (optionId === "__return_to_root") {
       try {
-        const { node: rootNode } = await getDialogueNode(npcId);
-
-        // Reset on server
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:6201"}/api/game/dialogue/reset`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ npcId })
-          }
-        );
-
-        if (response.ok) {
-          const data = (await response.json()) as { node: DialogueNode | null };
-          setNode(data.node);
-        } else {
-          setNode(rootNode?.node ?? null);
-        }
+        const { node: rootNode } = await resetDialogue(npcId);
+        setNode(rootNode);
 
         setLastResponse(null);
         setQuestNotification(null);

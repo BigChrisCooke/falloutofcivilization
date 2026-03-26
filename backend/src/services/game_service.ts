@@ -1,23 +1,10 @@
-import type Database from "better-sqlite3";
-
+import { computeAllSkillValues, getSkillPointCost, SKILL_DEFINITIONS, SKILL_IDS } from "../../../game/src/skills.js";
+import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
-
-function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
-  if (json === null || json === undefined) {
-    return fallback;
-  }
-
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    console.warn("Failed to parse stored JSON, using fallback:", json.slice(0, 80));
-    return fallback;
-  }
-}
 import { SaveRepo } from "../repos/save_repo.js";
-import { SKILL_DEFINITIONS, SKILL_IDS, getSkillPointCost, computeAllSkillValues } from "../../../game/src/skills.js";
+import type { MapDiscoveryRow, WorldStateRow } from "../shared/types.js";
 import { getGameContent } from "./content_service.js";
 import { DialogueService } from "./dialogue_service.js";
 import {
@@ -36,31 +23,35 @@ import {
   getInteriorMap,
   getInteriorSpawnPoint
 } from "./interior_state.js";
-import type { MapDiscoveryRow, WorldStateRow } from "../shared/types.js";
 
-export class GameService {
-  private readonly saveRepo: SaveRepo;
-  private readonly gameStateRepo: GameStateRepo;
-  private readonly inventoryRepo: InventoryRepo;
-  private readonly companionRepo: CompanionRepo;
-  private readonly dialogueService: DialogueService;
-
-  public constructor(db: Database.Database) {
-    this.saveRepo = new SaveRepo(db);
-    this.gameStateRepo = new GameStateRepo(db);
-    this.inventoryRepo = new InventoryRepo(db);
-    this.companionRepo = new CompanionRepo(db);
-    this.dialogueService = new DialogueService(db);
+function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
+  if (json === null || json === undefined) {
+    return fallback;
   }
 
-  public getState(saveId: string) {
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    console.warn("Failed to parse stored JSON, using fallback:", json.slice(0, 80));
+    return fallback;
+  }
+}
+
+export class GameService {
+  private readonly saveRepo = new SaveRepo();
+  private readonly gameStateRepo = new GameStateRepo();
+  private readonly inventoryRepo = new InventoryRepo();
+  private readonly companionRepo = new CompanionRepo();
+  private readonly dialogueService = new DialogueService();
+
+  public async getState(saveId: string) {
     const content = getGameContent();
-    const save = this.saveRepo.findById(saveId);
-    const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
-    const worldState = this.gameStateRepo.getWorldState(saveId);
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
-    const questState = this.gameStateRepo.getQuestState(saveId);
-    const factionStanding = this.gameStateRepo.getFactionStanding(saveId);
+    const save = await this.saveRepo.findById(saveId);
+    const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
+    const factionStanding = await this.gameStateRepo.getFactionStanding(saveId);
 
     if (!save || !playerCharacter || !worldState || !mapDiscovery || !questState || !factionStanding) {
       throw new Error("Save state is incomplete.");
@@ -73,7 +64,7 @@ export class GameService {
     const enteredLocationIds = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
     const normalizedState =
       region && overworldMap && isOnOverworld
-        ? this.ensureExplorationState(saveId, worldState, mapDiscovery)
+        ? await this.ensureExplorationState(saveId, worldState, mapDiscovery)
         : {
             worldState,
             mapDiscovery,
@@ -87,10 +78,10 @@ export class GameService {
       ? content.interiorMaps.find((candidate) => candidate.id === worldState.current_map_id) ?? null
       : null;
 
-    const inventoryRows = this.inventoryRepo.getAll(saveId);
+    const inventoryRows = await this.inventoryRepo.getAll(saveId);
     const collectedItemIds = inventoryRows.map((row) => row.item_id);
     const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
-    const companionRows = this.companionRepo.getAll(saveId);
+    const companionRows = await this.companionRepo.getAll(saveId);
 
     return {
       save,
@@ -152,7 +143,15 @@ export class GameService {
               } else if (o.type === "kill") {
                 completed = normalizedState.discoveredLocationIds.includes(o.target);
               }
-              return { id: o.id, description: o.description, type: o.type, target: o.target, locationId: o.locationId, completed, hidden: o.hidden ?? false };
+              return {
+                id: o.id,
+                description: o.description,
+                type: o.type,
+                target: o.target,
+                locationId: o.locationId,
+                completed,
+                hidden: o.hidden ?? false
+              };
             });
             // Hidden objectives reveal progressively: show when completed,
             // or when the preceding objective is completed (next-up reveal)
@@ -221,14 +220,14 @@ export class GameService {
     };
   }
 
-  public recordCollectedAction(saveId: string, actionId: string): void {
-    const questState = this.gameStateRepo.getQuestState(saveId);
+  public async recordCollectedAction(saveId: string, actionId: string): Promise<void> {
+    const questState = await this.gameStateRepo.getQuestState(saveId);
     if (!questState) return;
 
     const collected = safeJsonParse<string[]>(questState.collected_actions_json, []);
     if (!collected.includes(actionId)) {
       collected.push(actionId);
-      this.gameStateRepo.updateQuestState({
+      await this.gameStateRepo.updateQuestState({
         ...questState,
         collected_actions_json: JSON.stringify(collected),
         updated_at: Date.now()
@@ -236,9 +235,11 @@ export class GameService {
     }
   }
 
-  public checkCompanionStoryProgression(saveId: string): { companionId: string; newStage: number; stageTitle: string; dialogueTreeId: string } | null {
+  public async checkCompanionStoryProgression(
+    saveId: string
+  ): Promise<{ companionId: string; newStage: number; stageTitle: string; dialogueTreeId: string } | null> {
     const content = getGameContent();
-    const companions = this.companionRepo.getAll(saveId);
+    const companions = await this.companionRepo.getAll(saveId);
     const companion = companions[0];
     if (!companion) return null;
 
@@ -249,11 +250,11 @@ export class GameService {
     const nextStage = companionDef.storyStages[nextStageIndex];
     if (!nextStage) return null;
 
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
     const discoveredLocationIds = mapDiscovery
       ? safeJsonParse<string[]>(mapDiscovery.discovered_locations_json, [])
       : [];
-    const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+    const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
     const karma = playerCharacter?.karma ?? 0;
 
     const trigger = nextStage.triggerCondition;
@@ -270,7 +271,7 @@ export class GameService {
 
     if (!triggered) return null;
 
-    this.companionRepo.updateStoryStage(saveId, companion.companion_id, nextStageIndex);
+    await this.companionRepo.updateStoryStage(saveId, companion.companion_id, nextStageIndex);
 
     return {
       companionId: companion.companion_id,
@@ -280,9 +281,18 @@ export class GameService {
     };
   }
 
-  public getCompanionStoryDialogue(saveId: string, companionId: string): { dialogue: { rootNodeId: string; nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }> }; stageTitle: string } | null {
+  public async getCompanionStoryDialogue(
+    saveId: string,
+    companionId: string
+  ): Promise<{
+    dialogue: {
+      rootNodeId: string;
+      nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+    };
+    stageTitle: string;
+  } | null> {
     const content = getGameContent();
-    const companion = this.companionRepo.find(saveId, companionId);
+    const companion = await this.companionRepo.find(saveId, companionId);
     if (!companion || companion.departed) return null;
 
     const companionDef = content.companions.find((c) => c.id === companionId);
@@ -294,12 +304,11 @@ export class GameService {
     const dialogueTree = companionDef.storyDialogues[currentStage.dialogueTreeId];
     if (!dialogueTree) return null;
 
-    // Resolve effective root node via conditionalRoots (e.g. karma-based branching)
     let effectiveRootNodeId = dialogueTree.rootNodeId;
     if (dialogueTree.conditionalRoots && dialogueTree.conditionalRoots.length > 0) {
-      const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+      const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
       const karma = playerCharacter?.karma ?? 0;
-      const questState = this.gameStateRepo.getQuestState(saveId);
+      const questState = await this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
       const failed = safeJsonParse<string[]>(questState?.failed_quests_json, []);
 
@@ -319,9 +328,8 @@ export class GameService {
       }
     }
 
-    // Mark this stage as viewed so the "new story" indicator disappears
     if (companion.story_stage_viewed < companion.story_stage) {
-      this.companionRepo.markStoryStageViewed(saveId, companionId, companion.story_stage);
+      await this.companionRepo.markStoryStageViewed(saveId, companionId, companion.story_stage);
     }
 
     return {
@@ -330,9 +338,9 @@ export class GameService {
     };
   }
 
-  public updateScreen(saveId: string, screen: "overworld" | "vault"): void {
+  public async updateScreen(saveId: string, screen: "overworld" | "vault"): Promise<void> {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
     if (!worldState) {
       throw new Error("World state not found.");
     }
@@ -372,7 +380,7 @@ export class GameService {
             y: overworldPosition.y
           };
 
-    this.gameStateRepo.updateWorldState({
+    await this.gameStateRepo.updateWorldState({
       ...worldState,
       current_screen: screen,
       current_location_id: screen === "overworld" ? null : vaultLocation?.id ?? null,
@@ -384,143 +392,144 @@ export class GameService {
     });
   }
 
-  public enterLocation(saveId: string, locationId: string): void {
-    const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+  public async enterLocation(saveId: string, locationId: string): Promise<void> {
+    await withTransaction(async () => {
+      const content = getGameContent();
+      const worldState = await this.gameStateRepo.getWorldState(saveId);
+      const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
 
-    if (!worldState || !mapDiscovery) {
-      throw new Error("World state not found.");
-    }
+      if (!worldState || !mapDiscovery) {
+        throw new Error("World state not found.");
+      }
 
-    const region = getRegion(content, worldState.current_region_id);
-    const regionLocations = getRegionLocations(content, region.id);
-    const startingLocation = getStartingLocation(content, region, regionLocations);
-    const overworldMap = getOverworldMap(content, region);
-    const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
-      playerX: worldState.player_x,
-      playerY: worldState.player_y,
-      discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
-      discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
-    });
-    const location = regionLocations.find((candidate) => candidate.id === locationId);
+      const region = getRegion(content, worldState.current_region_id);
+      const regionLocations = getRegionLocations(content, region.id);
+      const startingLocation = getStartingLocation(content, region, regionLocations);
+      const overworldMap = getOverworldMap(content, region);
+      const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
+        playerX: worldState.player_x,
+        playerY: worldState.player_y,
+        discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
+        discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
+      });
+      const location = regionLocations.find((candidate) => candidate.id === locationId);
 
-    if (!location || !location.interiorMapId) {
-      throw new Error("That location cannot be entered.");
-    }
+      if (!location || !location.interiorMapId) {
+        throw new Error("That location cannot be entered.");
+      }
 
-    if (!normalizedExploration.discoveredLocationIds.includes(location.id)) {
-      throw new Error("That location has not been discovered yet.");
-    }
+      if (!normalizedExploration.discoveredLocationIds.includes(location.id)) {
+        throw new Error("That location has not been discovered yet.");
+      }
 
-    if (
-      normalizedExploration.playerPosition.x !== location.position.x ||
-      normalizedExploration.playerPosition.y !== location.position.y
-    ) {
-      throw new Error("Travel onto the location tile before entering it.");
-    }
+      if (
+        normalizedExploration.playerPosition.x !== location.position.x ||
+        normalizedExploration.playerPosition.y !== location.position.y
+      ) {
+        throw new Error("Travel onto the location tile before entering it.");
+      }
 
-    const spawnPoint = getInteriorSpawnPoint(getInteriorMap(content, location.interiorMapId));
-    const now = Date.now();
+      const spawnPoint = getInteriorSpawnPoint(getInteriorMap(content, location.interiorMapId));
+      const now = Date.now();
 
-    this.gameStateRepo.updateWorldState({
-      ...worldState,
-      current_screen: "location",
-      current_location_id: location.id,
-      current_map_id: location.interiorMapId,
-      current_panel: "location",
-      player_x: spawnPoint.x,
-      player_y: spawnPoint.y,
-      updated_at: now
-    });
-
-    // Record this location as entered (for visit objective tracking)
-    const enteredLocations = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
-    if (!enteredLocations.includes(location.id)) {
-      enteredLocations.push(location.id);
-      this.gameStateRepo.updateMapDiscovery({
-        ...mapDiscovery,
-        entered_locations_json: JSON.stringify(enteredLocations),
+      await this.gameStateRepo.updateWorldState({
+        ...worldState,
+        current_screen: "location",
+        current_location_id: location.id,
+        current_map_id: location.interiorMapId,
+        current_panel: "location",
+        player_x: spawnPoint.x,
+        player_y: spawnPoint.y,
         updated_at: now
       });
-    }
 
-    // Check companion story progression when entering a location
-    this.checkCompanionStoryProgression(saveId);
-  }
-
-  public travel(saveId: string, x: number, y: number): void {
-    const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
-
-    if (!worldState || !mapDiscovery) {
-      throw new Error("World state not found.");
-    }
-
-    const region = getRegion(content, worldState.current_region_id);
-    const regionLocations = getRegionLocations(content, region.id);
-    const startingLocation = getStartingLocation(content, region, regionLocations);
-    const overworldMap = getOverworldMap(content, region);
-    const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
-      playerX: worldState.player_x,
-      playerY: worldState.player_y,
-      discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
-      discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
-    });
-    const targetPosition = { x, y };
-
-    if (
-      normalizedExploration.playerPosition.x === targetPosition.x &&
-      normalizedExploration.playerPosition.y === targetPosition.y
-    ) {
-      return;
-    }
-
-    if (!canTravel(normalizedExploration.playerPosition, targetPosition, overworldMap)) {
-      throw new Error("Travel is limited to adjacent hexes inside the explored map bounds.");
-    }
-
-    const previousLocationCount = normalizedExploration.discoveredLocationIds.length;
-    const revealedState = revealExploration(
-      overworldMap,
-      regionLocations,
-      targetPosition,
-      normalizedExploration.discoveredLocationIds,
-      normalizedExploration.discoveredTileKeys
-    );
-    const now = Date.now();
-
-    this.gameStateRepo.updateExplorationState(
-      {
-        ...worldState,
-        current_screen: "overworld",
-        current_location_id: null,
-        current_map_id: region.mapId,
-        current_panel: null,
-        player_x: targetPosition.x,
-        player_y: targetPosition.y,
-        updated_at: now
-      },
-      {
-        save_id: saveId,
-        discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
-        discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
-        entered_locations_json: mapDiscovery.entered_locations_json,
-        updated_at: now
+      const enteredLocations = safeJsonParse<string[]>(mapDiscovery.entered_locations_json, []);
+      if (!enteredLocations.includes(location.id)) {
+        enteredLocations.push(location.id);
+        await this.gameStateRepo.updateMapDiscovery({
+          ...mapDiscovery,
+          entered_locations_json: JSON.stringify(enteredLocations),
+          updated_at: now
+        });
       }
-    );
 
-    // Award XP for newly discovered locations (20 XP each)
-    const newLocationCount = revealedState.discoveredLocationIds.length - previousLocationCount;
-    if (newLocationCount > 0) {
-      this.saveRepo.awardXp(saveId, newLocationCount * 20);
-    }
+      await this.checkCompanionStoryProgression(saveId);
+    });
   }
 
-  public moveInterior(saveId: string, x: number, y: number): void {
+  public async travel(saveId: string, x: number, y: number): Promise<void> {
+    await withTransaction(async () => {
+      const content = getGameContent();
+      const worldState = await this.gameStateRepo.getWorldState(saveId);
+      const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
+
+      if (!worldState || !mapDiscovery) {
+        throw new Error("World state not found.");
+      }
+
+      const region = getRegion(content, worldState.current_region_id);
+      const regionLocations = getRegionLocations(content, region.id);
+      const startingLocation = getStartingLocation(content, region, regionLocations);
+      const overworldMap = getOverworldMap(content, region);
+      const normalizedExploration = normalizeExplorationState(overworldMap, regionLocations, startingLocation, {
+        playerX: worldState.player_x,
+        playerY: worldState.player_y,
+        discoveredLocationIdsJson: mapDiscovery.discovered_locations_json,
+        discoveredTileKeysJson: mapDiscovery.discovered_tiles_json
+      });
+      const targetPosition = { x, y };
+
+      if (
+        normalizedExploration.playerPosition.x === targetPosition.x &&
+        normalizedExploration.playerPosition.y === targetPosition.y
+      ) {
+        return;
+      }
+
+      if (!canTravel(normalizedExploration.playerPosition, targetPosition, overworldMap)) {
+        throw new Error("Travel is limited to adjacent hexes inside the explored map bounds.");
+      }
+
+      const previousLocationCount = normalizedExploration.discoveredLocationIds.length;
+      const revealedState = revealExploration(
+        overworldMap,
+        regionLocations,
+        targetPosition,
+        normalizedExploration.discoveredLocationIds,
+        normalizedExploration.discoveredTileKeys
+      );
+      const now = Date.now();
+
+      await this.gameStateRepo.updateExplorationState(
+        {
+          ...worldState,
+          current_screen: "overworld",
+          current_location_id: null,
+          current_map_id: region.mapId,
+          current_panel: null,
+          player_x: targetPosition.x,
+          player_y: targetPosition.y,
+          updated_at: now
+        },
+        {
+          save_id: saveId,
+          discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
+          discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
+          entered_locations_json: mapDiscovery.entered_locations_json,
+          updated_at: now
+        }
+      );
+
+      const newLocationCount = revealedState.discoveredLocationIds.length - previousLocationCount;
+      if (newLocationCount > 0) {
+        await this.saveRepo.awardXp(saveId, newLocationCount * 20);
+      }
+    });
+  }
+
+  public async moveInterior(saveId: string, x: number, y: number): Promise<void> {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
 
     if (!worldState) {
       throw new Error("World state not found.");
@@ -545,7 +554,7 @@ export class GameService {
       throw new Error("Interior movement is limited to adjacent passable hexes.");
     }
 
-    this.gameStateRepo.updateWorldState({
+    await this.gameStateRepo.updateWorldState({
       ...worldState,
       player_x: targetPosition.x,
       player_y: targetPosition.y,
@@ -553,9 +562,9 @@ export class GameService {
     });
   }
 
-  public exitInterior(saveId: string, exitId: string): void {
+  public async exitInterior(saveId: string, exitId: string): Promise<void> {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
 
     if (!worldState) {
       throw new Error("World state not found.");
@@ -584,13 +593,11 @@ export class GameService {
 
     const location = getInteriorLocation(content, worldState.current_location_id);
 
-    // Reset NPC dialogue positions back to root when leaving an area
-    this.dialogueService.resetAllDialoguePositions(saveId);
-
-    this.restoreOverworldFromLocation(saveId, worldState, location);
+    await this.dialogueService.resetAllDialoguePositions(saveId);
+    await this.restoreOverworldFromLocation(saveId, worldState, location);
   }
 
-  private ensureExplorationState(saveId: string, worldState: WorldStateRow, mapDiscovery: MapDiscoveryRow) {
+  private async ensureExplorationState(saveId: string, worldState: WorldStateRow, mapDiscovery: MapDiscoveryRow) {
     const content = getGameContent();
     const region = getRegion(content, worldState.current_region_id);
     const regionLocations = getRegionLocations(content, region.id);
@@ -626,7 +633,7 @@ export class GameService {
       updated_at: now
     };
 
-    this.gameStateRepo.updateExplorationState(nextWorldState, nextMapDiscovery);
+    await this.gameStateRepo.updateExplorationState(nextWorldState, nextMapDiscovery);
 
     return {
       worldState: nextWorldState,
@@ -636,67 +643,74 @@ export class GameService {
     };
   }
 
-  public recruitCompanion(saveId: string, companionId: string): void {
+  public async recruitCompanion(saveId: string, companionId: string): Promise<void> {
     const content = getGameContent();
     const companion = content.companions.find((c) => c.id === companionId);
     if (!companion) {
       throw new Error("Unknown companion.");
     }
 
-    const existing = this.companionRepo.find(saveId, companionId);
+    const existing = await this.companionRepo.find(saveId, companionId);
     if (existing && !existing.departed) {
       throw new Error("Companion is already recruited.");
     }
+
     if (existing && existing.departed) {
       throw new Error("This companion has departed and cannot be re-recruited.");
     }
 
-    this.companionRepo.recruit(saveId, companionId);
+    await this.companionRepo.recruit(saveId, companionId);
   }
 
-  public savePlayerSpecial(saveId: string, special: Record<string, number>): { questCompleted?: string } {
-    const existing = this.saveRepo.findPlayerCharacter(saveId);
-    if (!existing) throw new Error("Player character not found.");
-    if (existing.special_json !== null) throw new Error("Character has already been created.");
-    this.saveRepo.updateSpecial(saveId, JSON.stringify(special));
+  public async savePlayerSpecial(saveId: string, special: Record<string, number>): Promise<{ questCompleted?: string }> {
+    return withTransaction(async () => {
+      const existing = await this.saveRepo.findPlayerCharacter(saveId);
+      if (!existing) throw new Error("Player character not found.");
+      if (existing.special_json !== null) throw new Error("Character has already been created.");
 
-    // Award initial skill points for level 1: 5 + 2 * INT
-    const initialSkillPoints = 5 + 2 * (special.int ?? 5);
-    this.saveRepo.awardSkillPoints(saveId, initialSkillPoints);
+      await this.saveRepo.updateSpecial(saveId, JSON.stringify(special));
 
-    // Auto-complete the "see Doc Mitchell" quest if active
-    const questState = this.gameStateRepo.getQuestState(saveId);
-    let questCompleted: string | undefined;
-    if (questState) {
-      const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
-      if (activeQuests.includes("see_doc_mitchell")) {
-        const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
-        const nextActive = activeQuests.filter((id) => id !== "see_doc_mitchell");
-        completedQuests.push("see_doc_mitchell");
-        this.gameStateRepo.updateQuestState({
-          ...questState,
-          active_quests_json: JSON.stringify(nextActive),
-          completed_quests_json: JSON.stringify(completedQuests),
-          updated_at: Date.now()
-        });
-        // Award quest rewards: 75 XP, 5 karma
-        this.saveRepo.awardXp(saveId, 75);
-        const pc = this.saveRepo.findPlayerCharacter(saveId);
-        if (pc) {
-          this.saveRepo.updateKarma(saveId, pc.karma + 5);
+      const initialSkillPoints = 5 + 2 * (special.int ?? 5);
+      await this.saveRepo.awardSkillPoints(saveId, initialSkillPoints);
+
+      const questState = await this.gameStateRepo.getQuestState(saveId);
+      let questCompleted: string | undefined;
+      if (questState) {
+        const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
+        if (activeQuests.includes("see_doc_mitchell")) {
+          const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
+          const nextActive = activeQuests.filter((id) => id !== "see_doc_mitchell");
+          completedQuests.push("see_doc_mitchell");
+          await this.gameStateRepo.updateQuestState({
+            ...questState,
+            active_quests_json: JSON.stringify(nextActive),
+            completed_quests_json: JSON.stringify(completedQuests),
+            updated_at: Date.now()
+          });
+
+          await this.saveRepo.awardXp(saveId, 75);
+          const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
+          if (playerCharacter) {
+            await this.saveRepo.updateKarma(saveId, playerCharacter.karma + 5);
+          }
+
+          questCompleted = "Get Your Head Checked";
         }
-        questCompleted = "Get Your Head Checked";
       }
-    }
 
-    return { questCompleted };
+      return { questCompleted };
+    });
   }
 
-  private restoreOverworldFromLocation(saveId: string, worldState: WorldStateRow, location: { regionId: string; position: { x: number; y: number } }) {
+  private async restoreOverworldFromLocation(
+    saveId: string,
+    worldState: WorldStateRow,
+    location: { regionId: string; position: { x: number; y: number } }
+  ): Promise<void> {
     const content = getGameContent();
     const region = getRegion(content, location.regionId);
 
-    this.gameStateRepo.updateWorldState({
+    await this.gameStateRepo.updateWorldState({
       ...worldState,
       current_screen: "overworld",
       current_location_id: null,
@@ -707,7 +721,7 @@ export class GameService {
       updated_at: Date.now()
     });
 
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
 
     if (!mapDiscovery) {
       return;
@@ -723,7 +737,7 @@ export class GameService {
       safeJsonParse<string[]>(mapDiscovery.discovered_tiles_json, [])
     );
 
-    this.gameStateRepo.updateMapDiscovery({
+    await this.gameStateRepo.updateMapDiscovery({
       ...mapDiscovery,
       discovered_locations_json: JSON.stringify(revealedState.discoveredLocationIds),
       discovered_tiles_json: JSON.stringify(revealedState.discoveredTileKeys),
@@ -732,62 +746,70 @@ export class GameService {
     });
   }
 
-  public setTaggedSkills(saveId: string, skillIds: string[]): void {
-    if (skillIds.length !== 3) {
-      throw new Error("You must choose exactly 3 tagged skills.");
-    }
-    const uniqueIds = new Set(skillIds);
-    if (uniqueIds.size !== 3) {
-      throw new Error("Tagged skills must be unique.");
-    }
-    for (const id of skillIds) {
-      if (!SKILL_IDS.includes(id)) {
-        throw new Error(`Unknown skill: ${id}`);
+  public async setTaggedSkills(saveId: string, skillIds: string[]): Promise<void> {
+    await withTransaction(async () => {
+      if (skillIds.length !== 3) {
+        throw new Error("You must choose exactly 3 tagged skills.");
       }
-    }
-    const pc = this.saveRepo.findPlayerCharacter(saveId);
-    if (!pc) throw new Error("Player character not found.");
-    if (pc.tagged_skills_json !== null) {
-      throw new Error("Tagged skills have already been chosen.");
-    }
-    this.saveRepo.setTaggedSkills(saveId, JSON.stringify(skillIds));
+
+      const uniqueIds = new Set(skillIds);
+      if (uniqueIds.size !== 3) {
+        throw new Error("Tagged skills must be unique.");
+      }
+
+      for (const id of skillIds) {
+        if (!SKILL_IDS.includes(id)) {
+          throw new Error(`Unknown skill: ${id}`);
+        }
+      }
+
+      const pc = await this.saveRepo.findPlayerCharacter(saveId);
+      if (!pc) throw new Error("Player character not found.");
+      if (pc.tagged_skills_json !== null) {
+        throw new Error("Tagged skills have already been chosen.");
+      }
+
+      await this.saveRepo.setTaggedSkills(saveId, JSON.stringify(skillIds));
+    });
   }
 
-  public allocateSkillPoints(saveId: string, allocations: Record<string, number>): void {
-    const pc = this.saveRepo.findPlayerCharacter(saveId);
-    if (!pc) throw new Error("Player character not found.");
-    if (!pc.special_json) throw new Error("Character creation not complete.");
+  public async allocateSkillPoints(saveId: string, allocations: Record<string, number>): Promise<void> {
+    await withTransaction(async () => {
+      const pc = await this.saveRepo.findPlayerCharacter(saveId);
+      if (!pc) throw new Error("Player character not found.");
+      if (!pc.special_json) throw new Error("Character creation not complete.");
 
-    const special = safeJsonParse<Record<string, number>>(pc.special_json, {});
-    const currentAllocated = safeJsonParse<Record<string, number>>(pc.skills_json, {});
-    const taggedSkills = safeJsonParse<string[]>(pc.tagged_skills_json, []);
-    let remaining = pc.unspent_skill_points ?? 0;
+      const special = safeJsonParse<Record<string, number>>(pc.special_json, {});
+      const currentAllocated = safeJsonParse<Record<string, number>>(pc.skills_json, {});
+      const taggedSkills = safeJsonParse<string[]>(pc.tagged_skills_json, []);
+      let remaining = pc.unspent_skill_points ?? 0;
 
-    const newAllocated = { ...currentAllocated };
+      const newAllocated = { ...currentAllocated };
 
-    for (const [skillId, points] of Object.entries(allocations)) {
-      if (points <= 0) continue;
-      if (!SKILL_IDS.includes(skillId)) {
-        throw new Error(`Unknown skill: ${skillId}`);
-      }
-
-      const def = SKILL_DEFINITIONS.find((s) => s.id === skillId)!;
-      const isTagged = taggedSkills.includes(skillId);
-      const baseValue = def.initialValue(special);
-      let currentTotal = baseValue + (newAllocated[skillId] ?? 0);
-
-      for (let i = 0; i < points; i++) {
-        const cost = getSkillPointCost(currentTotal);
-        if (remaining < cost) {
-          throw new Error(`Not enough skill points to raise ${def.name}.`);
+      for (const [skillId, points] of Object.entries(allocations)) {
+        if (points <= 0) continue;
+        if (!SKILL_IDS.includes(skillId)) {
+          throw new Error(`Unknown skill: ${skillId}`);
         }
-        remaining -= cost;
-        const gain = isTagged ? 2 : 1;
-        newAllocated[skillId] = (newAllocated[skillId] ?? 0) + gain;
-        currentTotal += gain;
-      }
-    }
 
-    this.saveRepo.updateSkills(saveId, JSON.stringify(newAllocated), remaining);
+        const def = SKILL_DEFINITIONS.find((s) => s.id === skillId)!;
+        const isTagged = taggedSkills.includes(skillId);
+        const baseValue = def.initialValue(special);
+        let currentTotal = baseValue + (newAllocated[skillId] ?? 0);
+
+        for (let i = 0; i < points; i += 1) {
+          const cost = getSkillPointCost(currentTotal);
+          if (remaining < cost) {
+            throw new Error(`Not enough skill points to raise ${def.name}.`);
+          }
+          remaining -= cost;
+          const gain = isTagged ? 2 : 1;
+          newAllocated[skillId] = (newAllocated[skillId] ?? 0) + gain;
+          currentTotal += gain;
+        }
+      }
+
+      await this.saveRepo.updateSkills(saveId, JSON.stringify(newAllocated), remaining);
+    });
   }
 }

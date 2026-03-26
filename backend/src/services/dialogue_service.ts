@@ -1,13 +1,11 @@
-import type Database from "better-sqlite3";
-
 import type {
   DialogueNode,
   DialogueOption,
   DialogueTree,
-  InteriorMapDefinition,
   QuestDefinition
 } from "../../../game/src/index.js";
 
+import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
@@ -39,12 +37,10 @@ function resolveNpcState(raw: DialogueNpcState | string | undefined, rootNodeId:
     return { nodeId: rootNodeId, selected: [] };
   }
 
-  // Backward compat: old format stored just a string nodeId
   if (typeof raw === "string") {
     return { nodeId: raw, selected: [] };
   }
 
-  // Empty nodeId means "reset to root" (e.g. after leaving an area)
   if (!raw.nodeId) {
     return { nodeId: rootNodeId, selected: raw.selected };
   }
@@ -66,6 +62,7 @@ export interface FilteredDialogueOption {
   hasResponse: boolean;
   hasNext: boolean;
   grantsQuest: string | null;
+  failsQuest: string | null;
   returnToRoot: boolean;
   alreadySelected: boolean;
   capsCost: number | null;
@@ -106,50 +103,40 @@ const STAT_DISPLAY_NAMES: Record<string, string> = {
 };
 
 export class DialogueService {
-  private readonly saveRepo: SaveRepo;
-  private readonly gameStateRepo: GameStateRepo;
-  private readonly inventoryRepo: InventoryRepo;
-  private readonly companionRepo: CompanionRepo;
+  private readonly saveRepo = new SaveRepo();
+  private readonly gameStateRepo = new GameStateRepo();
+  private readonly inventoryRepo = new InventoryRepo();
+  private readonly companionRepo = new CompanionRepo();
 
-  public constructor(db: Database.Database) {
-    this.saveRepo = new SaveRepo(db);
-    this.gameStateRepo = new GameStateRepo(db);
-    this.inventoryRepo = new InventoryRepo(db);
-    this.companionRepo = new CompanionRepo(db);
-  }
-
-  /** Reset all NPC dialogue positions back to root, keeping selected-option history. */
-  public resetAllDialoguePositions(saveId: string): void {
-    const stateMap = this.getDialogueStateMap(saveId);
+  public async resetAllDialoguePositions(saveId: string): Promise<void> {
+    const stateMap = await this.getDialogueStateMap(saveId);
     let changed = false;
 
     for (const npcId of Object.keys(stateMap)) {
       const raw = stateMap[npcId];
       if (typeof raw === "string") {
-        // Legacy format — just delete the position; resolveNpcState will return root next time
         delete stateMap[npcId];
         changed = true;
       } else if (raw && raw.nodeId) {
-        // Keep selected history, clear position so it falls back to root
         stateMap[npcId] = { nodeId: "", selected: raw.selected };
         changed = true;
       }
     }
 
     if (changed) {
-      this.saveDialogueStateMap(saveId, stateMap);
+      await this.saveDialogueStateMap(saveId, stateMap);
     }
   }
 
-  public getDialogueNode(saveId: string, npcId: string): FilteredDialogueNode | null {
-    const { dialogue, special } = this.resolveDialogueContext(saveId, npcId);
+  public async getDialogueNode(saveId: string, npcId: string): Promise<FilteredDialogueNode | null> {
+    const { dialogue, special } = await this.resolveDialogueContext(saveId, npcId);
 
     if (!dialogue) {
       return null;
     }
 
-    const npcState = this.getNpcState(saveId, npcId, dialogue);
-    const node = dialogue.nodes.find((n) => n.id === npcState.nodeId);
+    const npcState = await this.getNpcState(saveId, npcId, dialogue);
+    const node = dialogue.nodes.find((candidate) => candidate.id === npcState.nodeId);
 
     if (!node) {
       return null;
@@ -158,207 +145,201 @@ export class DialogueService {
     return this.filterNode(node, dialogue, special, npcState.selected, saveId);
   }
 
-  public selectOption(saveId: string, npcId: string, optionId: string): DialogueSelectResult {
-    const { dialogue, special } = this.resolveDialogueContext(saveId, npcId);
+  public async selectOption(saveId: string, npcId: string, optionId: string): Promise<DialogueSelectResult> {
+    return withTransaction(async () => {
+      const { dialogue, special } = await this.resolveDialogueContext(saveId, npcId);
 
-    if (!dialogue) {
-      throw new Error("This NPC has no dialogue.");
-    }
-
-    const npcState = this.getNpcState(saveId, npcId, dialogue);
-    const node = dialogue.nodes.find((n) => n.id === npcState.nodeId);
-
-    if (!node) {
-      throw new Error("Dialogue state is invalid.");
-    }
-
-    const option = node.options.find((o) => o.id === optionId);
-
-    if (!option) {
-      throw new Error("That dialogue option is not available.");
-    }
-
-    if (!this.passesGate(option, special)) {
-      throw new Error("You don't meet the requirements for that dialogue option.");
-    }
-
-    if (!this.passesInventoryGate(option, saveId)) {
-      throw new Error("You don't have the required item for that dialogue option.");
-    }
-
-    if (!this.passesQuestGate(option, saveId)) {
-      throw new Error("You don't have knowledge of that topic yet.");
-    }
-
-    const wasAlreadySelected = npcState.selected.includes(optionId);
-    const isPurchase = !!option.capsCost;
-
-    // Validate caps cost before proceeding
-    if (isPurchase) {
-      const capsItem = this.inventoryRepo.findItem(saveId, "caps");
-      const currentCaps = capsItem?.quantity ?? 0;
-      if (currentCaps < option.capsCost!) {
-        throw new Error(`Not enough caps. You need ${option.capsCost} but only have ${currentCaps}.`);
-      }
-    }
-
-    const result: DialogueSelectResult = {
-      response: option.response ?? null,
-      nextNode: null,
-      questGranted: null,
-      questCompleted: null,
-      questFailed: null,
-      karmaDelta: 0,
-      factionDelta: null,
-      companionRecruited: null,
-      companionReaction: null,
-      stateUpdated: false,
-      alreadySelected: wasAlreadySelected
-    };
-
-    // Purchases are always repeatable; other side effects only trigger once
-    if (isPurchase) {
-      // Deduct caps
-      const capsItem = this.inventoryRepo.findItem(saveId, "caps")!;
-      this.inventoryRepo.updateQuantity(saveId, "caps", capsItem.quantity - option.capsCost!);
-      result.stateUpdated = true;
-
-      // Grant purchased items
-      if (option.grantItems) {
-        for (const grant of option.grantItems) {
-          this.inventoryRepo.addItem({
-            save_id: saveId,
-            item_id: grant.itemId,
-            label: grant.label,
-            owned_by: null,
-            quantity: grant.quantity,
-            description: null,
-            collected_at: Date.now()
-          });
-        }
-      }
-    }
-
-    // Non-purchase side effects only trigger the FIRST time an option is selected
-    if (!wasAlreadySelected) {
-      if (option.questGrant) {
-        result.questGranted = this.grantQuest(saveId, option.questGrant);
+      if (!dialogue) {
+        throw new Error("This NPC has no dialogue.");
       }
 
-      if (option.questComplete) {
-        result.questCompleted = this.completeQuest(saveId, option.questComplete);
-        if (result.questCompleted) {
-          result.stateUpdated = true;
+      const npcState = await this.getNpcState(saveId, npcId, dialogue);
+      const node = dialogue.nodes.find((candidate) => candidate.id === npcState.nodeId);
+
+      if (!node) {
+        throw new Error("Dialogue state is invalid.");
+      }
+
+      const option = node.options.find((candidate) => candidate.id === optionId);
+
+      if (!option) {
+        throw new Error("That dialogue option is not available.");
+      }
+
+      if (!this.passesGate(option, special)) {
+        throw new Error("You don't meet the requirements for that dialogue option.");
+      }
+
+      if (!(await this.passesInventoryGate(option, saveId))) {
+        throw new Error("You don't have the required item for that dialogue option.");
+      }
+
+      if (!(await this.passesQuestGate(option, saveId))) {
+        throw new Error("You don't have knowledge of that topic yet.");
+      }
+
+      const wasAlreadySelected = npcState.selected.includes(optionId);
+      const isPurchase = !!option.capsCost;
+
+      if (isPurchase) {
+        const capsItem = await this.inventoryRepo.findItem(saveId, "caps");
+        const currentCaps = capsItem?.quantity ?? 0;
+        if (currentCaps < option.capsCost!) {
+          throw new Error(`Not enough caps. You need ${option.capsCost} but only have ${currentCaps}.`);
         }
       }
 
-      if (option.questFail) {
-        result.questFailed = this.failQuest(saveId, option.questFail);
-        if (result.questFailed) {
-          result.stateUpdated = true;
-        }
-      }
+      const result: DialogueSelectResult = {
+        response: option.response ?? null,
+        nextNode: null,
+        questGranted: null,
+        questCompleted: null,
+        questFailed: null,
+        karmaDelta: 0,
+        factionDelta: null,
+        companionRecruited: null,
+        companionReaction: null,
+        stateUpdated: false,
+        alreadySelected: wasAlreadySelected
+      };
 
-      if (option.karmaDelta) {
-        result.karmaDelta = option.karmaDelta;
-        this.adjustKarma(saveId, option.karmaDelta);
+      if (isPurchase) {
+        const capsItem = await this.inventoryRepo.findItem(saveId, "caps");
+        if (!capsItem) {
+          throw new Error("Not enough caps.");
+        }
+
+        await this.inventoryRepo.updateQuantity(saveId, "caps", capsItem.quantity - option.capsCost!);
         result.stateUpdated = true;
 
-        // Generous actions (karma +2 or higher) boost companion loyalty
-        if (option.karmaDelta >= 2) {
-          result.companionReaction = this.applyCompanionLoyaltyDelta(saveId, 1, "positive");
-        }
-      }
-
-      if (option.factionDelta) {
-        result.factionDelta = option.factionDelta;
-        this.adjustFaction(saveId, option.factionDelta.factionId, option.factionDelta.delta);
-        result.stateUpdated = true;
-      }
-
-      if (option.consumeItem) {
-        if (option.inventoryGate) {
-          this.inventoryRepo.removeItem(saveId, option.inventoryGate.itemId);
-          result.stateUpdated = true;
-        } else if (option.inventoryTagGate) {
-          const taggedItem = this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
-          if (taggedItem) {
-            this.inventoryRepo.removeItem(saveId, taggedItem.item_id);
-            result.stateUpdated = true;
+        if (option.grantItems) {
+          for (const grant of option.grantItems) {
+            await this.inventoryRepo.addItem({
+              save_id: saveId,
+              item_id: grant.itemId,
+              label: grant.label,
+              owned_by: null,
+              quantity: grant.quantity,
+              description: null,
+              collected_at: Date.now()
+            });
           }
         }
       }
 
-      // Grant items (non-purchase grants are first-time only)
-      if (!isPurchase && option.grantItems) {
-        for (const grant of option.grantItems) {
-          this.inventoryRepo.addItem({
-            save_id: saveId,
-            item_id: grant.itemId,
-            label: grant.label,
-            owned_by: null,
-            quantity: grant.quantity,
-            description: null,
-            collected_at: Date.now()
-          });
+      if (!wasAlreadySelected) {
+        if (option.questGrant) {
+          result.questGranted = await this.grantQuest(saveId, option.questGrant);
         }
-        result.stateUpdated = true;
-      }
 
-      if (option.companionRecruit) {
-        const content = getGameContent();
-        const companionDef = content.companions.find((c) => c.id === option.companionRecruit);
-        if (companionDef) {
-          const existing = this.companionRepo.find(saveId, option.companionRecruit);
-          if (!existing || existing.departed) {
+        if (option.questComplete) {
+          result.questCompleted = await this.completeQuest(saveId, option.questComplete);
+          if (result.questCompleted) {
+            result.stateUpdated = true;
+          }
+        }
+
+        if (option.questFail) {
+          result.questFailed = await this.failQuest(saveId, option.questFail);
+          if (result.questFailed) {
+            result.stateUpdated = true;
+          }
+        }
+
+        if (option.karmaDelta) {
+          result.karmaDelta = option.karmaDelta;
+          await this.adjustKarma(saveId, option.karmaDelta);
+          result.stateUpdated = true;
+
+          if (option.karmaDelta >= 2) {
+            result.companionReaction = await this.applyCompanionLoyaltyDelta(saveId, 1, "positive");
+          }
+        }
+
+        if (option.factionDelta) {
+          result.factionDelta = option.factionDelta;
+          await this.adjustFaction(saveId, option.factionDelta.factionId, option.factionDelta.delta);
+          result.stateUpdated = true;
+        }
+
+        if (option.consumeItem) {
+          if (option.inventoryGate) {
+            await this.inventoryRepo.removeItem(saveId, option.inventoryGate.itemId);
+            result.stateUpdated = true;
+          } else if (option.inventoryTagGate) {
+            const taggedItem = await this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
+            if (taggedItem) {
+              await this.inventoryRepo.removeItem(saveId, taggedItem.item_id);
+              result.stateUpdated = true;
+            }
+          }
+        }
+
+        if (!isPurchase && option.grantItems) {
+          for (const grant of option.grantItems) {
+            await this.inventoryRepo.addItem({
+              save_id: saveId,
+              item_id: grant.itemId,
+              label: grant.label,
+              owned_by: null,
+              quantity: grant.quantity,
+              description: null,
+              collected_at: Date.now()
+            });
+          }
+          result.stateUpdated = true;
+        }
+
+        if (option.companionRecruit) {
+          const content = getGameContent();
+          const companionDef = content.companions.find((candidate) => candidate.id === option.companionRecruit);
+          if (companionDef) {
+            const existing = await this.companionRepo.find(saveId, option.companionRecruit);
             if (!existing) {
-              this.companionRepo.recruit(saveId, option.companionRecruit);
+              await this.companionRepo.recruit(saveId, option.companionRecruit);
               result.companionRecruited = option.companionRecruit;
               result.stateUpdated = true;
             }
           }
         }
+
+        await this.markOptionSelected(saveId, npcId, dialogue, optionId);
       }
 
-      // Mark option as selected
-      this.markOptionSelected(saveId, npcId, dialogue, optionId);
-    }
+      const updatedNpcState = await this.getNpcState(saveId, npcId, dialogue);
 
-    // Refresh npcState after marking selected
-    const updatedNpcState = this.getNpcState(saveId, npcId, dialogue);
+      if (option.returnToRoot) {
+        const effectiveRoot = await this.getEffectiveRootNodeId(saveId, dialogue);
+        await this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
+        const rootNode = dialogue.nodes.find((candidate) => candidate.id === effectiveRoot);
 
-    // Navigate to next node
-    if (option.returnToRoot) {
-      const effectiveRoot = this.getEffectiveRootNodeId(saveId, dialogue);
-      this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
-      const rootNode = dialogue.nodes.find((n) => n.id === effectiveRoot);
+        if (rootNode) {
+          result.nextNode = await this.filterNode(rootNode, dialogue, special, updatedNpcState.selected, saveId);
+        }
+      } else if (option.next) {
+        await this.setCurrentNodeId(saveId, npcId, dialogue, option.next);
+        const nextNode = dialogue.nodes.find((candidate) => candidate.id === option.next);
 
-      if (rootNode) {
-        result.nextNode = this.filterNode(rootNode, dialogue, special, updatedNpcState.selected, saveId);
+        if (nextNode) {
+          result.nextNode = await this.filterNode(nextNode, dialogue, special, updatedNpcState.selected, saveId);
+        }
       }
-    } else if (option.next) {
-      this.setCurrentNodeId(saveId, npcId, dialogue, option.next);
-      const nextNode = dialogue.nodes.find((n) => n.id === option.next);
 
-      if (nextNode) {
-        result.nextNode = this.filterNode(nextNode, dialogue, special, updatedNpcState.selected, saveId);
-      }
-    }
-
-    return result;
+      return result;
+    });
   }
 
-  public resetDialogue(saveId: string, npcId: string): FilteredDialogueNode | null {
-    const { dialogue, special } = this.resolveDialogueContext(saveId, npcId);
+  public async resetDialogue(saveId: string, npcId: string): Promise<FilteredDialogueNode | null> {
+    const { dialogue, special } = await this.resolveDialogueContext(saveId, npcId);
 
     if (!dialogue) {
       return null;
     }
 
-    const effectiveRoot = this.getEffectiveRootNodeId(saveId, dialogue);
-    this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
-    const npcState = this.getNpcState(saveId, npcId, dialogue);
-    const rootNode = dialogue.nodes.find((n) => n.id === effectiveRoot);
+    const effectiveRoot = await this.getEffectiveRootNodeId(saveId, dialogue);
+    await this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
+    const npcState = await this.getNpcState(saveId, npcId, dialogue);
+    const rootNode = dialogue.nodes.find((candidate) => candidate.id === effectiveRoot);
 
     if (!rootNode) {
       return null;
@@ -367,27 +348,27 @@ export class DialogueService {
     return this.filterNode(rootNode, dialogue, special, npcState.selected, saveId);
   }
 
-  private resolveDialogueContext(saveId: string, npcId: string) {
+  private async resolveDialogueContext(saveId: string, npcId: string) {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
 
     if (!worldState || !worldState.current_map_id) {
       throw new Error("Not currently in an interior.");
     }
 
-    const interiorMap = content.interiorMaps.find((m) => m.id === worldState.current_map_id);
+    const interiorMap = content.interiorMaps.find((candidate) => candidate.id === worldState.current_map_id);
 
     if (!interiorMap) {
       throw new Error("Interior map not found.");
     }
 
-    const npc = interiorMap.npcs.find((n) => n.id === npcId);
+    const npc = interiorMap.npcs.find((candidate) => candidate.id === npcId);
 
     if (!npc) {
       throw new Error("NPC not found in current interior.");
     }
 
-    const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+    const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
     const special = playerCharacter?.special_json
       ? safeJsonParse<Record<string, number>>(playerCharacter.special_json, {})
       : {};
@@ -395,31 +376,31 @@ export class DialogueService {
     return { dialogue: npc.dialogue ?? null, special, interiorMap, npc };
   }
 
-  private getDialogueStateMap(saveId: string): DialogueStateMap {
-    const questState = this.gameStateRepo.getQuestState(saveId);
+  private async getDialogueStateMap(saveId: string): Promise<DialogueStateMap> {
+    const questState = await this.gameStateRepo.getQuestState(saveId);
     return safeJsonParse<DialogueStateMap>(questState?.dialogue_state_json, {});
   }
 
-  private saveDialogueStateMap(saveId: string, stateMap: DialogueStateMap): void {
-    const questState = this.gameStateRepo.getQuestState(saveId);
+  private async saveDialogueStateMap(saveId: string, stateMap: DialogueStateMap): Promise<void> {
+    const questState = await this.gameStateRepo.getQuestState(saveId);
 
     if (!questState) {
       return;
     }
 
-    this.gameStateRepo.updateQuestState({
+    await this.gameStateRepo.updateQuestState({
       ...questState,
       dialogue_state_json: JSON.stringify(stateMap),
       updated_at: Date.now()
     });
   }
 
-  private getEffectiveRootNodeId(saveId: string, dialogue: DialogueTree): string {
+  private async getEffectiveRootNodeId(saveId: string, dialogue: DialogueTree): Promise<string> {
     if (dialogue.conditionalRoots && dialogue.conditionalRoots.length > 0) {
-      const questState = this.gameStateRepo.getQuestState(saveId);
+      const questState = await this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
       const failed = safeJsonParse<string[]>(questState?.failed_quests_json, []);
-      const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+      const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
       const karma = playerCharacter?.karma ?? 0;
 
       for (const condition of dialogue.conditionalRoots) {
@@ -438,23 +419,23 @@ export class DialogueService {
     return dialogue.rootNodeId;
   }
 
-  private getNpcState(saveId: string, npcId: string, dialogue: DialogueTree): DialogueNpcState {
-    const stateMap = this.getDialogueStateMap(saveId);
-    const rootNodeId = this.getEffectiveRootNodeId(saveId, dialogue);
+  private async getNpcState(saveId: string, npcId: string, dialogue: DialogueTree): Promise<DialogueNpcState> {
+    const stateMap = await this.getDialogueStateMap(saveId);
+    const rootNodeId = await this.getEffectiveRootNodeId(saveId, dialogue);
     return resolveNpcState(stateMap[npcId], rootNodeId);
   }
 
-  private setCurrentNodeId(saveId: string, npcId: string, dialogue: DialogueTree, nodeId: string): void {
-    const stateMap = this.getDialogueStateMap(saveId);
-    const rootNodeId = this.getEffectiveRootNodeId(saveId, dialogue);
+  private async setCurrentNodeId(saveId: string, npcId: string, dialogue: DialogueTree, nodeId: string): Promise<void> {
+    const stateMap = await this.getDialogueStateMap(saveId);
+    const rootNodeId = await this.getEffectiveRootNodeId(saveId, dialogue);
     const current = resolveNpcState(stateMap[npcId], rootNodeId);
     stateMap[npcId] = { ...current, nodeId };
-    this.saveDialogueStateMap(saveId, stateMap);
+    await this.saveDialogueStateMap(saveId, stateMap);
   }
 
-  private markOptionSelected(saveId: string, npcId: string, dialogue: DialogueTree, optionId: string): void {
-    const stateMap = this.getDialogueStateMap(saveId);
-    const rootNodeId = this.getEffectiveRootNodeId(saveId, dialogue);
+  private async markOptionSelected(saveId: string, npcId: string, dialogue: DialogueTree, optionId: string): Promise<void> {
+    const stateMap = await this.getDialogueStateMap(saveId);
+    const rootNodeId = await this.getEffectiveRootNodeId(saveId, dialogue);
     const current = resolveNpcState(stateMap[npcId], rootNodeId);
 
     if (!current.selected.includes(optionId)) {
@@ -462,7 +443,7 @@ export class DialogueService {
     }
 
     stateMap[npcId] = current;
-    this.saveDialogueStateMap(saveId, stateMap);
+    await this.saveDialogueStateMap(saveId, stateMap);
   }
 
   private passesGate(option: DialogueOption, special: Record<string, number>): boolean {
@@ -483,29 +464,33 @@ export class DialogueService {
     return true;
   }
 
-  private passesInventoryGate(option: DialogueOption, saveId: string): boolean {
+  private async passesInventoryGate(option: DialogueOption, saveId: string): Promise<boolean> {
     if (option.inventoryGate) {
-      const item = this.inventoryRepo.findItem(saveId, option.inventoryGate.itemId);
+      const item = await this.inventoryRepo.findItem(saveId, option.inventoryGate.itemId);
       return !!item;
     }
 
     if (option.inventoryTagGate) {
-      const item = this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
+      const item = await this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
       return !!item;
     }
 
     return true;
   }
 
-  private formatGateLabel(option: DialogueOption, saveId: string): string | null {
+  private async formatGateLabel(option: DialogueOption, saveId?: string): Promise<string | null> {
     if (option.inventoryGate) {
-      const item = this.inventoryRepo.findItem(saveId, option.inventoryGate.itemId);
+      if (!saveId) {
+        return `Requires: ${option.inventoryGate.itemId}`;
+      }
+
+      const item = await this.inventoryRepo.findItem(saveId, option.inventoryGate.itemId);
       const itemLabel = item?.label ?? option.inventoryGate.itemId;
       return `Requires: ${itemLabel}`;
     }
 
     if (option.inventoryTagGate) {
-      const item = this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag);
+      const item = saveId ? await this.inventoryRepo.findItemByTag(saveId, option.inventoryTagGate.tag) : null;
       return item ? `Uses: ${item.label}` : null;
     }
 
@@ -526,12 +511,12 @@ export class DialogueService {
     return null;
   }
 
-  private passesQuestGate(option: DialogueOption, saveId: string): boolean {
+  private async passesQuestGate(option: DialogueOption, saveId: string): Promise<boolean> {
     if (!option.questGate) {
       return true;
     }
 
-    const questState = this.gameStateRepo.getQuestState(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
     if (!questState) return false;
 
     const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
@@ -539,13 +524,12 @@ export class DialogueService {
     return activeQuests.includes(option.questGate.questId) || completedQuests.includes(option.questGate.questId);
   }
 
-  /** Hide options whose questGrant quest is already active or completed. */
-  private passesQuestGrantFilter(option: DialogueOption, saveId: string): boolean {
+  private async passesQuestGrantFilter(option: DialogueOption, saveId: string): Promise<boolean> {
     if (!option.questGrant) {
       return true;
     }
 
-    const questState = this.gameStateRepo.getQuestState(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
     if (!questState) return true;
 
     const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
@@ -554,46 +538,65 @@ export class DialogueService {
     return !activeQuests.includes(option.questGrant) && !completedQuests.includes(option.questGrant) && !failedQuests.includes(option.questGrant);
   }
 
-  private filterNode(
+  private async filterNode(
     node: DialogueNode,
     dialogue: DialogueTree,
     special: Record<string, number>,
     selectedOptionIds: string[],
     saveId?: string
-  ): FilteredDialogueNode {
-    const effectiveRoot = saveId ? this.getEffectiveRootNodeId(saveId, dialogue) : dialogue.rootNodeId;
+  ): Promise<FilteredDialogueNode> {
+    const effectiveRoot = saveId ? await this.getEffectiveRootNodeId(saveId, dialogue) : dialogue.rootNodeId;
     const isRoot = node.id === effectiveRoot;
-    const filteredOptions = node.options
-      .filter((option) =>
-        this.passesGate(option, special) &&
-        (saveId ? this.passesInventoryGate(option, saveId) : (!option.inventoryGate && !option.inventoryTagGate)) &&
-        (saveId ? this.passesQuestGate(option, saveId) : !option.questGate) &&
-        (saveId ? this.passesQuestGrantFilter(option, saveId) : true)
-      )
-      .map((option) => {
-        const capsCost = option.capsCost ?? null;
-        let canAfford = true;
-        if (capsCost !== null && saveId) {
-          const capsItem = this.inventoryRepo.findItem(saveId, "caps");
-          canAfford = (capsItem?.quantity ?? 0) >= capsCost;
-        }
-        return {
-          id: option.id,
-          label: option.label,
-          specialGateLabel: saveId ? this.formatGateLabel(option, saveId) : this.formatGateLabel(option, ""),
-          hasResponse: !!option.response,
-          hasNext: !!option.next,
-          grantsQuest: option.questGrant ?? null,
-          failsQuest: option.questFail ?? null,
-          returnToRoot: option.returnToRoot ?? false,
-          alreadySelected: selectedOptionIds.includes(option.id),
-          capsCost,
-          canAfford
-        };
-      });
+    const filteredOptions: FilteredDialogueOption[] = [];
 
-    // Auto-inject "Let's talk about something else" on non-root nodes
-    if (!isRoot && !filteredOptions.some((o) => o.returnToRoot)) {
+    for (const option of node.options) {
+      if (!this.passesGate(option, special)) {
+        continue;
+      }
+
+      if (saveId && !(await this.passesInventoryGate(option, saveId))) {
+        continue;
+      }
+
+      if (!saveId && (option.inventoryGate || option.inventoryTagGate)) {
+        continue;
+      }
+
+      if (saveId && !(await this.passesQuestGate(option, saveId))) {
+        continue;
+      }
+
+      if (!saveId && option.questGate) {
+        continue;
+      }
+
+      if (saveId && !(await this.passesQuestGrantFilter(option, saveId))) {
+        continue;
+      }
+
+      const capsCost = option.capsCost ?? null;
+      let canAfford = true;
+      if (capsCost !== null && saveId) {
+        const capsItem = await this.inventoryRepo.findItem(saveId, "caps");
+        canAfford = (capsItem?.quantity ?? 0) >= capsCost;
+      }
+
+      filteredOptions.push({
+        id: option.id,
+        label: option.label,
+        specialGateLabel: await this.formatGateLabel(option, saveId),
+        hasResponse: !!option.response,
+        hasNext: !!option.next,
+        grantsQuest: option.questGrant ?? null,
+        failsQuest: option.questFail ?? null,
+        returnToRoot: option.returnToRoot ?? false,
+        alreadySelected: selectedOptionIds.includes(option.id),
+        capsCost,
+        canAfford
+      });
+    }
+
+    if (!isRoot && !filteredOptions.some((option) => option.returnToRoot)) {
       filteredOptions.push({
         id: "__return_to_root",
         label: "Let's talk about something else.",
@@ -617,15 +620,15 @@ export class DialogueService {
     };
   }
 
-  private grantQuest(saveId: string, questId: string): QuestDefinition | null {
+  private async grantQuest(saveId: string, questId: string): Promise<QuestDefinition | null> {
     const content = getGameContent();
-    const questDef = content.quests.find((q) => q.id === questId);
+    const questDef = content.quests.find((candidate) => candidate.id === questId);
 
     if (!questDef) {
       return null;
     }
 
-    const questState = this.gameStateRepo.getQuestState(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
 
     if (!questState) {
       return null;
@@ -633,36 +636,36 @@ export class DialogueService {
 
     const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
     const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
+    const failedQuests = safeJsonParse<string[]>(questState.failed_quests_json, []);
 
-    if (activeQuests.includes(questId) || completedQuests.includes(questId)) {
+    if (activeQuests.includes(questId) || completedQuests.includes(questId) || failedQuests.includes(questId)) {
       return null;
     }
 
     activeQuests.push(questId);
 
-    this.gameStateRepo.updateQuestState({
+    await this.gameStateRepo.updateQuestState({
       ...questState,
       active_quests_json: JSON.stringify(activeQuests),
       updated_at: Date.now()
     });
 
-    // Auto-discover the quest marker location on the map
     if (questDef.mapMarker?.locationId) {
-      this.revealQuestMarkerLocation(saveId, questDef.mapMarker.locationId);
+      await this.revealQuestMarkerLocation(saveId, questDef.mapMarker.locationId);
     }
 
     return questDef;
   }
 
-  private completeQuest(saveId: string, questId: string): QuestCompletionResult | null {
+  private async completeQuest(saveId: string, questId: string): Promise<QuestCompletionResult | null> {
     const content = getGameContent();
-    const questDef = content.quests.find((q) => q.id === questId);
+    const questDef = content.quests.find((candidate) => candidate.id === questId);
 
     if (!questDef) {
       return null;
     }
 
-    const questState = this.gameStateRepo.getQuestState(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
 
     if (!questState) {
       return null;
@@ -671,16 +674,14 @@ export class DialogueService {
     const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
     const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
 
-    // Already completed
     if (completedQuests.includes(questId)) {
       return null;
     }
 
-    // Move from active to completed
     const nextActive = activeQuests.filter((id) => id !== questId);
     completedQuests.push(questId);
 
-    this.gameStateRepo.updateQuestState({
+    await this.gameStateRepo.updateQuestState({
       ...questState,
       active_quests_json: JSON.stringify(nextActive),
       completed_quests_json: JSON.stringify(completedQuests),
@@ -696,23 +697,22 @@ export class DialogueService {
       capsGranted: 0
     };
 
-    // Apply rewards
     if (questDef.rewards) {
       if (questDef.rewards.karma) {
         result.karmaDelta = questDef.rewards.karma;
-        this.adjustKarma(saveId, questDef.rewards.karma);
+        await this.adjustKarma(saveId, questDef.rewards.karma);
       }
 
       if (questDef.rewards.factionDeltas) {
         for (const [factionId, delta] of Object.entries(questDef.rewards.factionDeltas)) {
           result.factionDeltas[factionId] = delta;
-          this.adjustFaction(saveId, factionId, delta);
+          await this.adjustFaction(saveId, factionId, delta);
         }
       }
 
       if (questDef.rewards.items) {
         for (const item of questDef.rewards.items) {
-          this.inventoryRepo.addItem({
+          await this.inventoryRepo.addItem({
             save_id: saveId,
             item_id: item.itemId,
             label: item.label,
@@ -727,26 +727,24 @@ export class DialogueService {
 
       if (questDef.rewards.caps) {
         result.capsGranted = questDef.rewards.caps;
-        // Add caps to inventory
-        this.inventoryRepo.addItem({
+        await this.inventoryRepo.addItem({
           save_id: saveId,
           item_id: "caps",
           label: "Caps",
           owned_by: null,
           quantity: questDef.rewards.caps,
-          description: "Bottle caps — the universally accepted currency of the wasteland.",
+          description: "Bottle caps - the universally accepted currency of the wasteland.",
           collected_at: Date.now()
         });
       }
     }
 
-    // Award 75 XP for quest completion
-    this.saveRepo.awardXp(saveId, 75);
+    await this.saveRepo.awardXp(saveId, 75);
 
     return result;
   }
 
-  private failQuest(saveId: string, questId: string): { questId: string; questName: string } | null {
+  private async failQuest(saveId: string, questId: string): Promise<{ questId: string; questName: string } | null> {
     const content = getGameContent();
     const questDef = content.quests.find((q) => q.id === questId);
 
@@ -754,7 +752,7 @@ export class DialogueService {
       return null;
     }
 
-    const questState = this.gameStateRepo.getQuestState(saveId);
+    const questState = await this.gameStateRepo.getQuestState(saveId);
     if (!questState) {
       return null;
     }
@@ -763,16 +761,14 @@ export class DialogueService {
     const completedQuests = safeJsonParse<string[]>(questState.completed_quests_json, []);
     const failedQuests = safeJsonParse<string[]>(questState.failed_quests_json, []);
 
-    // Already completed or failed
     if (completedQuests.includes(questId) || failedQuests.includes(questId)) {
       return null;
     }
 
-    // Move from active to failed
     const nextActive = activeQuests.filter((id) => id !== questId);
     failedQuests.push(questId);
 
-    this.gameStateRepo.updateQuestState({
+    await this.gameStateRepo.updateQuestState({
       ...questState,
       active_quests_json: JSON.stringify(nextActive),
       failed_quests_json: JSON.stringify(failedQuests),
@@ -782,18 +778,18 @@ export class DialogueService {
     return { questId, questName: questDef.name };
   }
 
-  private revealQuestMarkerLocation(saveId: string, locationId: string): void {
+  private async revealQuestMarkerLocation(saveId: string, locationId: string): Promise<void> {
     const content = getGameContent();
-    const worldState = this.gameStateRepo.getWorldState(saveId);
-    const mapDiscovery = this.gameStateRepo.getMapDiscovery(saveId);
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
+    const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
 
     if (!worldState || !mapDiscovery) return;
 
-    const region = content.regions.find((r) => r.id === worldState.current_region_id);
+    const region = content.regions.find((candidate) => candidate.id === worldState.current_region_id);
     if (!region) return;
 
     const regionLocations = getRegionLocations(content, region.id);
-    const location = regionLocations.find((l) => l.id === locationId);
+    const location = regionLocations.find((candidate) => candidate.id === locationId);
     if (!location) return;
 
     const discoveredLocationIds = safeJsonParse<string[]>(mapDiscovery.discovered_locations_json, []);
@@ -801,14 +797,13 @@ export class DialogueService {
 
     if (discoveredLocationIds.includes(locationId)) return;
 
-    // Reveal the location and its tile
     discoveredLocationIds.push(locationId);
     const tileKey = `${location.position.x},${location.position.y}`;
     if (!discoveredTileKeys.includes(tileKey)) {
       discoveredTileKeys.push(tileKey);
     }
 
-    this.gameStateRepo.updateMapDiscovery({
+    await this.gameStateRepo.updateMapDiscovery({
       ...mapDiscovery,
       discovered_locations_json: JSON.stringify(discoveredLocationIds),
       discovered_tiles_json: JSON.stringify(discoveredTileKeys),
@@ -816,18 +811,18 @@ export class DialogueService {
     });
   }
 
-  private adjustKarma(saveId: string, delta: number): void {
-    const playerCharacter = this.saveRepo.findPlayerCharacter(saveId);
+  private async adjustKarma(saveId: string, delta: number): Promise<void> {
+    const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
 
     if (!playerCharacter) {
       return;
     }
 
-    this.saveRepo.updateKarma(saveId, playerCharacter.karma + delta);
+    await this.saveRepo.updateKarma(saveId, playerCharacter.karma + delta);
   }
 
-  private adjustFaction(saveId: string, factionId: string, delta: number): void {
-    const factionStanding = this.gameStateRepo.getFactionStanding(saveId);
+  private async adjustFaction(saveId: string, factionId: string, delta: number): Promise<void> {
+    const factionStanding = await this.gameStateRepo.getFactionStanding(saveId);
 
     if (!factionStanding) {
       return;
@@ -836,31 +831,35 @@ export class DialogueService {
     const standings = safeJsonParse<Record<string, number>>(factionStanding.standings_json, {});
     standings[factionId] = (standings[factionId] ?? 0) + delta;
 
-    this.gameStateRepo.updateFactionStanding({
+    await this.gameStateRepo.updateFactionStanding({
       ...factionStanding,
       standings_json: JSON.stringify(standings),
       updated_at: Date.now()
     });
   }
 
-  private applyCompanionLoyaltyDelta(saveId: string, delta: number, reactionType: "positive" | "negative"): { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null {
-    const companions = this.companionRepo.getAll(saveId);
+  private async applyCompanionLoyaltyDelta(
+    saveId: string,
+    delta: number,
+    reactionType: "positive" | "negative"
+  ): Promise<{ companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null> {
+    const companions = await this.companionRepo.getAll(saveId);
     const companion = companions[0];
     if (!companion) return null;
 
     const content = getGameContent();
-    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    const companionDef = content.companions.find((candidate) => candidate.id === companion.companion_id);
     if (!companionDef) return null;
 
     const newLoyalty = Math.max(0, Math.min(100, companion.loyalty + delta));
-    this.companionRepo.updateLoyalty(saveId, companion.companion_id, newLoyalty);
+    await this.companionRepo.updateLoyalty(saveId, companion.companion_id, newLoyalty);
 
     let reaction: string;
     let departed = false;
 
     if (newLoyalty === 0) {
       reaction = companionDef.reactions.farewell;
-      this.companionRepo.remove(saveId, companion.companion_id);
+      await this.companionRepo.remove(saveId, companion.companion_id);
       departed = true;
     } else if (newLoyalty < 20) {
       reaction = companionDef.reactions.warning;

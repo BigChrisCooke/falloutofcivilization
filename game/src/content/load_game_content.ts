@@ -60,6 +60,21 @@ function loadDirectory<T>(directoryPath: string, parser: { parse: (value: unknow
 }
 
 export function getDefaultContentRoot(): string {
+  const configuredContentRoot = process.env.GAME_CONTENT_ROOT;
+  const candidates = [
+    configuredContentRoot ? path.resolve(process.cwd(), configuredContentRoot) : null,
+    path.resolve(import.meta.dirname, "..", "..", "content"),
+    path.resolve(process.cwd(), "content"),
+    path.resolve(process.cwd(), "..", "game", "content"),
+    path.resolve(process.cwd(), "game", "content")
+  ].filter((candidate): candidate is string => candidate !== null);
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
   return path.resolve(import.meta.dirname, "..", "..", "content");
 }
 

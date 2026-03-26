@@ -1,21 +1,19 @@
-import type Database from "better-sqlite3";
-
+import { getDb } from "../db/connection.js";
 import type { UserRow } from "../shared/types.js";
 
 export class UserRepo {
-  public constructor(private readonly db: Database.Database) {}
-
-  public findByUsername(username: string): UserRow | undefined {
-    return this.db.prepare("SELECT * FROM users WHERE username = ?").get(username) as UserRow | undefined;
+  public async findByUsername(username: string): Promise<UserRow | undefined> {
+    return getDb().get<UserRow>("SELECT * FROM users WHERE username = ?", [username]);
   }
 
-  public findById(userId: string): UserRow | undefined {
-    return this.db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as UserRow | undefined;
+  public async findById(userId: string): Promise<UserRow | undefined> {
+    return getDb().get<UserRow>("SELECT * FROM users WHERE id = ?", [userId]);
   }
 
-  public create(user: UserRow): void {
-    this.db
-      .prepare("INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)")
-      .run(user.id, user.username, user.password_hash, user.created_at);
+  public async create(user: UserRow): Promise<void> {
+    await getDb().run(
+      "INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)",
+      [user.id, user.username, user.password_hash, user.created_at]
+    );
   }
 }
