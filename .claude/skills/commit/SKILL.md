@@ -80,11 +80,19 @@ npm run test
 npm run content:validate
 ```
 
-Also run this if database setup or migrations changed:
+Also run this if the session touched shared DB code, migrations, repos, or deployment/runtime config for the SQLite/Postgres path:
 
 ```bash
 npm run db:migrate
 ```
+
+If `TEST_DATABASE_URL` is available and the session touched Postgres-sensitive code or release wiring, also run:
+
+```bash
+npm run test:postgres
+```
+
+If `TEST_DATABASE_URL` is not available, say that the Postgres smoke check was skipped instead of implying both drivers were verified.
 
 Do not commit if the relevant checks fail.
 

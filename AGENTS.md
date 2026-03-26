@@ -116,6 +116,7 @@ Do not:
 
 - Local dev uses separate frontend and backend dev servers.
 - Docker/Render production uses one container and one public port.
+- Keep local Vite API wiring and production same-origin wiring aligned: local dev should reach the backend through `/api` proxying or `VITE_API_BASE_URL`, while Docker/Render should keep browser API calls same-origin by default.
 - Do not add a second long-running frontend process to the production container unless explicitly requested.
 - The backend should serve `client/dist` when that build output exists.
 - Production Docker startup should generate browser-safe runtime config, run backend migrations, then start the backend server.
@@ -212,6 +213,7 @@ These files should always match the real repo commands and structure.
 - Root `.env` should be the source of environment configuration.
 - `DB_DRIVER=sqlite` is the default local workflow.
 - PostgreSQL uses `DATABASE_URL` first, then the discrete `POSTGRES_*` settings if needed.
+- If the client shows an HTML `<!doctype ...>` parse error during auth or save loading, check Vite `/api` proxying or `VITE_API_BASE_URL` before changing backend auth code.
 - `PORT` is provided by Render in production; local dev can keep using `BACKEND_PORT`.
 - `CLIENT_DIST_PATH` defaults to `../client/dist` from the backend workspace for static production serving.
 - `TRUST_PROXY=true` and `COOKIE_SECURE=true` are the intended Render defaults.

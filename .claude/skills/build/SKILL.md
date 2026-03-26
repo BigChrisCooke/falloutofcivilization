@@ -22,6 +22,20 @@ npm run test
 npm run content:validate
 ```
 
+If the release touches shared DB code, migrations, repos, or deployment/runtime config for the dual SQLite/Postgres path (for example `backend/src/db/`, `backend/src/repos/`, `backend/src/shared/config.ts`, `start.sh`, `render.yaml`, `Dockerfile`, `client/vite.config.ts`, `client/src/lib/runtime_config.ts`, or `client/public/runtime-config.js`), also run:
+
+```bash
+npm run db:migrate
+```
+
+If `TEST_DATABASE_URL` is available for this environment, also run:
+
+```bash
+npm run test:postgres
+```
+
+If `TEST_DATABASE_URL` is not available, explicitly report that the Postgres smoke check was skipped.
+
 **If any checks fail, STOP immediately.** Report the failures to the user. Do not proceed with the release.
 
 ### 2. Determine version bump
@@ -129,6 +143,8 @@ Run the tests again to confirm everything is green:
 npm run build
 npm run test
 ```
+
+If step 1 required the dual-driver checks, rerun the relevant `npm run db:migrate` and `npm run test:postgres` verification here too, or report that Postgres verification remained skipped because `TEST_DATABASE_URL` was unavailable.
 
 If tests fail, **report immediately** - do not hide the failure.
 
