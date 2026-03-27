@@ -70,6 +70,7 @@ export interface InteriorMarkerNode {
   isActionable: boolean;
   zIndex: number;
   ownedBy?: string;
+  interactRange?: number;
 }
 
 export interface InteriorActorNode {

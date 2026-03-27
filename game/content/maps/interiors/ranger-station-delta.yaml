@@ -182,7 +182,30 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "*Ghost glances up from her scope and gives you the faintest nod of recognition.* You're still alive. That puts you ahead of most people I meet twice. What do you need?"
+          options:
+            - id: ask_name
+              label: "Ghost — is that a callsign?"
+              next: callsign
+            - id: ask_seen
+              label: "What have you seen from the watchtower?"
+              next: watchtower_intel
+            - id: ask_reactor
+              label: "Jackson mentioned something near the reactor. What did you see?"
+              next: reactor_sighting
+            - id: cha_respectful
+              label: "I won't waste your time. Just tell me what I need to know to survive out there."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_respect
+            - id: cha_pushy
+              label: "You don't talk much, do you? That must get boring."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_annoying
         - id: greeting
           text: "*A lean woman with sharp eyes and a sniper rifle across her lap glances at you without moving.* Ghost. I handle recon. If Jackson sent you to chat, make it quick — I've got a lot of wasteland to watch."
           options:

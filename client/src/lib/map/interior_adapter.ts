@@ -129,7 +129,9 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
         return;
       }
 
-      if (hexDistance(from, marker.point) <= MAX_INTERACT_DISTANCE) {
+      const npcRange = marker.interactRange ?? MAX_INTERACT_DISTANCE;
+
+      if (hexDistance(from, marker.point) <= npcRange) {
         handlers.onNpcClick(target.npcId);
         return;
       }

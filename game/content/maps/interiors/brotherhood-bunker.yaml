@@ -45,6 +45,11 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - factionMin: { factionId: brotherhood, min: 10 }
+          nodeId: faction_friendly_greeting
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
         - id: greeting
           text: "*A powerfully built man in a Brotherhood flight suit rises from behind a desk, hand resting on a holstered laser pistol.* You shouldn't be here. State your name, your business, and how you found this location. You have thirty seconds."
@@ -66,6 +71,50 @@ npcs:
               next: int_recognition
             - id: dumb_greeting
               label: "Ooh, cool underground place! Is this a vault? I like vaults!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_response
+        - id: faction_friendly_greeting
+          text: "*Ramos stands from behind his desk and offers a crisp nod — the closest thing to warmth his military bearing allows.* You've proven yourself to the Brotherhood. That counts for something in this bunker. Welcome back, friend. What brings you here?"
+          options:
+            - id: honest_answer
+              label: "Just passing through. Wanted to check in."
+              next: skeptical_response
+            - id: cha_diplomatic
+              label: "Paladin, I'd like to discuss how the Brotherhood and I can continue working together."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_impressed
+            - id: cha_blunt
+              label: "Figured I'd drop by and see if you've lightened up any, tin man."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_hostile
+            - id: int_knowledgeable
+              label: "I noticed you've upgraded the ventilation filters since my last visit. Switched to a dual-stage particulate system?"
+              specialGate: { stat: int, min: 7 }
+              next: int_recognition
+            - id: dumb_greeting
+              label: "Hi friend! I brought myself! You're welcome!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_response
+        - id: return_greeting
+          text: "*Ramos looks up from his desk, hand drifting toward his sidearm before he recognizes you. He relaxes — slightly.* You again. At least you haven't caused any trouble... yet. What do you want this time?"
+          options:
+            - id: honest_answer
+              label: "Just came back to talk. No trouble, I promise."
+              next: skeptical_response
+            - id: cha_diplomatic
+              label: "Paladin, I think we got off on the right foot last time. I'd like to continue that."
+              specialGate: { stat: cha, min: 7 }
+              next: cha_impressed
+            - id: cha_blunt
+              label: "Miss me? I know you did."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_hostile
+            - id: int_knowledgeable
+              label: "I've been doing some research since we last spoke. Your filtration setup — have you considered cross-referencing Poseidon schematics with RobCo maintenance logs?"
+              specialGate: { stat: int, min: 7 }
+              next: int_recognition
+            - id: dumb_greeting
+              label: "Me again! Remember me? We talked before!"
               specialGate: { stat: int, max: 3 }
               next: dumb_response
         - id: skeptical_response

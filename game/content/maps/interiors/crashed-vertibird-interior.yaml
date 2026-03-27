@@ -57,7 +57,34 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "*Tinker's face lights up.* Hey, you're back! Excellent — I was hoping you'd come around again. This wreck keeps surprising me. Got a minute?"
+          options:
+            - id: ask_wreck
+              label: "What is this place?"
+              next: about_wreck
+            - id: ask_found
+              label: "Find anything new since last time?"
+              next: what_found
+            - id: ask_trade
+              label: "Interested in trading information?"
+              next: trade_intel
+            - id: int_technical
+              label: "[INT 7] Any updates on the engine status?"
+              specialGate: { stat: int, min: 7 }
+              next: technical_talk
+            - id: dumb_greeting
+              label: "Big bird still here! Not fly away!"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_response
+            - id: cha_friendly
+              label: "Good to see you, Tinker. How's the salvage going?"
+              specialGate: { stat: cha, min: 6 }
+              next: friendly_response
         - id: greeting
           text: "*A wiry figure looks up from a tangle of wires, goggles pushed up on their forehead.* Huh? Oh — another scavenger. Thought I had this wreck to myself. Name's Tinker."
           options:

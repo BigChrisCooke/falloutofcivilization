@@ -55,7 +55,33 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "*Gristle's hand drops to his sidearm the moment he sees you, then he relaxes — barely.* You've got nerve showing up here again. Most people who leave my camp don't come back on purpose. What is it this time?"
+          options:
+            - id: confront
+              label: "I'm here to put an end to your raiding, Gristle."
+              next: confront_response
+            - id: negotiate
+              label: "I'm here to talk, not fight. There might be a way out of this for everyone."
+              next: negotiate_start
+            - id: intimidate
+              label: "I've killed worse than you. Stand down or join them."
+              next: intimidate_start
+            - id: cha_negotiate
+              label: "[CHA 8] Look around you, Gristle. Dwindling supplies, NCR closing in. This can't last. Let me offer you an alternative."
+              specialGate: { stat: cha, min: 8 }
+              next: cha_disband
+            - id: ask_why
+              label: "Before anything happens — why? Why raid the valley?"
+              next: raider_motive
+            - id: dumb_greeting
+              label: "You Gristle? You look like a gristle. What a gristle?"
+              specialGate: { stat: int, max: 3 }
+              next: dumb_gristle
         - id: greeting
           text: "*A heavily scarred man with a shaved head and a necklace of dog tags looks up from a crude map table.* Well, well. Either you're the bravest or the dumbest thing to walk into my camp. What do you want?"
           options:
@@ -270,7 +296,26 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "*The guard's eyes narrow as recognition flickers across their face.* You again. I remember you. Boss still hasn't said nothing about repeat visitors, so don't get comfortable."
+          options:
+            - id: here_for_gristle
+              label: "I'm here to see Gristle."
+              next: see_boss
+            - id: just_passing
+              label: "Just passing through."
+              next: passing_through
+            - id: cha_disarm
+              label: "[CHA 6] Easy. I'm not looking for trouble. Gristle and I have business."
+              specialGate: { stat: cha, min: 6 }
+              next: cha_disarm
+            - id: intimidate
+              label: "Out of my way."
+              next: intimidate_guard
         - id: greeting
           text: "*A raider with a pipe rifle slung across their back eyes you with open suspicion.* You shouldn't be here. Boss didn't say nothing about visitors."
           options:
@@ -323,4 +368,5 @@ loot:
     y: 2
 questHooks:
   - ranger_bounty
+  - ncr_raider_problem
   - ncr_raider_problem

@@ -209,6 +209,7 @@ npcs:
     factionId: dusty_spur_tavern
     x: 5
     y: 1
+    interactRange: 3
     dialogue:
       rootNodeId: greeting
       nodes:

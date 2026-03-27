@@ -1,11 +1,11 @@
 id: ncr_raider_problem
 name: Raider Problem
-description: "Corporal Hayes mentioned raiders causing trouble north of Frontier Valley. Handle the situation and report back to earn NCR favor."
+description: "Corporal Hayes mentioned raiders causing trouble in the valley. Deal with them — by force or persuasion — and report back to earn NCR favor."
 grantedBy: corporal_hayes
 objectives:
   - id: clear_raiders
-    description: "Clear out the raiders at the Raider Overlook east of the valley."
-    type: kill
+    description: "Deal with the raiders at the Raider Overlook."
+    type: visit
     target: raider_overlook
     locationId: raider_overlook
   - id: report_hayes

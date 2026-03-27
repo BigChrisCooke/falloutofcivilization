@@ -44,7 +44,33 @@ npcs:
     y: 1
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "Hey, welcome back! Always good to see a returning customer. What can I set you up with today?"
+          options:
+            - id: ask_weapons
+              label: "What have you got for sale?"
+              next: weapons_stock
+            - id: ask_prewar
+              label: "You deal in pre-war tech?"
+              next: prewar_tech
+            - id: ask_faction
+              label: "Tell me about the Gun Runners."
+              next: gun_runner_info
+            - id: ask_area
+              label: "What do you know about the local situation?"
+              next: local_intel
+            - id: cha_charm
+              label: "Good to see you too, Isaac. Any special deals for a friend?"
+              specialGate: { stat: cha, min: 7 }
+              next: cha_deal
+            - id: cha_blunt
+              label: "Just show me the guns. Skip the sales pitch."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_rude
         - id: greeting
           text: "Welcome to the Gun Runner Depot. Isaac's the name, arms dealing's the game. If it shoots, stabs, or explodes, we either sell it or can build it."
           options:
@@ -213,7 +239,30 @@ npcs:
     y: 3
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "*The apprentice waves with a file still in hand.* Oh hey, it's you again! Good to see a friendly face. What's up?"
+          options:
+            - id: ask_learning
+              label: "How's the apprenticeship going?"
+              next: learning
+            - id: ask_isaac
+              label: "What's Isaac like as a teacher?"
+              next: about_isaac
+            - id: ask_advice
+              label: "Any tips for someone new to the wasteland?"
+              next: wasteland_tips
+            - id: cha_encourage
+              label: "Keep at it. The wasteland needs good craftspeople."
+              specialGate: { stat: cha, min: 7 }
+              next: encouraged
+            - id: int_observe
+              label: "Your filing angle is off by about three degrees. You'll get a burr on the rifling."
+              specialGate: { stat: int, min: 7 }
+              next: corrected
         - id: greeting
           text: "*The young apprentice looks up from filing a gun barrel, metal shavings dusting their apron.* Oh, hey! Sorry, didn't see you come in. I'm still learning the trade."
           options:

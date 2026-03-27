@@ -31,7 +31,8 @@ function createMarkerNode(
   label: string,
   zOffset: number,
   isActionable: boolean,
-  ownedBy?: string
+  ownedBy?: string,
+  interactRange?: number
 ): InteriorMarkerNode {
   return {
     id,
@@ -42,7 +43,8 @@ function createMarkerNode(
     hitRadius: isActionable ? 18 : 14,
     isActionable,
     zIndex: getTileZIndex(point) + zOffset,
-    ownedBy
+    ownedBy,
+    interactRange
   };
 }
 
@@ -114,7 +116,7 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       const lootDef = activeLoot.find((l) => l.id === item.id);
       return createMarkerNode(item.id, "loot", item.point, item.id, 32, true, lootDef?.ownedBy);
     }),
-    ...visibleNpcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, true))
+    ...visibleNpcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, true, undefined, npc.interactRange))
   ].sort((left, right) => left.zIndex - right.zIndex);
 
   // Compute companion actor position if a companion is active

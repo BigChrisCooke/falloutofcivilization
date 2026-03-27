@@ -239,6 +239,8 @@ export class GameService {
       const questState = await this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
       const failed = safeJsonParse<string[]>(questState?.failed_quests_json, []);
+      const factionStanding = await this.gameStateRepo.getFactionStanding(saveId);
+      const standings = safeJsonParse<Record<string, number>>(factionStanding?.standings_json, {});
 
       for (const condition of dialogueTree.conditionalRoots) {
         if (condition.questCompleted && completed.includes(condition.questCompleted)) {
@@ -250,6 +252,10 @@ export class GameService {
           break;
         }
         if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
+          effectiveRootNodeId = condition.nodeId;
+          break;
+        }
+        if (condition.factionMin && (standings[condition.factionMin.factionId] ?? 0) >= condition.factionMin.min) {
           effectiveRootNodeId = condition.nodeId;
           break;
         }

@@ -55,6 +55,11 @@ export const dialogueTreeSchema = z.object({
     questCompleted: z.string().min(1).optional(),
     questFailed: z.string().min(1).optional(),
     karmaMin: z.number().int().optional(),
+    factionMin: z.object({
+      factionId: z.string().min(1),
+      min: z.number().int()
+    }).optional(),
+    hasTalked: z.boolean().optional(),
     nodeId: z.string().min(1)
   })).optional(),
   nodes: z.array(dialogueNodeSchema).min(1)
@@ -204,6 +209,7 @@ export const interiorMapSchema = z.object({
       factionId: z.string().min(1).optional(),
       x: z.number().int().optional(),
       y: z.number().int().optional(),
+      interactRange: z.number().int().min(1).optional(),
       dialogue: dialogueTreeSchema.optional()
     })
   ).default([]),

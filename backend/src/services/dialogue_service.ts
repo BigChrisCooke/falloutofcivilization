@@ -142,7 +142,7 @@ export class DialogueService {
       return null;
     }
 
-    return this.filterNode(node, dialogue, special, npcState.selected, saveId);
+    return this.filterNode(node, dialogue, special, npcState.selected, saveId, npcId);
   }
 
   public async selectOption(saveId: string, npcId: string, optionId: string): Promise<DialogueSelectResult> {
@@ -309,19 +309,19 @@ export class DialogueService {
       const updatedNpcState = await this.getNpcState(saveId, npcId, dialogue);
 
       if (option.returnToRoot) {
-        const effectiveRoot = await this.getEffectiveRootNodeId(saveId, dialogue);
+        const effectiveRoot = await this.getEffectiveRootNodeId(saveId, npcId, dialogue);
         await this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
         const rootNode = dialogue.nodes.find((candidate) => candidate.id === effectiveRoot);
 
         if (rootNode) {
-          result.nextNode = await this.filterNode(rootNode, dialogue, special, updatedNpcState.selected, saveId);
+          result.nextNode = await this.filterNode(rootNode, dialogue, special, updatedNpcState.selected, saveId, npcId);
         }
       } else if (option.next) {
         await this.setCurrentNodeId(saveId, npcId, dialogue, option.next);
         const nextNode = dialogue.nodes.find((candidate) => candidate.id === option.next);
 
         if (nextNode) {
-          result.nextNode = await this.filterNode(nextNode, dialogue, special, updatedNpcState.selected, saveId);
+          result.nextNode = await this.filterNode(nextNode, dialogue, special, updatedNpcState.selected, saveId, npcId);
         }
       }
 
@@ -336,7 +336,7 @@ export class DialogueService {
       return null;
     }
 
-    const effectiveRoot = await this.getEffectiveRootNodeId(saveId, dialogue);
+    const effectiveRoot = await this.getEffectiveRootNodeId(saveId, npcId, dialogue);
     await this.setCurrentNodeId(saveId, npcId, dialogue, effectiveRoot);
     const npcState = await this.getNpcState(saveId, npcId, dialogue);
     const rootNode = dialogue.nodes.find((candidate) => candidate.id === effectiveRoot);
@@ -345,7 +345,7 @@ export class DialogueService {
       return null;
     }
 
-    return this.filterNode(rootNode, dialogue, special, npcState.selected, saveId);
+    return this.filterNode(rootNode, dialogue, special, npcState.selected, saveId, npcId);
   }
 
   private async resolveDialogueContext(saveId: string, npcId: string) {
@@ -395,13 +395,20 @@ export class DialogueService {
     });
   }
 
-  private async getEffectiveRootNodeId(saveId: string, dialogue: DialogueTree): Promise<string> {
+  private async getEffectiveRootNodeId(saveId: string, npcId: string, dialogue: DialogueTree): Promise<string> {
     if (dialogue.conditionalRoots && dialogue.conditionalRoots.length > 0) {
       const questState = await this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
       const failed = safeJsonParse<string[]>(questState?.failed_quests_json, []);
       const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
       const karma = playerCharacter?.karma ?? 0;
+      const factionStanding = await this.gameStateRepo.getFactionStanding(saveId);
+      const standings = safeJsonParse<Record<string, number>>(factionStanding?.standings_json, {});
+      const dialogueStateMap = await this.getDialogueStateMap(saveId);
+      const npcDialogueState = dialogueStateMap[npcId];
+      const hasSpokenBefore = npcDialogueState !== undefined
+        && typeof npcDialogueState !== "string"
+        && npcDialogueState.selected.length > 0;
 
       for (const condition of dialogue.conditionalRoots) {
         if (condition.questCompleted && completed.includes(condition.questCompleted)) {
@@ -413,6 +420,12 @@ export class DialogueService {
         if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
           return condition.nodeId;
         }
+        if (condition.factionMin && (standings[condition.factionMin.factionId] ?? 0) >= condition.factionMin.min) {
+          return condition.nodeId;
+        }
+        if (condition.hasTalked && hasSpokenBefore) {
+          return condition.nodeId;
+        }
       }
     }
 
@@ -421,13 +434,13 @@ export class DialogueService {
 
   private async getNpcState(saveId: string, npcId: string, dialogue: DialogueTree): Promise<DialogueNpcState> {
     const stateMap = await this.getDialogueStateMap(saveId);
-    const rootNodeId = await this.getEffectiveRootNodeId(saveId, dialogue);
+    const rootNodeId = await this.getEffectiveRootNodeId(saveId, npcId, dialogue);
     return resolveNpcState(stateMap[npcId], rootNodeId);
   }
 
   private async setCurrentNodeId(saveId: string, npcId: string, dialogue: DialogueTree, nodeId: string): Promise<void> {
     const stateMap = await this.getDialogueStateMap(saveId);
-    const rootNodeId = await this.getEffectiveRootNodeId(saveId, dialogue);
+    const rootNodeId = await this.getEffectiveRootNodeId(saveId, npcId, dialogue);
     const current = resolveNpcState(stateMap[npcId], rootNodeId);
     stateMap[npcId] = { ...current, nodeId };
     await this.saveDialogueStateMap(saveId, stateMap);
@@ -435,7 +448,7 @@ export class DialogueService {
 
   private async markOptionSelected(saveId: string, npcId: string, dialogue: DialogueTree, optionId: string): Promise<void> {
     const stateMap = await this.getDialogueStateMap(saveId);
-    const rootNodeId = await this.getEffectiveRootNodeId(saveId, dialogue);
+    const rootNodeId = await this.getEffectiveRootNodeId(saveId, npcId, dialogue);
     const current = resolveNpcState(stateMap[npcId], rootNodeId);
 
     if (!current.selected.includes(optionId)) {
@@ -543,9 +556,10 @@ export class DialogueService {
     dialogue: DialogueTree,
     special: Record<string, number>,
     selectedOptionIds: string[],
-    saveId?: string
+    saveId?: string,
+    npcId?: string
   ): Promise<FilteredDialogueNode> {
-    const effectiveRoot = saveId ? await this.getEffectiveRootNodeId(saveId, dialogue) : dialogue.rootNodeId;
+    const effectiveRoot = saveId && npcId ? await this.getEffectiveRootNodeId(saveId, npcId, dialogue) : dialogue.rootNodeId;
     const isRoot = node.id === effectiveRoot;
     const filteredOptions: FilteredDialogueOption[] = [];
 

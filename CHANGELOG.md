@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-26
+[FEATURE] Faction reputation dialogue — NPCs with `factionMin` conditional roots show friendlier greetings when the player has high faction standing
+[FEATURE] Return visit dialogue — NPCs with `hasTalked` conditional roots greet the player differently after the first conversation (11 NPCs across 8 interiors)
+[FEATURE] Overseer Hale suggests unstarted quests via "Any news from outside?" radio chatter, with options auto-hidden as quests are taken
+[FEATURE] Per-NPC `interactRange` — individual NPCs can override the global interaction distance (used for Mina at the Dusty Spur)
+[FIX] Danny now appears at the Powder Ganger Camp instead of being unfindable during "Rescue Danny" quest
+[FIX] Vault Repairs quest catch-22 resolved — completion dialogue is now reachable
+[FIX] "Danger in the Hollow" quest target corrected from generic `powder_ganger` to `boss_eddie`
+[FIX] "NCR Raider Problem" first objective changed from `kill` to `visit` (no combat system yet)
+[IMPROVEMENT] Cassidy at the Caravan Waystation now has dialogue pointing players to Danny's location during "Rescue Danny"
+
 ## [0.5.0] - 2026-03-26
 [FEATURE] Full skill system — 20 skills across Combat, Active, and Passive categories derived from SPECIAL stats
 [FEATURE] Tagged Skills selection after character creation — choose 3 skills that improve at 2x rate

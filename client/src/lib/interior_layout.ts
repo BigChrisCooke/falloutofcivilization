@@ -4,6 +4,7 @@ import type { GridPoint } from "./iso.js";
 interface InteriorMarkerPlacement {
   id: string;
   point: GridPoint;
+  interactRange?: number;
 }
 
 const INTERACTABLE_TILE_TOKENS = new Set([
@@ -158,11 +159,11 @@ export function deriveInteriorPlacements(state: GameState): InteriorPlacements |
     .map((npc, index) => {
       if (npc.x !== undefined && npc.y !== undefined) {
         used.add(`${npc.x},${npc.y}`);
-        return { id: npc.id, point: { x: npc.x, y: npc.y } };
+        return { id: npc.id, point: { x: npc.x, y: npc.y }, interactRange: npc.interactRange };
       }
       const point = choosePlacement(floorTiles, interactableTiles, used, index);
 
-      return point ? { id: npc.id, point } : null;
+      return point ? { id: npc.id, point, interactRange: npc.interactRange } : null;
     })
     .filter((entry): entry is InteriorMarkerPlacement => entry !== null);
 

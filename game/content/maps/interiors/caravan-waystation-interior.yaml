@@ -51,7 +51,46 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "Back again? Good — means you survived the roads. What can I do for you this time?"
+          options:
+            - id: ask_trade
+              label: "What are the trade routes like right now?"
+              next: trade_routes
+            - id: ask_rumors
+              label: "Heard any good rumors lately?"
+              next: rumors
+            - id: ask_goods
+              label: "What kind of goods are you moving?"
+              next: goods_info
+            - id: cha_insider
+              label: "Between you and me, Cassidy — I know how business works. What's really moving out here?"
+              specialGate: { stat: cha, min: 7 }
+              next: insider_info
+            - id: cha_rude
+              label: "Still selling junk, I see."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_rude_response
+            - id: int_supply
+              label: "Your wagons are heavy but your guards are light. Supply chain optimization issue or budget constraint?"
+              specialGate: { stat: int, min: 7 }
+              next: supply_analysis
+            - id: int_dumb
+              label: "You sell... things? From the wagon? How does wagon know where to go?"
+              specialGate: { stat: int, max: 3 }
+              next: int_dumb_response
+            - id: ask_courier
+              label: "I heard a Kings courier went missing. Know anything?"
+              questGate: { questId: kings_missing_courier }
+              next: courier_info
+            - id: ask_danny_rescue
+              label: "I'm looking for Danny — the Kings courier. Any idea where the Powder Gangers took him?"
+              questGate: { questId: kings_rescue_danny }
+              next: danny_location
         - id: greeting
           text: "Another drifter. Welcome to the waystation — long as you're buying, selling, or moving on. Name's Cassidy. I run the caravan through this stretch of nowhere."
           options:
@@ -84,6 +123,10 @@ npcs:
               label: "I heard a Kings courier went missing. Know anything?"
               questGate: { questId: kings_missing_courier }
               next: courier_info
+            - id: ask_danny_rescue
+              label: "I'm looking for Danny — the Kings courier. Any idea where the Powder Gangers took him?"
+              questGate: { questId: kings_rescue_danny }
+              next: danny_location
         - id: trade_routes
           text: "Three main routes through Frontier Valley. North fork is safest — Jacobstown traders keep it clean. East road is fast but risky, Powder Gangers have been hitting anything that moves. South to Nipton is a death sentence right now — Legion's got it locked down."
           options:
@@ -164,9 +207,22 @@ npcs:
               label: "I'm looking into it. Anything you can tell me that might help?"
               specialGate: { stat: cha, min: 5 }
               response: "He stopped here for water before heading out. Mentioned he was taking the shortcut past the ridge — not the main road. If he went off-trail, the Powder Gangers might not have been the problem. There are worse things in those hills."
+            - id: ask_danny_where
+              label: "I need to find Danny. Where would the Powder Gangers take him?"
+              questGate: { questId: kings_rescue_danny }
+              next: danny_location
             - id: generic_courier
               label: "I'll keep my eyes open."
               response: "Do that. Danny's a good kid. The Kings would owe you one, and that's worth more than caps in this valley."
+        - id: danny_location
+          text: "If the Powder Gangers grabbed Danny, there's only one place they'd take him — their camp, east of here in the canyon. Boss Eddie runs the operation. He's not the shoot-first type, so Danny might still be breathing. But I wouldn't wait around. Eddie gets bored of prisoners eventually, and 'bored' is not good for the prisoner."
+          options:
+            - id: danny_camp_danger
+              label: "How dangerous is the camp?"
+              response: "Dangerous enough. Eddie's got maybe fifteen, twenty guys in there with dynamite and stolen rifles. You're not going to shoot your way through the front door. But Eddie's a businessman — if you've got something he wants, you might be able to talk your way in."
+            - id: danny_thanks
+              label: "Thanks, Cassidy. I'll head there."
+              response: "Watch yourself. The Powder Gangers don't take kindly to uninvited guests. And if you do find Danny — tell him he still owes me for that water."
         - id: cha_rude_response
           text: "*Cassidy's expression goes flat.* ...Wow. You know, most people at least pretend to have manners before they insult someone's livelihood. I sell supplies that keep people alive. What do you do, besides make enemies?"
           options: []
@@ -182,7 +238,38 @@ npcs:
     y: 3
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "*Brick glances over and nods.* I remember you. Still in one piece — that's better than most. What brings you back?"
+          options:
+            - id: ask_dangers
+              label: "What kind of dangers?"
+              next: road_dangers
+            - id: ask_powder
+              label: "I heard the Powder Gangers are active out here."
+              next: powder_info
+            - id: ask_brick
+              label: "You been doing this long? Guarding caravans?"
+              next: personal
+            - id: cha_tough
+              label: "You know me — I can handle myself."
+              specialGate: { stat: cha, min: 6 }
+              next: tough_response
+            - id: cha_rude_brick
+              label: "Why do you care? Mind your own business, big guy."
+              specialGate: { stat: cha, max: 3 }
+              next: brick_cha_rude
+            - id: str_intimidate
+              label: "*Crack your knuckles.* I don't need a weapon."
+              specialGate: { stat: str, min: 7 }
+              next: strong_response
+            - id: int_dumb_brick
+              label: "What is 'armed'? Like... more arms? I only got two."
+              specialGate: { stat: int, max: 3 }
+              next: brick_int_dumb
         - id: greeting
           text: "*A mountain of a man leans on a battered rifle, scanning the horizon.* Road's dangerous. You armed?"
           options:
@@ -300,3 +387,4 @@ loot:
     y: 3
 questHooks:
   - kings_missing_courier
+  - kings_rescue_danny

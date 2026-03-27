@@ -176,7 +176,52 @@ npcs:
     y: 3
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - factionMin: { factionId: ncr, min: 10 }
+          nodeId: faction_greeting
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: faction_greeting
+          text: "*Torres straightens up and grins when she sees you.* Hey, it's the Republic's favorite civilian! Word got around about what you did for us. Pull up a chair — you're practically NCR at this point."
+          options:
+            - id: ask_life
+              label: "What's NCR life like out here?"
+              next: ncr_life
+            - id: ask_hayes
+              label: "What's the Corporal like?"
+              next: about_hayes
+            - id: ask_threats
+              label: "What are the biggest threats in the area?"
+              next: local_threats
+            - id: cha_friendly
+              label: "Must get lonely out here. Good to have some company, right?"
+              specialGate: { stat: cha, min: 7 }
+              next: cha_lonely
+            - id: cha_blunt
+              label: "You look bored out of your skull."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_bored
+        - id: return_greeting
+          text: "*Torres looks up from her inventory clipboard and relaxes.* Oh hey, you're back. Good to see a familiar face around here. What brings you by this time?"
+          options:
+            - id: ask_life
+              label: "What's NCR life like out here?"
+              next: ncr_life
+            - id: ask_hayes
+              label: "What's the Corporal like?"
+              next: about_hayes
+            - id: ask_threats
+              label: "What are the biggest threats in the area?"
+              next: local_threats
+            - id: cha_friendly
+              label: "Must get lonely out here. Good to have some company, right?"
+              specialGate: { stat: cha, min: 7 }
+              next: cha_lonely
+            - id: cha_blunt
+              label: "You look bored out of your skull."
+              specialGate: { stat: cha, max: 3 }
+              next: cha_bored
         - id: greeting
           text: "Civilian on site. State your business. ...Sorry, habit. Torres, NCR infantry. Not much to do here except inventory and wait."
           options:

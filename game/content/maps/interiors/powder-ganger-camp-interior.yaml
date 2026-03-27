@@ -630,6 +630,101 @@ npcs:
             - id: hard_truth
               label: "We all make choices. Even the bad ones shape who we become."
               response: "Philosophy from a stranger in a camp full of convicts. Just what I needed today. *But there's no anger in his voice — just weariness.* You're not wrong, though. I chose to swing that punch. Everything else followed."
+  # ── Danny — Captured Kings Courier ──────────────────────
+  - id: danny
+    name: "Danny"
+    disposition: friendly
+    factionId: kings
+    x: 8
+    y: 5
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A young man in a torn Kings jacket is sitting against the rock wall, wrists bound with cord. He looks up with wide, desperate eyes.* You — you're not one of them. Please, you gotta get me out of here. They grabbed me on the east road, took my satchel, everything."
+          options:
+            - id: rescue_him
+              label: "I'm here to bring you home. The King sent me."
+              questGate: { questId: kings_rescue_danny }
+              questComplete: kings_rescue_danny
+              next: rescued
+            - id: ask_what_happened
+              label: "What happened to you?"
+              next: what_happened
+            - id: ask_satchel
+              label: "Your satchel — we already recovered it at the waystation."
+              next: satchel_found
+            - id: cha_reassure
+              label: "Easy, kid. I've got this under control. Nobody's going to hurt you."
+              specialGate: { stat: cha, min: 6 }
+              next: reassured
+            - id: int_assess
+              label: "How many guards are watching you? What's their rotation?"
+              specialGate: { stat: int, min: 6 }
+              next: guard_info
+            - id: cha_rude_danny
+              label: "A Kings courier who got caught by Powder Gangers? You must be real good at your job."
+              specialGate: { stat: cha, max: 3 }
+              next: danny_cha_rude
+            - id: int_dumb_danny
+              label: "Why are you sitting on the floor? There's chairs over there."
+              specialGate: { stat: int, max: 3 }
+              next: danny_int_dumb
+        - id: rescued
+          text: "*Danny's face breaks into a grin so wide it splits his bruised lip open again.* The King sent you? Oh man, oh man. I thought I was dead. I really thought I was dead. Let's go — let's get out of here before Eddie changes his mind about keeping me alive."
+          options: []
+        - id: what_happened
+          text: "I was running a delivery for Rex — documents, real important stuff. Took the shortcut past the ridge like I always do. Powder Gangers jumped me before I even saw them. Three of 'em. I gave up the satchel — figured my life was worth more than paper. But Eddie wanted to know who sent me and why. Been here two days."
+          options:
+            - id: rescue_after_story
+              label: "You're coming with me. The King wants you home."
+              questGate: { questId: kings_rescue_danny }
+              questComplete: kings_rescue_danny
+              next: rescued
+            - id: ask_eddie_interest
+              label: "What does Eddie want with Kings documents?"
+              response: "I don't know, man. He kept asking about Kings operations — who runs what, where our stashes are. I didn't tell him nothing. But he's patient. That's what scares me."
+        - id: satchel_found
+          text: "*Danny exhales, relieved.* You found it? At the waystation? Must've dropped when they dragged me off the road. At least the documents are safe. But I'm still stuck here, so... little help?"
+          options:
+            - id: rescue_after_satchel
+              label: "Let's get you out of here."
+              questGate: { questId: kings_rescue_danny }
+              questComplete: kings_rescue_danny
+              next: rescued
+        - id: reassured
+          text: "*Danny takes a shaky breath and nods.* Okay. Okay, yeah. You seem like you know what you're doing. Just — please don't leave me here. Eddie's been talking about 'making an example' and I really don't want to find out what that means."
+          options:
+            - id: rescue_after_reassure
+              label: "Nobody's making an example of anyone. Let's move."
+              questGate: { questId: kings_rescue_danny }
+              questComplete: kings_rescue_danny
+              next: rescued
+        - id: guard_info
+          text: "*Danny blinks, then focuses.* Uh — one guard, usually. Chains. Big guy, mean as hell. He checks on me every couple hours but he gets bored and wanders off to the fire. Right now he's... *Danny glances around.* ...not here. This is your window."
+          options:
+            - id: rescue_after_intel
+              label: "Good. We're leaving now."
+              questGate: { questId: kings_rescue_danny }
+              questComplete: kings_rescue_danny
+              next: rescued
+        - id: danny_cha_rude
+          text: "*Danny winces.* Yeah, thanks for that. Really helpful. You know, when you're tied up in a Powder Ganger camp, what you really need is someone to remind you how badly you screwed up. Are you here to help or just to make me feel worse?"
+          options:
+            - id: rescue_after_rude
+              label: "Relax, I'm getting you out."
+              questGate: { questId: kings_rescue_danny }
+              questComplete: kings_rescue_danny
+              next: rescued
+        - id: danny_int_dumb
+          text: "*Danny stares at you.* I'm... tied up. I'm a prisoner. The Powder Gangers kidnapped me. I am tied to this wall. *He lifts his bound wrists.* See? Rope? Bad guys? ...Are you okay?"
+          options:
+            - id: rescue_after_dumb
+              label: "Oh! Bad guys! I'll untie you!"
+              questGate: { questId: kings_rescue_danny }
+              questComplete: kings_rescue_danny
+              next: rescued
+
 loot:
   - id: prison_manifest
     label: "NCRCF Prison Manifest"
@@ -662,3 +757,4 @@ loot:
     y: 5
 questHooks:
   - danger_in_the_hollow
+  - kings_rescue_danny

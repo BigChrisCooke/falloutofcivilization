@@ -167,6 +167,7 @@ export interface GameState {
       name: string;
       disposition: string;
       factionId?: string;
+      interactRange?: number;
       dialogue?: {
         rootNodeId: string;
         nodes: Array<{

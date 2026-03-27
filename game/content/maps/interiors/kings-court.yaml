@@ -101,8 +101,15 @@ npcs:
         - id: danny_safe_greeting
           text: "*The King rises from his throne and spreads his arms wide.* There they are! The hero of the hour. Danny's back safe and sound, and the Kings owe you — big time. You've got a standing invitation in the Court. What can I do for you?"
           options:
+            - id: danny_returned_complete
+              label: "Glad Danny's safe. That's what matters."
+              questGrant: kings_danny_returned
+              questComplete: kings_danny_returned
+              response: "*The King nods firmly.* It is. And it's because of you. The Kings don't forget a debt like that. You need anything in this valley — anything — you come to me first."
             - id: post_ask_danny
               label: "How's Danny holding up?"
+              questGrant: kings_danny_returned
+              questComplete: kings_danny_returned
               response: "Shaken up, but alive. Pacer's been hovering over him like a mother deathclaw. The boy's got stories to tell now — and the Kings love a good story. You gave him a chance to tell them."
             - id: post_ask_kings
               label: "How are the Kings holding up?"
@@ -383,3 +390,5 @@ loot:
     y: 3
 questHooks:
   - kings_missing_courier
+  - kings_rescue_danny
+  - kings_danny_returned

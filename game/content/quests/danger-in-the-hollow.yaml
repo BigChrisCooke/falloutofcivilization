@@ -9,13 +9,13 @@ objectives:
     target: dynamite_stash
     locationId: bitter_cave
   - id: deal_with_gangers
-    description: "Return the dynamite to the Powder Gangers and convince them Kell is dead."
+    description: "Return the dynamite to Boss Eddie and settle the score."
     type: talk
-    target: powder_ganger
+    target: boss_eddie
     locationId: powder_ganger_camp
 rewards:
   karma: 5
   caps: 30
 mapMarker:
-  locationId: dusty_tavern
-  label: "Talk to Boxcars"
+  locationId: powder_ganger_camp
+  label: "Return dynamite to Boss Eddie"

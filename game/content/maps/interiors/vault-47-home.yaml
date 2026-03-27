@@ -71,11 +71,16 @@ npcs:
               next: doc_mitchell_accepted
             - id: post_ask_status_v1
               label: "How are the vault systems doing?"
-              questGrant: vault_47_repairs_pending
+              questGate: { questId: vault_47_repairs_pending }
+              questComplete: vault_47_repairs_pending
+              response: "Better than they've been in years. That repair kit you found bought us real time. I'm working on a more permanent fix, but for now — we're alive. That's what matters."
+            - id: post_grant_repairs
+              label: "How are the vault systems doing?"
               response: "I'm still working on it. These things take time — fusion cells don't repair themselves. Come back later and I should have an update for you."
+              questGrant: vault_47_repairs_pending
             - id: post_ask_outside_v1
               label: "Any news from outside?"
-              response: "Radio chatter's been picking up. Sounds like the valley is getting busier — more factions moving in, more tension. Be careful out there. But you already know that."
+              next: radio_chatter
             - id: post_ask_advice_v1
               label: "Any advice for what I should do next?"
               response: "Explore. Help people. Make allies — you'll need them. The Dusty Spur Tavern is a good place to pick up work. And keep an eye on the notice boards around the valley."
@@ -88,14 +93,43 @@ npcs:
               next: doc_mitchell_accepted
             - id: post_ask_status_v2
               label: "How are the vault systems doing?"
-              questComplete: vault_47_repairs_pending
-              response: "Better than they've been in years. That repair kit you found bought us real time. I'm working on a more permanent fix, but for now — we're alive. That's what matters."
+              response: "Running smooth. The permanent fix is holding and the recycler hasn't hiccupped since. We're in good shape — thanks to you."
             - id: post_ask_outside_v2
               label: "Any news from outside?"
-              response: "Radio chatter's been picking up. Sounds like the valley is getting busier — more factions moving in, more tension. Be careful out there. But you already know that."
+              next: radio_chatter
             - id: post_ask_advice_v2
               label: "Any advice for what I should do next?"
               response: "Explore. Help people. Make allies — you'll need them. The Dusty Spur Tavern is a good place to pick up work. And keep an eye on the notice boards around the valley."
+        - id: radio_chatter
+          text: "The radio's been picking up all kinds of chatter lately. Let me think... *Hale tilts her head, listening to the faint static from the console behind her.*"
+          options:
+            - id: suggest_raider_problem
+              label: "What about the NCR frequency?"
+              questGrant: ncr_raider_problem
+              response: "NCR's been broadcasting about raider trouble near their outpost. Corporal Hayes — he's at NCR Outpost Alpha — sounds desperate for help. If you're looking to make friends with the Republic, that's your opening."
+            - id: suggest_brotherhood_tech
+              label: "Anything from the Brotherhood?"
+              questGrant: brotherhood_lost_tech
+              response: "There's a Brotherhood signal — encrypted, but I caught enough. They're looking for lost technology. A Scribe named Ibsen at their bunker might have details. Be careful though — the Brotherhood doesn't trust outsiders easily."
+            - id: suggest_water_valley
+              label: "Any distress signals?"
+              questGrant: water_for_the_valley
+              response: "The water purification plant's been sending automated distress pings. Engineer Torres is trying to keep it running, but she needs parts. If that plant goes down, the whole valley suffers."
+            - id: suggest_signal_dark
+              label: "What about that strange signal on the ridge?"
+              questGrant: signal_in_the_dark
+              response: "There's something broadcasting from the radio tower on the ridge — not NCR, not Brotherhood, not anything I recognize. Someone's up there. Might be worth investigating, but watch yourself."
+            - id: suggest_ranger_bounty
+              label: "Heard anything from the Rangers?"
+              questGrant: ranger_bounty
+              response: "Ranger Station Delta's been putting out bounty notices. Ranger Jackson runs the station — sounds like they could use someone capable. Rangers pay fair and they remember their friends."
+            - id: suggest_kings_courier
+              label: "Any faction chatter from Freeside?"
+              questGrant: kings_missing_courier
+              response: "The Kings have been broadcasting on an open channel — unusual for them. Something about a missing courier. Their leader holds court at the Kings Court if you want to look into it."
+            - id: radio_nothing_new
+              label: "Never mind."
+              response: "Well, keep your ears open out there. The wasteland always has something that needs doing."
         - id: greeting
           text: "Ah, you're awake. I dragged you inside when you crawled up to the vault door, you were barely conscious. I thought you were a gonner. I'm Overseer Hale — or what's left of the title. There's a tavern down the road — the Dusty Spur. A man they call Doc Mitchell has medical know-how. You should get your head checked before anything else. Tap on objects and people to interact with them — like you just did with me."
           options:

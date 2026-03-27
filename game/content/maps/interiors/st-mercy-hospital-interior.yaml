@@ -64,7 +64,41 @@ npcs:
     y: 2
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
       nodes:
+        - id: return_greeting
+          text: "Back again? No new injuries, I hope. *Doc Sawyer sets down a worn medical text and gives you a warm, familiar look.* Good to see you in one piece. The wasteland doesn't usually let people visit twice. What can I do for you?"
+          options:
+            - id: ask_doctor
+              label: "You're a real doctor? Out here?"
+              next: about_doctor
+            - id: ask_supplies
+              label: "How's the medical supply situation?"
+              next: supply_info
+            - id: ask_hospital
+              label: "What's the story with this hospital?"
+              next: hospital_info
+            - id: int_surgery
+              label: "That operating table — you've been performing actual surgeries? With what anesthetic protocol?"
+              specialGate: { stat: int, min: 7 }
+              next: surgery_talk
+            - id: cha_heal
+              label: "Doc, I've been through the wringer. Any chance you could patch me up? I'd owe you one."
+              specialGate: { stat: cha, min: 7 }
+              next: free_healing
+            - id: ask_trade
+              label: "I might have some things to trade for medical supplies."
+              next: trade_info
+            - id: cha_rude_sawyer
+              label: "Great, another quack playing doctor in a ruin. You got anything actually useful or just speeches?"
+              specialGate: { stat: cha, max: 3 }
+              next: sawyer_cha_rude_response
+            - id: int_dumb_sawyer
+              label: "You a doctor? Can you fix my think-muscle? Sometimes it doesn't think good."
+              specialGate: { stat: int, max: 3 }
+              next: sawyer_int_dumb_response
         - id: greeting
           text: "Well now, a visitor. Welcome to St. Mercy — or what's left of it. I'm Doc Sawyer. If you're hurt, you came to the right place. If you're here to scavenge, I'd appreciate you not taking the things I need to keep people alive."
           options:
