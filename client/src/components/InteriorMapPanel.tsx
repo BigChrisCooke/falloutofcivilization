@@ -17,10 +17,11 @@ interface InteriorMapPanelProps {
   onMove: (x: number, y: number) => Promise<boolean>;
   onExit: (exitId: string) => void;
   onStateRefresh: (state: GameState) => void;
+  onQuestGranted?: (questId: string) => void;
 }
 
 
-export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefresh }: InteriorMapPanelProps) {
+export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefresh, onQuestGranted }: InteriorMapPanelProps) {
   const map = state.currentInteriorMap;
 
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
@@ -222,6 +223,7 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
               setQuestToast(text);
               setTimeout(() => setQuestToast(null), 4000);
             }}
+            onQuestGranted={onQuestGranted}
           />
         )}
 

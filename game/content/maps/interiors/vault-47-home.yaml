@@ -182,7 +182,7 @@ npcs:
               label: "Is there anything I can do to help?"
               next: vault_help
         - id: vault_systems
-          text: "Power core is down to 23%. Water recycler works but the filters need replacing. Air filtration is holding, barely. If we don't find parts, this vault becomes a tomb in about six months. Check your Pip-Boy for details — tap the Pip-Boy button at the top of the screen to open it."
+          text: "Power core is down to 23%. Water recycler works but the filters need replacing. Air filtration is holding, barely. If we don't find parts, this vault becomes a tomb in about six months. Check your Pip-Boy for details — tap the Pip-Boy button at the bottom of your screen to open it."
           options:
             - id: int_tech
               label: "Fusion cell degradation at 23% means we have about 4-5 months before cascade failure. What's the priority?"
@@ -281,7 +281,7 @@ npcs:
               questGrant: save_vault_47
               next: quest_accepted_dumb
         - id: doc_mitchell_accepted
-          text: "Good idea. Head south once you're outside — follow the road to the Dusty Spur Tavern. Doc Mitchell has medical know-how. Get your head checked before anything else. Grab anything useful from the stash before you go."
+          text: "Good idea. Head south once you're outside — follow the road to the Dusty Spur Tavern. Doc Mitchell has medical know-how. Get your head checked before anything else. Have you checked out your Pip-Boy yet? That'll help you around the wasteland — tap the Pip-Boy button at the bottom of your screen to see your quests and map. Grab anything useful from the stash before you go."
           options:
             - id: doc_mitchell_on_it
               label: "I'm on it. I'll be back."

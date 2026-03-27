@@ -1222,6 +1222,11 @@ h2 {
   border: 1px solid rgba(100, 255, 140, 0.6);
 }
 
+.minimap-cell.is-current-location {
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
 .minimap-cell.has-quest-marker {
   background: #f0c040 !important;
   box-shadow: 0 0 4px rgba(240, 192, 64, 0.7);
@@ -1253,11 +1258,51 @@ h2 {
 }
 
 .minimap-legend {
+  margin-top: 0.5rem;
+}
+
+.map-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.map-key-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: rgba(100, 255, 140, 0.6);
+}
+
+.map-key-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+}
+
+.map-key-player {
+  background: #64ff8c;
+  box-shadow: 0 0 3px #64ff8c;
+}
+
+.map-key-current-location {
+  background: transparent;
+  border: 2px solid #ffffff;
+}
+
+.map-key-quest {
+  background: #f0c040;
+  box-shadow: 0 0 3px rgba(240, 192, 64, 0.5);
+}
+
+.map-key-counts {
   display: flex;
   justify-content: space-between;
-  font-size: 0.72rem;
-  color: rgba(100, 255, 140, 0.4);
-  margin-top: 0.5rem;
+  font-size: 0.68rem;
+  color: rgba(100, 255, 140, 0.3);
 }
 
 .location-entry {
@@ -1289,6 +1334,15 @@ h2 {
 
 .location-entry.is-selected .location-name {
   color: #f0c040;
+}
+
+.location-entry.is-current {
+  border-left: 3px solid #ffffff;
+  padding-left: 0.5rem;
+}
+
+.location-entry.is-current .location-name {
+  color: #ffffff;
 }
 
 /* XP bar */

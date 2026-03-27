@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-03-27
+[IMPROVEMENT] First accepted quest auto-selects in Pip-Boy, highlighting its map marker immediately
+[IMPROVEMENT] Pip-Boy map tab now shows a color-coded legend (You, Current Location, Quest Location)
+[IMPROVEMENT] Current location on Pip-Boy minimap uses white outline instead of yellow to distinguish from selected/quest locations
+[IMPROVEMENT] Overseer Hale and Doc Mitchell mention the Pip-Boy in dialogue as a tutorial hint
+[FIX] Dialogue option double-click no longer accidentally selects the next prompt (400ms cooldown after new options appear)
+[FIX] Overseer Hale's vault systems dialogue now correctly says "bottom of your screen" for Pip-Boy button location
+
 ## [0.6.0] - 2026-03-26
 [FEATURE] Faction reputation dialogue — NPCs with `factionMin` conditional roots show friendlier greetings when the player has high faction standing
 [FEATURE] Return visit dialogue — NPCs with `hasTalked` conditional roots greet the player differently after the first conversation (11 NPCs across 8 interiors)

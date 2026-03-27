@@ -303,10 +303,11 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                             const isQuestTarget = questMarkerPositions.has(key);
                             const isSelectedObjective = selectedQuestKey === key;
                             const isHighlightedLocation = highlightedLocationId && location?.id === highlightedLocationId;
+                            const isCurrentLocation = isPlayer && !!location;
                             return (
                               <div
                                 key={key}
-                                className={`minimap-cell${discovered ? ` tile-${tile}` : " tile-fog"}${isPlayer ? " is-player" : ""}${location ? " has-location" : ""}${isQuestTarget ? " has-quest-marker" : ""}${isSelectedObjective ? " is-selected-objective" : ""}${isHighlightedLocation ? " is-highlighted-location" : ""}`}
+                                className={`minimap-cell${discovered ? ` tile-${tile}` : " tile-fog"}${isPlayer ? " is-player" : ""}${location ? " has-location" : ""}${isQuestTarget ? " has-quest-marker" : ""}${isSelectedObjective ? " is-selected-objective" : ""}${isHighlightedLocation ? " is-highlighted-location" : ""}${isCurrentLocation ? " is-current-location" : ""}`}
                                 title={discovered ? (location ? location.name : tile) : "???"}
                               />
                             );
@@ -316,20 +317,40 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                     );
                   })()}
                   <div className="minimap-legend">
-                    <span>{state.mapDiscovery.discoveredTileKeys.length} tiles discovered</span>
-                    <span>{state.mapDiscovery.discoveredLocationIds.length} locations found</span>
+                    <div className="map-key">
+                      <div className="map-key-entry">
+                        <span className="map-key-swatch map-key-player" />
+                        <span>You</span>
+                      </div>
+                      <div className="map-key-entry">
+                        <span className="map-key-swatch map-key-current-location" />
+                        <span>Current Location</span>
+                      </div>
+                      <div className="map-key-entry">
+                        <span className="map-key-swatch map-key-quest" />
+                        <span>Quest Location</span>
+                      </div>
+                    </div>
+                    <div className="map-key-counts">
+                      <span>{state.mapDiscovery.discoveredTileKeys.length} tiles</span>
+                      <span>{state.mapDiscovery.discoveredLocationIds.length} locations</span>
+                    </div>
                   </div>
                 </>
               ) : (
                 <p className="subtle">No map data available.</p>
               )}
-              {state.locations.filter((l) => l.discovered).length > 0 && (
+              {state.locations.filter((l) => l.discovered).length > 0 && (() => {
+                const playerLocationId = state.locations.find(
+                  (l) => l.discovered && l.position.x === state.worldState.player_x && l.position.y === state.worldState.player_y
+                )?.id ?? null;
+                return (
                 <div className="pipboy-section">
                   <h3>Known Locations</h3>
                   {state.locations.filter((l) => l.discovered).map((loc) => (
                     <div
                       key={loc.id}
-                      className={`location-entry clickable${highlightedLocationId === loc.id ? " is-selected" : ""}`}
+                      className={`location-entry clickable${highlightedLocationId === loc.id ? " is-selected" : ""}${loc.id === playerLocationId ? " is-current" : ""}`}
                       onClick={() => onHighlightLocation(highlightedLocationId === loc.id ? null : loc.id)}
                     >
                       <span className="location-name">{loc.name}</span>
@@ -337,7 +358,8 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                     </div>
                   ))}
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
 

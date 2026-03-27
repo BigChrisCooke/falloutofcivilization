@@ -188,7 +188,7 @@ npcs:
               specialGate: { stat: int, max: 3 }
               response: "...Right. Well, at least you're enthusiastic. Just try not to eat anything that glows, alright?"
         - id: where_am_i
-          text: "The Dusty Spur Tavern, Frontier Valley. Last watering hole before the badlands. Talk to Mina if you want the full picture — she knows more than the rest of us put together."
+          text: "The Dusty Spur Tavern, Frontier Valley. Last watering hole before the badlands. Have you checked out your Pip-Boy yet? That'll help you around the wasteland — shows your quests and the local map. Talk to Mina if you want the full picture — she knows more than the rest of us put together."
           options:
             - id: cha_thanks
               label: "You've been incredibly kind. I won't forget this."

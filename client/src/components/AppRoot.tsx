@@ -75,6 +75,10 @@ export function AppRoot() {
     commitGameState(() => newState);
   }, [commitGameState]);
 
+  const handleQuestGranted = useCallback((questId: string) => {
+    setSelectedQuestId((current) => current ?? questId);
+  }, []);
+
   const patchGameState = useCallback((patch: GameStatePatch) => {
     commitGameState((previousState) => (previousState ? applyGameStatePatch(previousState, patch) : previousState));
   }, [commitGameState]);
@@ -474,6 +478,7 @@ export function AppRoot() {
               onMove={(x, y) => handleInteriorMove(x, y)}
               onExit={(exitId) => void handleInteriorExit(exitId)}
               onStateRefresh={(newState) => updateGameState(newState)}
+              onQuestGranted={handleQuestGranted}
             />
           ) : gameState.worldState.current_screen === "vault" && gameState.currentInteriorMap ? (
             <InteriorMapPanel
@@ -482,6 +487,7 @@ export function AppRoot() {
               onMove={(x, y) => handleInteriorMove(x, y)}
               onExit={(exitId) => void handleInteriorExit(exitId)}
               onStateRefresh={(newState) => updateGameState(newState)}
+              onQuestGranted={handleQuestGranted}
             />
           ) : (
             <div style={{ position: "relative" }}>

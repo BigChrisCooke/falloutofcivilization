@@ -2,7 +2,9 @@
 # Add things in here that you're actively working on
 # Sometimes can be fleshed out and waiting for you to copy and paste to AI
 
-Resume to finish the below:
-1.) Paladin Ramos in the Brotherhood Bunker is still hostile to me in the dialogue, even after I've completed a quest for the Brotherhood faction, and have a good reputation with them. Make all NPCs dialogue options change after the first time you talk to them, and have their dialogue vary slightly based on your reputation with the faction they're a member of.
+1.) The first quest the player accepts should be auto highlighted as if the player clicked on it in in the pip-boy 3000 quest tab, this automatically highlights the next location, which makes it easier and clearer.
 
-2.) If I don't have any active quests, I should be able to ask the Vault Overseer Hale "Any news from the outside?" and she suggests where I might find a new unstarted quest based on radio chatter.
+2.) Whoever the player talks to first, (most likely The Overseer Hale, or Doc Mitchell) should ask the player in the Dialogue: "Have you checked out your pip boy yet? That will help you around the Wasteland!"
+3.) On the map tab in the pip boy, having selected location and current location, both yellow, is confusing. Change current location to just a white box outline, and selected location to THE CURRENT yellow/ ORANGE.
+
+4.) There should be a map key on the right of the PIP-BOY map tab, to explain what the different colors mean. Green = You, white outline of square = CURRENT LOCATION. Green square highlight outline= quest location

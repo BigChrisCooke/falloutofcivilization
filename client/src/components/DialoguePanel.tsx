@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { DialogueNode, DialogueSelectResult, GameState } from "../lib/api.js";
 import { getDialogueNode, resetDialogue, selectDialogueOption } from "../lib/api.js";
@@ -14,6 +14,7 @@ interface DialoguePanelProps {
   onOptionSelected?: (optionId: string) => void;
   onCompanionReaction?: (reaction: { companionId: string; reaction: string; departed: boolean }) => void;
   onQuestCompleted?: (text: string) => void;
+  onQuestGranted?: (questId: string) => void;
 }
 
 export function DialoguePanel({
@@ -26,7 +27,8 @@ export function DialoguePanel({
   onBeginCharCreation,
   onOptionSelected,
   onCompanionReaction,
-  onQuestCompleted
+  onQuestCompleted,
+  onQuestGranted
 }: DialoguePanelProps) {
   const [node, setNode] = useState<DialogueNode | null>(null);
   const [lastResponse, setLastResponse] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export function DialoguePanel({
   const [loading, setLoading] = useState(false);
   const [justSelectedId, setJustSelectedId] = useState<string | null>(null);
   const [questFlash, setQuestFlash] = useState(false);
+  const cooldownRef = useRef(false);
 
   const loadNode = useCallback(async () => {
     try {
@@ -50,7 +53,7 @@ export function DialoguePanel({
   }, [loadNode]);
 
   async function handleOptionClick(optionId: string) {
-    if (loading) {
+    if (loading || cooldownRef.current) {
       return;
     }
 
@@ -66,6 +69,8 @@ export function DialoguePanel({
         setLastResponse(null);
         setQuestNotification(null);
         setJustSelectedId(null);
+        cooldownRef.current = true;
+        setTimeout(() => { cooldownRef.current = false; }, 400);
       } catch {
         // Ignore
       }
@@ -81,6 +86,7 @@ export function DialoguePanel({
       if (result.questGranted) {
         setQuestNotification(`Quest added: ${result.questGranted.name}`);
         setTimeout(() => setQuestNotification(null), 4000);
+        onQuestGranted?.(result.questGranted.id);
       }
 
       if (result.questFailed) {
@@ -125,6 +131,8 @@ export function DialoguePanel({
       if (result.nextNode) {
         setNode(result.nextNode);
         setJustSelectedId(null);
+        cooldownRef.current = true;
+        setTimeout(() => { cooldownRef.current = false; }, 400);
       }
 
       onStateRefresh(newState);
