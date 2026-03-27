@@ -1222,22 +1222,9 @@ h2 {
   border: 1px solid rgba(100, 255, 140, 0.6);
 }
 
-.minimap-cell.is-current-location {
+.minimap-cell.has-quest-marker {
   border: 2px solid #ffffff !important;
   box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
-}
-
-.minimap-cell.has-quest-marker {
-  background: #f0c040 !important;
-  box-shadow: 0 0 4px rgba(240, 192, 64, 0.7);
-  border: 1px solid rgba(240, 192, 64, 0.9);
-}
-
-.minimap-cell.is-selected-objective {
-  background: #ff6040 !important;
-  box-shadow: 0 0 8px rgba(255, 96, 64, 0.9), 0 0 16px rgba(255, 96, 64, 0.4);
-  border: 2px solid #fff;
-  animation: pulse-objective 1.2s ease-in-out infinite;
 }
 
 .minimap-cell.is-highlighted-location {
@@ -1250,11 +1237,6 @@ h2 {
 @keyframes pulse-location {
   0%, 100% { box-shadow: 0 0 8px rgba(100, 255, 140, 0.9), 0 0 16px rgba(100, 255, 140, 0.4); }
   50% { box-shadow: 0 0 12px rgba(100, 255, 140, 1), 0 0 24px rgba(100, 255, 140, 0.6); }
-}
-
-@keyframes pulse-objective {
-  0%, 100% { box-shadow: 0 0 8px rgba(255, 96, 64, 0.9), 0 0 16px rgba(255, 96, 64, 0.4); }
-  50% { box-shadow: 0 0 12px rgba(255, 96, 64, 1), 0 0 24px rgba(255, 96, 64, 0.6); }
 }
 
 .minimap-legend {
@@ -1288,14 +1270,9 @@ h2 {
   box-shadow: 0 0 3px #64ff8c;
 }
 
-.map-key-current-location {
+.map-key-quest-objective {
   background: transparent;
   border: 2px solid #ffffff;
-}
-
-.map-key-quest {
-  background: #f0c040;
-  box-shadow: 0 0 3px rgba(240, 192, 64, 0.5);
 }
 
 .map-key-counts {

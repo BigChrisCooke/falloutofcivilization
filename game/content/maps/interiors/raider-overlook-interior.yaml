@@ -56,9 +56,20 @@ npcs:
     dialogue:
       rootNodeId: greeting
       conditionalRoots:
+        - questCompleted: ranger_bounty
+          nodeId: post_quest_greeting
         - hasTalked: true
           nodeId: return_greeting
       nodes:
+        - id: post_quest_greeting
+          text: "*Gristle barely glances up.* It's done. My crew's scattered, the rangers got what they wanted, and I'm still here cleaning up the mess. There's nothing left to talk about."
+          options:
+            - id: pq_check_in
+              label: "How are you holding up?"
+              response: "*Gristle shrugs.* Breathing. That's more than most people expected. Go on — you've got your own problems to deal with."
+            - id: pq_leave
+              label: "Take care, Gristle."
+              response: "Yeah. You too. ...Don't make me regret this."
         - id: return_greeting
           text: "*Gristle's hand drops to his sidearm the moment he sees you, then he relaxes — barely.* You've got nerve showing up here again. Most people who leave my camp don't come back on purpose. What is it this time?"
           options:

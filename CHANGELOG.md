@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-03-28
+[IMPROVEMENT] Pip-Boy minimap uses white outline for active quest objective locations instead of yellow fill; map key simplified to "You" + "Quest Objective"
+[IMPROVEMENT] Gristle at Raider Overlook now has post-quest dialogue after ranger bounty completion instead of repeating pre-quest confrontation options
+
 ## [0.7.0] - 2026-03-28
 [FEATURE] `noActiveQuestsGate` dialogue option field — hides options when the player already has active quests (with configurable exclusions)
 [IMPROVEMENT] Overseer Hale's radio chatter now drip-feeds one quest at a time instead of offering all six at once

@@ -269,10 +269,6 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                 <>
                   <h3>{state.overworldMap.name}</h3>
                   {(() => {
-                    const selectedQuest = selectedQuestId
-                      ? quests.definitions.find((q) => q.id === selectedQuestId)
-                      : null;
-                    const selectedQuestMarkerLocId = selectedQuest?.activeMapMarker?.locationId ?? null;
                     const questMarkerLocIds = new Set(
                       quests.definitions
                         .filter((q) => quests.active.includes(q.id) && q.activeMapMarker)
@@ -283,12 +279,6 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                         .filter((l) => l.discovered && questMarkerLocIds.has(l.id))
                         .map((l) => `${l.position.x},${l.position.y}`)
                     );
-                    const selectedQuestPosition = selectedQuestMarkerLocId
-                      ? state.locations.find((l) => l.id === selectedQuestMarkerLocId && l.discovered)
-                      : null;
-                    const selectedQuestKey = selectedQuestPosition
-                      ? `${selectedQuestPosition.position.x},${selectedQuestPosition.position.y}`
-                      : null;
 
                     return (
                       <div className="minimap-grid" style={{
@@ -301,13 +291,11 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                             const isPlayer = state.worldState.player_x === x && state.worldState.player_y === y;
                             const location = state.locations.find((l) => l.position.x === x && l.position.y === y && l.discovered);
                             const isQuestTarget = questMarkerPositions.has(key);
-                            const isSelectedObjective = selectedQuestKey === key;
                             const isHighlightedLocation = highlightedLocationId && location?.id === highlightedLocationId;
-                            const isCurrentLocation = isPlayer && !!location;
                             return (
                               <div
                                 key={key}
-                                className={`minimap-cell${discovered ? ` tile-${tile}` : " tile-fog"}${isPlayer ? " is-player" : ""}${location ? " has-location" : ""}${isQuestTarget ? " has-quest-marker" : ""}${isSelectedObjective ? " is-selected-objective" : ""}${isHighlightedLocation ? " is-highlighted-location" : ""}${isCurrentLocation ? " is-current-location" : ""}`}
+                                className={`minimap-cell${discovered ? ` tile-${tile}` : " tile-fog"}${isPlayer ? " is-player" : ""}${location ? " has-location" : ""}${isQuestTarget ? " has-quest-marker" : ""}${isHighlightedLocation ? " is-highlighted-location" : ""}`}
                                 title={discovered ? (location ? location.name : tile) : "???"}
                               />
                             );
@@ -323,12 +311,8 @@ export function PipBoyOverlay({ state, onClose, selectedQuestId, onSelectQuest, 
                         <span>You</span>
                       </div>
                       <div className="map-key-entry">
-                        <span className="map-key-swatch map-key-current-location" />
-                        <span>Current Location</span>
-                      </div>
-                      <div className="map-key-entry">
-                        <span className="map-key-swatch map-key-quest" />
-                        <span>Quest Location</span>
+                        <span className="map-key-swatch map-key-quest-objective" />
+                        <span>Quest Objective</span>
                       </div>
                     </div>
                     <div className="map-key-counts">
