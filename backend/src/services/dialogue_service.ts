@@ -102,6 +102,21 @@ const STAT_DISPLAY_NAMES: Record<string, string> = {
   lck: "Luck"
 };
 
+const REPEAT_QUIPS = [
+  "Are you ok? This conversation is starting to get repetitive.",
+  "You're starting to sound like an NPC...",
+  "Didn't we just talk about this? You hit your head again?",
+  "I feel like I've said this before. Because I have. Just now.",
+  "You sure you're feeling alright? You keep asking the same thing.",
+  "Déjà vu. Must be a glitch in the Pip-Boy.",
+  "*sighs* Yes. Same answer as last time.",
+  "I'm starting to think you're testing me. The answer hasn't changed.",
+];
+
+function getRepeatQuip(): string {
+  return REPEAT_QUIPS[Math.floor(Math.random() * REPEAT_QUIPS.length)] ?? REPEAT_QUIPS[0]!;
+}
+
 export class DialogueService {
   private readonly saveRepo = new SaveRepo();
   private readonly gameStateRepo = new GameStateRepo();
@@ -190,7 +205,7 @@ export class DialogueService {
       }
 
       const result: DialogueSelectResult = {
-        response: option.response ?? null,
+        response: wasAlreadySelected && option.response ? getRepeatQuip() : (option.response ?? null),
         nextNode: null,
         questGranted: null,
         questCompleted: null,
@@ -537,6 +552,20 @@ export class DialogueService {
     return activeQuests.includes(option.questGate.questId) || completedQuests.includes(option.questGate.questId);
   }
 
+  private async passesNoActiveQuestsGate(option: DialogueOption, saveId: string): Promise<boolean> {
+    if (!option.noActiveQuestsGate) {
+      return true;
+    }
+
+    const questState = await this.gameStateRepo.getQuestState(saveId);
+    if (!questState) return true;
+
+    const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
+    const exclude = new Set(option.noActiveQuestsGate.exclude ?? []);
+    const meaningful = activeQuests.filter((q) => !exclude.has(q));
+    return meaningful.length === 0;
+  }
+
   private async passesQuestGrantFilter(option: DialogueOption, saveId: string): Promise<boolean> {
     if (!option.questGrant) {
       return true;
@@ -588,11 +617,25 @@ export class DialogueService {
         continue;
       }
 
+      if (saveId && !(await this.passesNoActiveQuestsGate(option, saveId))) {
+        continue;
+      }
+
       const capsCost = option.capsCost ?? null;
       let canAfford = true;
       if (capsCost !== null && saveId) {
         const capsItem = await this.inventoryRepo.findItem(saveId, "caps");
         canAfford = (capsItem?.quantity ?? 0) >= capsCost;
+      }
+
+      const isAlreadySelected = selectedOptionIds.includes(option.id);
+      const hasOneTimeEffect = option.questGrant || option.questComplete || option.questFail
+        || option.karmaDelta || option.factionDelta
+        || (option.grantItems && !option.capsCost)
+        || option.consumeItem || option.companionRecruit;
+
+      if (isAlreadySelected && hasOneTimeEffect) {
+        continue;
       }
 
       filteredOptions.push({
@@ -604,7 +647,7 @@ export class DialogueService {
         grantsQuest: option.questGrant ?? null,
         failsQuest: option.questFail ?? null,
         returnToRoot: option.returnToRoot ?? false,
-        alreadySelected: selectedOptionIds.includes(option.id),
+        alreadySelected: isAlreadySelected,
         capsCost,
         canAfford
       });

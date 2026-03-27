@@ -106,26 +106,38 @@ npcs:
             - id: suggest_raider_problem
               label: "What about the NCR frequency?"
               questGrant: ncr_raider_problem
+              noActiveQuestsGate:
+                exclude: [vault_47_repairs_pending]
               response: "NCR's been broadcasting about raider trouble near their outpost. Corporal Hayes — he's at NCR Outpost Alpha — sounds desperate for help. If you're looking to make friends with the Republic, that's your opening."
             - id: suggest_brotherhood_tech
               label: "Anything from the Brotherhood?"
               questGrant: brotherhood_lost_tech
+              noActiveQuestsGate:
+                exclude: [vault_47_repairs_pending]
               response: "There's a Brotherhood signal — encrypted, but I caught enough. They're looking for lost technology. A Scribe named Ibsen at their bunker might have details. Be careful though — the Brotherhood doesn't trust outsiders easily."
             - id: suggest_water_valley
               label: "Any distress signals?"
               questGrant: water_for_the_valley
+              noActiveQuestsGate:
+                exclude: [vault_47_repairs_pending]
               response: "The water purification plant's been sending automated distress pings. Engineer Torres is trying to keep it running, but she needs parts. If that plant goes down, the whole valley suffers."
             - id: suggest_signal_dark
               label: "What about that strange signal on the ridge?"
               questGrant: signal_in_the_dark
+              noActiveQuestsGate:
+                exclude: [vault_47_repairs_pending]
               response: "There's something broadcasting from the radio tower on the ridge — not NCR, not Brotherhood, not anything I recognize. Someone's up there. Might be worth investigating, but watch yourself."
             - id: suggest_ranger_bounty
               label: "Heard anything from the Rangers?"
               questGrant: ranger_bounty
+              noActiveQuestsGate:
+                exclude: [vault_47_repairs_pending]
               response: "Ranger Station Delta's been putting out bounty notices. Ranger Jackson runs the station — sounds like they could use someone capable. Rangers pay fair and they remember their friends."
             - id: suggest_kings_courier
               label: "Any faction chatter from Freeside?"
               questGrant: kings_missing_courier
+              noActiveQuestsGate:
+                exclude: [vault_47_repairs_pending]
               response: "The Kings have been broadcasting on an open channel — unusual for them. Something about a missing courier. Their leader holds court at the Kings Court if you want to look into it."
             - id: radio_nothing_new
               label: "Never mind."

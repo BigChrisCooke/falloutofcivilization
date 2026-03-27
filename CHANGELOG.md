@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-28
+[FEATURE] `noActiveQuestsGate` dialogue option field — hides options when the player already has active quests (with configurable exclusions)
+[IMPROVEMENT] Overseer Hale's radio chatter now drip-feeds one quest at a time instead of offering all six at once
+[IMPROVEMENT] One-time dialogue options (item grants, quest grants, karma/faction changes) hidden after use instead of greyed out
+[IMPROVEMENT] NPCs give random 4th-wall quips when players re-click already-selected conversational options
+
 ## [0.6.1] - 2026-03-27
 [IMPROVEMENT] First accepted quest auto-selects in Pip-Boy, highlighting its map marker immediately
 [IMPROVEMENT] Pip-Boy map tab now shows a color-coded legend (You, Current Location, Quest Location)
