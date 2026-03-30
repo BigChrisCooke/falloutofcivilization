@@ -1,6 +1,6 @@
 id: radio_tower
 name: Radio Tower Bravo
-type: landmark
+type: radio_tower
 regionId: frontier_valley
 position:
   x: 32

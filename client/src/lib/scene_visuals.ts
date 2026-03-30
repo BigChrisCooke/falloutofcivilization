@@ -1,4 +1,4 @@
-import { Container, Graphics } from "pixi.js";
+import { Assets, Container, Graphics, Sprite, Texture } from "pixi.js";
 
 import type { IsoMetrics } from "./iso.js";
 
@@ -38,7 +38,13 @@ export const LOCATION_MARKERS: Record<string, MarkerVisual> = {
   vault: { fillColor: 0x9ed8ff, accentColor: 0x1b2731 },
   tavern: { fillColor: 0xffc576, accentColor: 0x402410 },
   cave: { fillColor: 0xc5b69e, accentColor: 0x261d17 },
-  landmark: { fillColor: 0xf0a4a4, accentColor: 0x311a1a }
+  landmark: { fillColor: 0xf0a4a4, accentColor: 0x311a1a },
+  dry_lake_bed: { fillColor: 0xf0a4a4, accentColor: 0x311a1a },
+  radio_tower: { fillColor: 0xf0a4a4, accentColor: 0x311a1a },
+  solar_spire: { fillColor: 0xf0a4a4, accentColor: 0x311a1a },
+  abandoned_gas_station: { fillColor: 0xd4a882, accentColor: 0x2a1c12 },
+  prewar_hospital: { fillColor: 0xd4a882, accentColor: 0x2a1c12 },
+  ruined_suburb: { fillColor: 0xd4a882, accentColor: 0x2a1c12 }
 };
 
 export const INTERIOR_TILE_VISUALS: Record<string, TileVisual> = {
@@ -283,6 +289,104 @@ export function createQuestMarker(): Container {
   marker.addChild(glow, pin, dot);
 
   return marker;
+}
+
+export const LOCATION_TILE_IMAGES: Record<string, string> = {
+  camp: "/tiles/western_indians.png",
+  facility: "/tiles/western_watertower.png",
+  faction_hq: "/tiles/western_sheriff.png",
+  market: "/tiles/western_station.png",
+  shop: "/tiles/western_general.png",
+  tavern: "/tiles/western_saloon.png"
+};
+
+export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
+  sand: [
+    "/tiles/sand_07.png", "/tiles/sand_12.png", "/tiles/sand_13.png",
+    "/tiles/sand_14.png", "/tiles/sand_15.png", "/tiles/sand_16.png",
+    "/tiles/sand_17.png", "/tiles/sand_18.png", "/tiles/sand_19.png"
+  ],
+  scrub: [
+    "/tiles/grass_05.png", "/tiles/grass_10.png", "/tiles/grass_11.png",
+    "/tiles/grass_12.png", "/tiles/grass_13.png", "/tiles/grass_14.png",
+    "/tiles/grass_15.png", "/tiles/grass_16.png", "/tiles/grass_17.png"
+  ],
+  road: [
+    "/tiles/stone_07.png", "/tiles/stone_12.png", "/tiles/stone_13.png",
+    "/tiles/stone_14.png", "/tiles/stone_15.png"
+  ],
+  rock: [
+    "/tiles/mars_07.png", "/tiles/mars_16.png", "/tiles/mars_17.png",
+    "/tiles/mars_18.png", "/tiles/mars_19.png"
+  ],
+  mesa: [
+    "/tiles/dirt_06.png", "/tiles/dirt_11.png", "/tiles/dirt_12.png",
+    "/tiles/dirt_13.png", "/tiles/dirt_14.png", "/tiles/dirt_15.png",
+    "/tiles/dirt_16.png", "/tiles/dirt_17.png", "/tiles/dirt_18.png"
+  ]
+};
+
+const loadedTileTextures = new Map<string, Texture>();
+const loadedTerrainTextures = new Map<string, Texture[]>();
+let tileTexturesLoaded = false;
+
+function hashTileKey(key: string): number {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = ((hash << 5) - hash + key.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+export async function preloadLocationTileImages(): Promise<void> {
+  const locationEntries = Object.entries(LOCATION_TILE_IMAGES);
+  for (const [type, path] of locationEntries) {
+    const texture = await Assets.load<Texture>(path);
+    loadedTileTextures.set(type, texture);
+  }
+
+  const terrainEntries = Object.entries(TERRAIN_TILE_IMAGES);
+  for (const [terrain, paths] of terrainEntries) {
+    const textures: Texture[] = [];
+    for (const path of paths) {
+      const texture = await Assets.load<Texture>(path);
+      textures.push(texture);
+    }
+    loadedTerrainTextures.set(terrain, textures);
+  }
+
+  tileTexturesLoaded = true;
+}
+
+export function hasLocationTileImage(type: string): boolean {
+  return type in LOCATION_TILE_IMAGES && tileTexturesLoaded && loadedTileTextures.has(type);
+}
+
+export function hasTerrainTileImage(terrain: string): boolean {
+  return tileTexturesLoaded && loadedTerrainTextures.has(terrain);
+}
+
+export function createLocationTileSprite(type: string, metrics: IsoMetrics): Sprite {
+  const texture = loadedTileTextures.get(type)!;
+  const sprite = new Sprite(texture);
+
+  sprite.anchor.set(0.5, 0.5);
+  sprite.width = metrics.tileWidth;
+  sprite.height = metrics.tileHeight;
+
+  return sprite;
+}
+
+export function createTerrainTileSprite(terrain: string, tileKey: string, metrics: IsoMetrics): Sprite {
+  const textures = loadedTerrainTextures.get(terrain)!;
+  const index = hashTileKey(tileKey) % textures.length;
+  const sprite = new Sprite(textures[index]);
+
+  sprite.anchor.set(0.5, 0.5);
+  sprite.width = metrics.tileWidth;
+  sprite.height = metrics.tileHeight;
+
+  return sprite;
 }
 
 export function createSceneMarker(fillColor: number, accentColor: number): Container {

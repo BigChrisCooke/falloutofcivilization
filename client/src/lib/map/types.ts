@@ -22,6 +22,7 @@ export interface OverworldTileNode {
   isReachable: boolean;
   zIndex: number;
   locationId: string | null;
+  locationType: string | null;
   enterableLocationId: string | null;
 }
 

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-03-30
+[FEATURE] Image-based overworld tiles — location hexes replaced with isometric building sprites (camp, tavern, shop, market, facility, faction HQ) with procedural fallback for unmapped types
+[FEATURE] Image-based terrain tiles — sand, scrub, road, rock, and mesa hexes use randomized sprite variants from tile image sets instead of procedural fills
+[IMPROVEMENT] Split `landmark` into 3 distinct location types (dry_lake_bed, radio_tower, solar_spire) and `ruin` into 3 (abandoned_gas_station, prewar_hospital, ruined_suburb) for individual tile art
+
 ## [0.7.1] - 2026-03-28
 [IMPROVEMENT] Pip-Boy minimap uses white outline for active quest objective locations instead of yellow fill; map key simplified to "You" + "Quest Objective"
 [IMPROVEMENT] Gristle at Raider Overlook now has post-quest dialogue after ranger bounty completion instead of repeating pre-quest confrontation options

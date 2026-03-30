@@ -1,6 +1,6 @@
 id: abandoned_gas_station
 name: Abandoned Gas Station
-type: ruin
+type: abandoned_gas_station
 regionId: frontier_valley
 position:
   x: 6

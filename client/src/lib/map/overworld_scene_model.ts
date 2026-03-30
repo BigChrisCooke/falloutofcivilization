@@ -66,6 +66,7 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
         isReachable: tileKey !== currentTileKey && discoveredTiles.has(tileKey),
         zIndex: getTileZIndex(point),
         locationId: primaryLocation?.id ?? null,
+        locationType: primaryLocation?.type ?? null,
         enterableLocationId:
           tileKey === currentTileKey && enterableLocation?.interiorMapId ? enterableLocation.id : null
       });

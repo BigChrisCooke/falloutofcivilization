@@ -1,6 +1,6 @@
 id: prewar_hospital
 name: St. Mercy General Hospital
-type: ruin
+type: prewar_hospital
 regionId: frontier_valley
 position:
   x: 18

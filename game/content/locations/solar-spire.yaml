@@ -1,6 +1,6 @@
 id: solar_spire
 name: Solar Spire
-type: landmark
+type: solar_spire
 regionId: frontier_valley
 position:
   x: 35

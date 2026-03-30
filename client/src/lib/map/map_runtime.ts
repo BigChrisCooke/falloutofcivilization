@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { Application, Container, Graphics, Rectangle } from "pixi.js";
+import { preloadLocationTileImages } from "../scene_visuals.js";
 
 import { getCenteredWorldPosition, toWorldPoint, type PointerPosition } from "./hex_geometry.js";
 import { observeMapViewport, type MapViewport } from "./map_viewport.js";
@@ -82,6 +83,8 @@ class RetainedMapRuntime<Scene extends RuntimeScene, Layers, RetainedNodes, Inte
       width: initialViewport.width,
       height: initialViewport.height
     });
+
+    await preloadLocationTileImages();
 
     this.app = nextApp;
     this.layers = this.adapter.createLayers();

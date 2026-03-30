@@ -1,7 +1,7 @@
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Sprite } from "pixi.js";
 
 import { OVERWORLD_ISO_METRICS } from "../iso.js";
-import { createCompanionToken, createCourierToken, createLocationMarker, createQuestMarker, drawHexSurface, TERRAIN_VISUALS } from "../scene_visuals.js";
+import { createCompanionToken, createCourierToken, createLocationMarker, createLocationTileSprite, createTerrainTileSprite, createQuestMarker, drawHexSurface, hasLocationTileImage, hasTerrainTileImage, TERRAIN_VISUALS } from "../scene_visuals.js";
 
 import { flattenPolygon } from "./hex_geometry.js";
 import type { OverworldLocationNode, OverworldQuestMarkerNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
@@ -15,7 +15,7 @@ export interface OverworldLayerContainers {
 }
 
 export interface OverworldRetainedNodes {
-  terrainByKey: Map<string, Graphics>;
+  terrainByKey: Map<string, Graphics | Sprite>;
   fogByKey: Map<string, Graphics>;
   feedbackByKey: Map<string, Graphics>;
   markerById: Map<string, Container>;
@@ -84,30 +84,64 @@ function syncTerrainLayer(
   }
 
   for (const tile of scene.tiles) {
-    let graphic = retainedNodes.terrainByKey.get(tile.key);
-
-    if (!graphic) {
-      graphic = new Graphics();
-      retainedNodes.terrainByKey.set(tile.key, graphic);
-      layers.terrain.addChild(graphic);
-      syncTerrainNode(graphic, tile);
-      continue;
-    }
-
+    const useLocationImage = tile.discovered && tile.locationType && hasLocationTileImage(tile.locationType);
+    const useTerrainImage = tile.discovered && !useLocationImage && hasTerrainTileImage(tile.terrain);
+    const useSprite = useLocationImage || useTerrainImage;
+    let existing = retainedNodes.terrainByKey.get(tile.key);
     const previousTile = previousTiles.get(tile.key);
 
-    if (
-      !previousTile ||
-      previousTile.terrain !== tile.terrain ||
-      previousTile.discovered !== tile.discovered ||
-      previousTile.projected.x !== tile.projected.x ||
-      previousTile.projected.y !== tile.projected.y
-    ) {
-      syncTerrainNode(graphic, tile);
+    // If the node type changed (sprite <-> graphics), destroy and recreate
+    const wasSprite = existing instanceof Sprite;
+    if (existing && wasSprite !== !!useSprite) {
+      layers.terrain.removeChild(existing);
+      existing.destroy();
+      retainedNodes.terrainByKey.delete(tile.key);
+      existing = undefined;
     }
 
-    graphic.position.set(tile.projected.x, tile.projected.y);
-    graphic.zIndex = tile.zIndex;
+    if (useLocationImage) {
+      if (!existing) {
+        const sprite = createLocationTileSprite(tile.locationType!, OVERWORLD_ISO_METRICS);
+        sprite.position.set(tile.projected.x, tile.projected.y);
+        sprite.zIndex = tile.zIndex;
+        retainedNodes.terrainByKey.set(tile.key, sprite);
+        layers.terrain.addChild(sprite);
+      } else {
+        existing.position.set(tile.projected.x, tile.projected.y);
+        existing.zIndex = tile.zIndex;
+      }
+    } else if (useTerrainImage) {
+      if (!existing) {
+        const sprite = createTerrainTileSprite(tile.terrain, tile.key, OVERWORLD_ISO_METRICS);
+        sprite.position.set(tile.projected.x, tile.projected.y);
+        sprite.zIndex = tile.zIndex;
+        retainedNodes.terrainByKey.set(tile.key, sprite);
+        layers.terrain.addChild(sprite);
+      } else {
+        existing.position.set(tile.projected.x, tile.projected.y);
+        existing.zIndex = tile.zIndex;
+      }
+    } else {
+      if (!existing) {
+        const graphic = new Graphics();
+        retainedNodes.terrainByKey.set(tile.key, graphic);
+        layers.terrain.addChild(graphic);
+        syncTerrainNode(graphic, tile);
+      } else if (
+        existing instanceof Graphics && (
+          !previousTile ||
+          previousTile.terrain !== tile.terrain ||
+          previousTile.discovered !== tile.discovered ||
+          previousTile.projected.x !== tile.projected.x ||
+          previousTile.projected.y !== tile.projected.y
+        )
+      ) {
+        syncTerrainNode(existing, tile);
+      } else {
+        existing.position.set(tile.projected.x, tile.projected.y);
+        existing.zIndex = tile.zIndex;
+      }
+    }
   }
 }
 
@@ -247,6 +281,17 @@ function syncPropLayer(
   }
 
   for (const location of scene.locations) {
+    // Skip procedural markers for locations that use tile images
+    if (hasLocationTileImage(location.type)) {
+      const existing = retainedNodes.markerById.get(location.id);
+      if (existing) {
+        layers.props.removeChild(existing);
+        existing.destroy({ children: true });
+        retainedNodes.markerById.delete(location.id);
+      }
+      continue;
+    }
+
     const previousLocation = previousLocations.get(location.id);
     let marker = retainedNodes.markerById.get(location.id);
 

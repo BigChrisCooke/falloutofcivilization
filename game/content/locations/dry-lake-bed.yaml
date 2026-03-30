@@ -1,6 +1,6 @@
 id: dry_lake_bed
 name: Dry Lake Bed
-type: landmark
+type: dry_lake_bed
 regionId: frontier_valley
 position:
   x: 8
