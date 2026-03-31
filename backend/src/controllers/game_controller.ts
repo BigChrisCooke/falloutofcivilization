@@ -319,6 +319,22 @@ export function createGameRouter(
     }
   });
 
+  router.post("/companion/help-goal", async (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = companionDialogueSchema.parse(request.body);
+      const result = await gameService.helpCompanionGoal(request.currentSaveId, payload.companionId);
+      response.json({ goalCompleted: result });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to help companion with goal.");
+      response.status(400).json({ error: message });
+    }
+  });
+
   router.post("/dialogue/node", async (request, response) => {
     if (!request.currentSaveId) {
       response.status(400).json({ error: "No active save loaded." });

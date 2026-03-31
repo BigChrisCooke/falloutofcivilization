@@ -94,6 +94,8 @@ export interface CompanionInstanceRow {
   departed: number;
   companion_x: number | null;
   companion_y: number | null;
+  active_goal_id: string | null;
+  goal_progress: string | null;
 }
 
 export interface AuthUser {

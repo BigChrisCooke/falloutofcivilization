@@ -230,6 +230,38 @@ export const interiorMapSchema = z.object({
   questHooks: z.array(z.string()).default([])
 });
 
+// --- Companion goal schema ---
+
+export const companionGoalOnCompleteSchema = z.object({
+  dialogueTreeId: z.string().min(1).optional(),
+  karmaDelta: z.number().int().optional(),
+  storyNote: z.string().min(1).optional()
+});
+
+export const companionGoalSchema = z.object({
+  id: z.string().min(1),
+  target: z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("tile_type"),
+      tileType: z.string().min(1)
+    }),
+    z.object({
+      type: z.literal("location_tile"),
+      locationId: z.string().min(1),
+      tileX: z.number().int(),
+      tileY: z.number().int()
+    })
+  ]),
+  triggerCondition: z.object({
+    storyStage: z.number().int().optional(),
+    karma: z.number().int().optional(),
+    locationId: z.string().min(1).optional()
+  }).default({}),
+  frequency: z.enum(["always", "once", "sometimes"]),
+  playerCanHelp: z.boolean().default(false),
+  onComplete: companionGoalOnCompleteSchema
+});
+
 // --- Companion content schema ---
 
 export const companionStoryStageSchema = z.object({
@@ -258,6 +290,7 @@ export const companionSchema = z.object({
   recruitDialogueId: z.string().min(1),
   storyStages: z.array(companionStoryStageSchema).min(1),
   storyDialogues: z.record(z.string(), dialogueTreeSchema).default({}),
+  goals: z.array(companionGoalSchema).default([]),
   reactions: z.object({
     positive: z.array(companionReactionLineSchema).min(1),
     negative: z.array(companionReactionLineSchema).min(1),
@@ -282,5 +315,7 @@ export type Rarity = z.infer<typeof rarityEnum>;
 export type WeaponDefinition = z.infer<typeof weaponDefinitionSchema>;
 export type InteriorMapDefinition = z.infer<typeof interiorMapSchema>;
 export type CompanionDefinition = z.infer<typeof companionSchema>;
+export type CompanionGoal = z.infer<typeof companionGoalSchema>;
+export type CompanionGoalOnComplete = z.infer<typeof companionGoalOnCompleteSchema>;
 export type CompanionStoryStage = z.infer<typeof companionStoryStageSchema>;
 export type CompanionReactionLine = z.infer<typeof companionReactionLineSchema>;

@@ -1,5 +1,5 @@
 import { computeAllSkillValues, getSkillPointCost, SKILL_DEFINITIONS, SKILL_IDS } from "../../../game/src/skills.js";
-import { buildExplorationRoute, findPath, hexDistance, hexNeighbors, toTileKey, type HexPoint, type InteriorMapDefinition } from "../../../game/src/index.js";
+import { buildExplorationRoute, findPath, hexDistance, hexNeighbors, toTileKey, type CompanionDefinition, type CompanionGoal, type HexPoint, type InteriorMapDefinition } from "../../../game/src/index.js";
 import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
@@ -401,14 +401,18 @@ export class GameService {
         });
       }
 
-      // Place companion near spawn point
+      // Place companion near spawn point and activate goal if eligible
       const interiorMap = getInteriorMap(content, location.interiorMapId);
       const companions = await this.companionRepo.getAll(saveId);
       if (companions.length > 0) {
+        const companion = companions[0]!;
         const companionAdjacentPos = this.findAdjacentPassableHex(spawnPoint, interiorMap);
         if (companionAdjacentPos) {
-          await this.companionRepo.setPosition(saveId, companions[0]!.companion_id, companionAdjacentPos.x, companionAdjacentPos.y);
+          await this.companionRepo.setPosition(saveId, companion.companion_id, companionAdjacentPos.x, companionAdjacentPos.y);
         }
+
+        const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
+        await this.activateEligibleGoal(saveId, companion, interiorMap, location.id, playerCharacter?.karma ?? 0, content);
       }
 
       await this.checkCompanionStoryProgression(saveId);
@@ -556,12 +560,18 @@ export class GameService {
 
     // Companion loose-follow step
     const companionStep = await this.runCompanionFollowStep(
-      saveId, currentPosition, finalPosition, passableSet
+      saveId, currentPosition, finalPosition, passableSet, interiorMap, worldState.current_location_id
+    );
+
+    // Check if player can help companion with active goal
+    const companionHelpAvailable = await this.checkCompanionHelpAvailable(
+      saveId, finalPosition, interiorMap, worldState.current_location_id
     );
 
     return {
       steps: route.map((position) => ({ position })),
       companionStep,
+      companionHelpAvailable,
       finalPatch: {
         worldState: nextWorldState
       }
@@ -968,12 +978,132 @@ export class GameService {
     });
   }
 
+  private async checkCompanionHelpAvailable(
+    saveId: string,
+    playerPos: HexPoint,
+    interiorMap: InteriorMapDefinition,
+    locationId: string | null
+  ): Promise<{ companionId: string; goalId: string } | null> {
+    const companions = await this.companionRepo.getAll(saveId);
+    const companion = companions[0];
+    if (!companion?.active_goal_id) return null;
+    if (companion.companion_x === null || companion.companion_y === null) return null;
+
+    const content = getGameContent();
+    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    const goal = companionDef?.goals?.find((g) => g.id === companion.active_goal_id);
+    if (!goal?.playerCanHelp) return null;
+
+    // Check if companion is on the goal tile
+    const goalTile = this.findGoalTile(goal, interiorMap, locationId ?? "");
+    if (!goalTile) return null;
+
+    const companionPos = { x: companion.companion_x, y: companion.companion_y };
+    if (toTileKey(companionPos) !== toTileKey(goalTile)) return null;
+
+    // Check if player is adjacent to companion
+    const dist = hexDistance(playerPos, companionPos);
+    if (dist > 1) return null;
+
+    return { companionId: companion.companion_id, goalId: goal.id };
+  }
+
+  public async helpCompanionGoal(saveId: string, companionId: string): Promise<GoalCompletionResult | null> {
+    const companion = await this.companionRepo.find(saveId, companionId);
+    if (!companion || !companion.active_goal_id) {
+      throw new Error("Companion does not have an active goal.");
+    }
+
+    const content = getGameContent();
+    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    const goal = companionDef?.goals?.find((g) => g.id === companion.active_goal_id);
+    if (!goal?.playerCanHelp) {
+      throw new Error("This goal does not support player help.");
+    }
+
+    // Fire the goal completion with a loyalty bonus
+    const result = await this.fireGoalCompletion(saveId, companion);
+
+    // Grant loyalty bonus for helping
+    if (result) {
+      const newLoyalty = Math.min(100, companion.loyalty + 5);
+      await this.companionRepo.updateLoyalty(saveId, companionId, newLoyalty);
+    }
+
+    return result;
+  }
+
+  private async activateEligibleGoal(
+    saveId: string,
+    companion: import("../shared/types.js").CompanionInstanceRow,
+    interiorMap: InteriorMapDefinition,
+    locationId: string,
+    karma: number,
+    content: ReturnType<typeof getGameContent>
+  ): Promise<void> {
+    // Skip if companion already has an active goal
+    if (companion.active_goal_id) return;
+
+    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    if (!companionDef?.goals?.length) return;
+
+    const completedGoals = await this.companionRepo.getCompletedGoals(saveId, companion.companion_id);
+
+    for (const goal of companionDef.goals) {
+      // Check if already completed (for "once" frequency)
+      if (goal.frequency === "once" && completedGoals.includes(goal.id)) continue;
+
+      // Check trigger conditions
+      const tc = goal.triggerCondition;
+      if (tc.storyStage !== undefined && companion.story_stage < tc.storyStage) continue;
+      if (tc.karma !== undefined && karma < tc.karma) continue;
+      if (tc.locationId !== undefined && tc.locationId !== locationId) continue;
+
+      // Check if the interior has a matching tile
+      const goalTile = this.findGoalTile(goal, interiorMap, locationId);
+      if (!goalTile) continue;
+
+      // "sometimes" goals have ~40% chance of activating
+      if (goal.frequency === "sometimes" && Math.random() > 0.4) continue;
+
+      // Activate this goal
+      await this.companionRepo.setActiveGoal(saveId, companion.companion_id, goal.id);
+      return;
+    }
+  }
+
+  private findGoalTile(
+    goal: CompanionGoal,
+    interiorMap: InteriorMapDefinition,
+    locationId: string
+  ): HexPoint | null {
+    if (goal.target.type === "location_tile") {
+      if (goal.target.locationId !== locationId) return null;
+      const point = { x: goal.target.tileX, y: goal.target.tileY };
+      if (interiorMap.layout[point.y]?.[point.x]) return point;
+      return null;
+    }
+
+    // tile_type target: find first matching tile in the layout
+    for (let y = 0; y < interiorMap.layout.length; y++) {
+      const row = interiorMap.layout[y] ?? [];
+      for (let x = 0; x < row.length; x++) {
+        if (row[x] === goal.target.tileType) {
+          return { x, y };
+        }
+      }
+    }
+    return null;
+  }
+
   private async runCompanionFollowStep(
     saveId: string,
     playerFrom: HexPoint,
     playerTo: HexPoint,
-    passableSet: Set<string>
-  ): Promise<{ companionId: string; from: HexPoint; to: HexPoint } | null> {
+    passableSet: Set<string>,
+    interiorMap: InteriorMapDefinition,
+    locationId: string | null
+  ): Promise<CompanionTurnResult | null> {
     const companions = await this.companionRepo.getAll(saveId);
     const companion = companions[0];
     if (!companion) return null;
@@ -990,12 +1120,21 @@ export class GameService {
     const distToPlayer = hexDistance(companionPos, playerTo);
     const playerKey = toTileKey(playerTo);
 
-    // Compute follow target
+    // Resolve goal tile for active goal (used for both pathfinding and completion check)
+    let goalTile: HexPoint | null = null;
+    if (companion.active_goal_id) {
+      goalTile = this.resolveGoalTarget(companion, interiorMap, locationId);
+    }
+
+    // Compute follow target — goal-seeking overrides loose follow, but regroup always wins
     let followTarget: HexPoint;
     if (distToPlayer >= 4) {
-      // Regroup: target adjacent to player
+      // Regroup: target adjacent to player (highest priority)
       const adjacent = this.findAdjacentPassableHexExcluding(playerTo, passableSet, new Set([playerKey]));
       followTarget = adjacent ?? playerTo;
+    } else if (goalTile) {
+      // Active goal: pathfind toward goal tile
+      followTarget = goalTile;
     } else {
       // Loose follow: target 1-2 hexes behind player (opposite direction of travel)
       followTarget = this.computeLooseFollowTarget(playerFrom, playerTo, passableSet);
@@ -1004,26 +1143,36 @@ export class GameService {
     // Take one step toward the follow target
     const companionKey = toTileKey(companionPos);
     const followTargetKey = toTileKey(followTarget);
+    let newPos = companionPos;
 
-    if (companionKey === followTargetKey) {
-      // Already at target, persist and return
-      await this.companionRepo.setPosition(saveId, companion.companion_id, companionPos.x, companionPos.y);
-      return null;
+    if (companionKey !== followTargetKey) {
+      // Block companion from stepping onto the player's tile
+      const blockedSet = new Set([playerKey]);
+      const path = findPath(companionPos, followTarget, passableSet, blockedSet);
+      const nextStep = path?.[0];
+
+      if (nextStep && passableSet.has(toTileKey(nextStep))) {
+        newPos = nextStep;
+      }
     }
 
-    // Block companion from stepping onto the player's tile
-    const blockedSet = new Set([playerKey]);
-    const path = findPath(companionPos, followTarget, passableSet, blockedSet);
-    const nextStep = path?.[0];
+    await this.companionRepo.setPosition(saveId, companion.companion_id, newPos.x, newPos.y);
 
-    if (nextStep && passableSet.has(toTileKey(nextStep))) {
-      await this.companionRepo.setPosition(saveId, companion.companion_id, nextStep.x, nextStep.y);
-      return { companionId: companion.companion_id, from: companionPos, to: nextStep };
+    // Check if companion reached goal tile — fire completion
+    let goalCompleted: GoalCompletionResult | null = null;
+    if (goalTile && toTileKey(newPos) === toTileKey(goalTile)) {
+      goalCompleted = await this.fireGoalCompletion(saveId, companion);
     }
 
-    // Can't move, persist current position
-    await this.companionRepo.setPosition(saveId, companion.companion_id, companionPos.x, companionPos.y);
-    return null;
+    const moved = toTileKey(newPos) !== companionKey;
+    if (!moved && !goalCompleted) return null;
+
+    return {
+      companionId: companion.companion_id,
+      from: companionPos,
+      to: newPos,
+      goalCompleted
+    };
   }
 
   private computeLooseFollowTarget(
@@ -1062,6 +1211,48 @@ export class GameService {
       .sort((a, b) => b.y - a.y || a.x - b.x);
 
     return neighbors[0] ?? playerFrom;
+  }
+
+  private async fireGoalCompletion(
+    saveId: string,
+    companion: import("../shared/types.js").CompanionInstanceRow
+  ): Promise<GoalCompletionResult | null> {
+    const content = getGameContent();
+    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    const goal = companionDef?.goals?.find((g) => g.id === companion.active_goal_id);
+    if (!goal) return null;
+
+    // Apply karmaDelta
+    if (goal.onComplete.karmaDelta) {
+      const pc = await this.saveRepo.findPlayerCharacter(saveId);
+      if (pc) {
+        const newKarma = pc.karma + goal.onComplete.karmaDelta;
+        await this.saveRepo.updateKarma(saveId, newKarma);
+      }
+    }
+
+    // Mark goal complete and clear active goal
+    await this.companionRepo.markGoalComplete(saveId, companion.companion_id, goal.id);
+
+    return {
+      goalId: goal.id,
+      dialogueTreeId: goal.onComplete.dialogueTreeId ?? null,
+      storyNote: goal.onComplete.storyNote ?? null,
+      karmaDelta: goal.onComplete.karmaDelta ?? null
+    };
+  }
+
+  private resolveGoalTarget(
+    companion: import("../shared/types.js").CompanionInstanceRow,
+    interiorMap: InteriorMapDefinition,
+    locationId: string | null
+  ): HexPoint | null {
+    const content = getGameContent();
+    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+    const goal = companionDef?.goals?.find((g) => g.id === companion.active_goal_id);
+    if (!goal) return null;
+
+    return this.findGoalTile(goal, interiorMap, locationId ?? "");
   }
 
   private findAdjacentPassableHexExcluding(
@@ -1129,4 +1320,18 @@ interface OverworldReplayStep {
 
 interface InteriorReplayStep {
   position: HexPoint;
+}
+
+interface GoalCompletionResult {
+  goalId: string;
+  dialogueTreeId: string | null;
+  storyNote: string | null;
+  karmaDelta: number | null;
+}
+
+interface CompanionTurnResult {
+  companionId: string;
+  from: HexPoint;
+  to: HexPoint;
+  goalCompleted: GoalCompletionResult | null;
 }

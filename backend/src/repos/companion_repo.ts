@@ -61,6 +61,37 @@ export class CompanionRepo {
     );
   }
 
+  public async setActiveGoal(saveId: string, companionId: string, goalId: string): Promise<void> {
+    await getDb().run(
+      "UPDATE companion_instances SET active_goal_id = ? WHERE save_id = ? AND companion_id = ? AND departed = 0",
+      [goalId, saveId, companionId]
+    );
+  }
+
+  public async clearActiveGoal(saveId: string, companionId: string): Promise<void> {
+    await getDb().run(
+      "UPDATE companion_instances SET active_goal_id = NULL WHERE save_id = ? AND companion_id = ? AND departed = 0",
+      [saveId, companionId]
+    );
+  }
+
+  public async markGoalComplete(saveId: string, companionId: string, goalId: string): Promise<void> {
+    const row = await this.find(saveId, companionId);
+    const completed: string[] = row?.goal_progress ? JSON.parse(row.goal_progress) : [];
+    if (!completed.includes(goalId)) {
+      completed.push(goalId);
+    }
+    await getDb().run(
+      "UPDATE companion_instances SET goal_progress = ?, active_goal_id = NULL WHERE save_id = ? AND companion_id = ? AND departed = 0",
+      [JSON.stringify(completed), saveId, companionId]
+    );
+  }
+
+  public async getCompletedGoals(saveId: string, companionId: string): Promise<string[]> {
+    const row = await this.find(saveId, companionId);
+    return row?.goal_progress ? JSON.parse(row.goal_progress) : [];
+  }
+
   public async remove(saveId: string, companionId: string): Promise<void> {
     await getDb().run(
       "UPDATE companion_instances SET departed = 1, loyalty = 0 WHERE save_id = ? AND companion_id = ?",
