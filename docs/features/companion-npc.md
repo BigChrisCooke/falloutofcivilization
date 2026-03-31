@@ -1,129 +1,141 @@
 # Companion NPC System
 
-## Overview
+Single-player companions that travel with the player, react to their choices, and unfold a personal story arc over the course of a run.
 
-Companions are recruitable NPCs that travel with the player through the wasteland. Each companion has a story arc, loyalty system, reactions to player behavior, and goals they pursue autonomously in interiors.
+## Current State
 
-Currently implemented: **Dex** (caravan guard, recruited at the Dusty Tavern).
+One authored companion is implemented: **Dex**, a former caravan guard recruited at the Dusty Tavern.
 
-## Position and Movement
-
-Companions have their own position in interior maps, stored as `companion_x` and `companion_y` in the `companion_instances` table.
-
-### Loose Follow
-
-After each player step in an interior, the companion takes one step:
-
-1. **Regroup** (4+ hexes from player): companion moves toward a tile adjacent to the player
-2. **Goal pursuit** (active goal): companion moves toward the goal tile instead of following
-3. **Loose follow** (default): companion moves toward a position 1-2 hexes behind the player (opposite the player's direction of travel)
-
-The companion never steps onto a non-passable tile or the player's tile.
-
-### Position Lifecycle
-
-- **On recruit**: seeded to a hex adjacent to the player
-- **On enter interior/vault**: placed adjacent to the spawn point
-- **On exit interior**: position cleared (NULL)
-
-## Goal System
-
-Companions can pursue authored goals at locations. Goals are defined in the companion's YAML file and drive autonomous behavior during interior exploration.
-
-### YAML Schema
-
-```yaml
-goals:
-  - id: investigate_supply_crate
-    target:
-      type: tile_type        # or "location_tile"
-      tileType: crate         # matches any tile of this type in any interior
-    triggerCondition:
-      storyStage: 1           # optional: minimum story stage
-      karma: 50               # optional: minimum karma
-      locationId: some_loc    # optional: only triggers in this location
-    frequency: once           # "always", "once", or "sometimes"
-    playerCanHelp: true       # enables player-help interaction
-    onComplete:
-      dialogueTreeId: goal_supply_crate   # optional: triggers dialogue
-      karmaDelta: 5                        # optional: karma change
-      storyNote: "Description of what happened"  # optional: narrative log
-```
-
-### Target Types
-
-- **tile_type**: matches any tile of the given type in any interior (e.g., `crate`, `terminal`)
-- **location_tile**: matches a specific tile at exact coordinates in a specific location
-
-### Goal Activation
-
-When a companion enters an interior (via `enterLocation`), the system checks their authored goals:
-
-1. Skip goals already completed (for `once` frequency)
-2. Check trigger conditions (story stage, karma, location)
-3. Verify the interior contains a matching tile
-4. For `sometimes` goals, roll ~40% probability
-5. First eligible goal is activated via `setActiveGoal`
-
-### Goal Execution
-
-While a goal is active:
-
-- The companion pathfinds toward the goal tile each turn instead of loose-following
-- Regroup (4+ hexes from player) still takes priority over goal pursuit
-- When the companion reaches the goal tile, `onComplete` fires:
-  - `karmaDelta` is applied to the player
-  - `dialogueTreeId` is queued for the companion's story dialogue
-  - `storyNote` is logged
-  - The goal is marked complete and `active_goal_id` is cleared
-
-### Player Help
-
-When `playerCanHelp` is true on the active goal:
-
-- If the player moves adjacent to the companion while the companion is on the goal tile, a help interaction becomes available
-- Selecting help triggers `onComplete` plus a loyalty bonus (+5)
-- Endpoint: `POST /api/game/companion/help-goal` with `{ companionId }`
-
-## Persistence
-
-Goal state is stored in `companion_instances`:
-
-- `active_goal_id` (TEXT, nullable): the currently active goal ID
-- `goal_progress` (TEXT, nullable): JSON array of completed goal IDs
+---
 
 ## Recruitment
 
-Companions are recruited through dialogue options tagged with `companionRecruit`. The recruitment flow:
+- Player enters the Dusty Tavern interior and speaks to Dex
+- A dialogue option tagged `companionRecruit: "dex"` triggers recruitment
+- Dex is added to the save with loyalty 50 and story stage 0
+- Once departed, Dex cannot be re-recruited
 
-1. Player selects a dialogue option with `companionRecruit: "dex"`
-2. Backend creates a `companion_instances` row with loyalty=50, story_stage=0
-3. Companion position is seeded adjacent to the player
+---
+
+## In-World Presence
+
+**Interiors**
+- Dex has his own position on the interior map, tracked separately from the player
+- He loose-follows the player — moving one hex per player step toward a position 1–2 hexes behind
+- If the player moves 4+ hexes away, Dex regroups (moves toward the player instead)
+- When pursuing a goal, Dex pathfinds toward the goal tile instead of following
+- Dex is suppressed from the NPC marker layer to avoid rendering twice
+
+**Overworld**
+- Dex does not appear on the overworld map — he travels with the player abstractly
+
+---
+
+## Pip-Boy Tab
+
+- A **Companions** tab appears in the Pip-Boy overlay once a companion is recruited
+- Shows name, current story stage title, and a loyalty bar (0–100)
+- Loyalty bar turns red when below 20
+
+---
 
 ## Loyalty
 
-- Starts at 50, range [0, 100]
-- Increases on generous/positive player choices (karma gains)
-- Decreases on stealing or selfish choices
-- Warning reaction at loyalty < 20
-- Farewell and departure at loyalty = 0
+| Value | Meaning |
+|-------|---------|
+| 50 | Starting value |
+| 0 | Companion departs permanently |
+| < 20 | Warning reaction triggered |
+
+**Increases from:**
+- Generous dialogue choices (karma delta ≥ +2)
+
+**Decreases from:**
+- Stealing while Dex is present (−1 loyalty, negative reaction line plays)
+
+When loyalty hits 0, a farewell message plays and the companion is marked `departed = 1` in the database.
+
+---
 
 ## Story Arc
 
-Companions have story stages triggered by conditions (locations visited, karma thresholds). Each stage unlocks a dialogue tree in the Pip-Boy companion tab.
+Dex has a four-stage story that advances automatically as the player explores the world.
+
+| Stage | Title | Trigger | Summary |
+|-------|-------|---------|---------|
+| 0 | Old Roads | Immediate | Dex's history with the Crimson Caravan and the ambush that killed his crew |
+| 1 | The Ambush | 2 locations visited | Insurance fraud discovered; Harland named as the probable inside man |
+| 2 | Unfinished Business | 4 locations visited | Harland resurfaces; player chooses justice (expose) or confrontation |
+| 3 | What Matters | 6 locations visited | Karma-branched ending — high karma leads to Harland's arrest, low karma sees him flee |
+
+Story dialogue trees branch on karma. A `karmaMin >= 50` condition gates the moral resolution path at stage 3.
+
+Story bubbles appear automatically on interior entry when a new stage triggers.
+
+---
+
+## Goals
+
+Companions can pursue authored goals within locations — walking to specific tiles, completing character-arc moments, and optionally letting the player help. Goals are defined in the companion's YAML file.
+
+**Goal schema fields:**
+- `target` — `tile_type` (any tile of a given type) or `location_tile` (specific tile in a specific location)
+- `triggerCondition` — optional; gates activation by `storyStage`, `karma`, or `locationId`
+- `frequency` — `always`, `once`, or `sometimes` (~40% chance per location entry)
+- `playerCanHelp` — if true, an interaction option appears when the player is adjacent to the companion at the goal tile
+- `onComplete` — `dialogueTreeId`, `karmaDelta`, `storyNote`
+
+**Dex's goals:**
+
+| ID | Target | Trigger | Frequency | Player can help | On complete |
+|----|--------|---------|-----------|-----------------|-------------|
+| `investigate_supply_crate` | Any `crate` tile | Story stage ≥ 1 | Once | Yes | Fires `goal_supply_crate` dialogue — Dex finds Crimson Caravan shipping labels linking the circulating stolen cargo to the ambush |
+
+---
+
+## Reactions
+
+Dex reacts to player actions during play:
+
+- **Positive reaction** — plays after generous dialogue choices
+- **Negative reaction** — plays after stealing or selfish choices
+- **Warning** — plays when loyalty drops below 20
+- **Farewell** — plays on departure
+
+Reaction text is authored in `game/content/companions/dex-caravan-guard.yaml`.
+
+---
+
+## Architecture
+
+| Layer | Location |
+|-------|---------|
+| Authored content | `game/content/companions/dex-caravan-guard.yaml` |
+| Zod schema | `game/src/schemas/content.ts` — `companionSchema` |
+| Database | `backend/src/db/migrations/007_companion_instances.sql` (base), `014_companion_position.sql`, `015_companion_goals.sql` |
+| Repository | `backend/src/repos/companion_repo.ts` |
+| Game service | `backend/src/services/game_service.ts` — recruit, story progression, movement, goal logic |
+| Dialogue integration | `backend/src/services/dialogue_service.ts` — loyalty changes on option select |
+| Inventory integration | `backend/src/services/inventory_service.ts` — stealing triggers loyalty loss |
+| API endpoints | `backend/src/controllers/game_controller.ts` — `/companion/recruit`, `/companion/story` |
+| Pip-Boy UI | `client/src/components/PipBoyOverlay.tsx` |
+| Story/reaction bubbles | `client/src/components/InteriorMapPanel.tsx` |
+| Token rendering | `client/src/lib/map/interior_layers.ts`, `interior_scene_model.ts` |
+| State patching | `client/src/lib/game_state_patch.ts` — `applyCompanionStep` |
+
+---
 
 ## Adding a New Companion
 
-1. Create `game/content/companions/<id>.yaml` with the companion schema
-2. Add story dialogues under `storyDialogues`
-3. Add goals under `goals` (optional)
-4. Reference the companion in a location NPC's dialogue via `companionRecruit`
-5. Run `npm run content:validate`
+1. Create `game/content/companions/<id>.yaml` following `companionSchema`
+2. Add a recruit dialogue option with `companionRecruit: "<id>"` in the relevant location's dialogue file
+3. Add goals to the `goals` array in the YAML — no backend or UI changes required for standard goals
+4. Run `npm run content:validate` to confirm the file is valid
 
-## Known Limitations
+---
 
-- Single companion slot only
-- No overworld companion presence (only appears in interiors)
-- Companion does not wander when player is stationary
-- Goal completion dialogue is not yet animated in the client UI
-- Player-help interaction UI not yet wired in the client
+## Known Limitations / Future Work
+
+- Only one companion slot is tracked; multi-companion support is not implemented
+- Companion does not wander or act independently while the player is stationary (only moves on player turns)
+- Goal-triggered dialogue is queued as a story bubble; no mid-exploration dialogue interruption yet
