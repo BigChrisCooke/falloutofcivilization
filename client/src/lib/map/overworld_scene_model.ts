@@ -134,34 +134,8 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
     });
   }
 
-  // Compute companion position on overworld (mirrors interior_scene_model.ts pattern)
-  let companion: CompanionActorNode | null = null;
-  const activeCompanion = state.companions[0];
-
-  if (activeCompanion?.tokenColor) {
-    const neighbors = hexNeighbors(currentPoint)
-      .filter((n) => {
-        const key = toTileKey(n);
-        return discoveredTiles.has(key) && key !== currentTileKey;
-      })
-      .sort((a, b) => b.y - a.y || a.x - b.x);
-
-    const companionPoint = neighbors[0] ?? tiles
-      .filter((t) => t.discovered && t.key !== currentTileKey)
-      .sort((a, b) => hexDistance(currentPoint, a.point) - hexDistance(currentPoint, b.point))[0]?.point
-      ?? null;
-
-    if (companionPoint) {
-      companion = {
-        id: `companion-${activeCompanion.companionId}`,
-        companionId: activeCompanion.companionId,
-        tokenColor: activeCompanion.tokenColor,
-        point: companionPoint,
-        anchor: getCourierAnchor(companionPoint),
-        zIndex: getTileZIndex(companionPoint) + 85
-      };
-    }
-  }
+  // Companions are not shown on the overworld — they travel with the player abstractly.
+  const companion: CompanionActorNode | null = null;
 
   return {
     mapId: overworldMap.id,

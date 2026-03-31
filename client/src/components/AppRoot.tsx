@@ -28,7 +28,7 @@ import {
   type SaveGame
 } from "../lib/api.js";
 import { delay, STEP_DELAY_MS } from "../lib/map/hex_pathfinding.js";
-import { applyGameStatePatch, applyInteriorReplayStep, applyOverworldReplayStep } from "../lib/game_state_patch.js";
+import { applyCompanionStep, applyGameStatePatch, applyInteriorReplayStep, applyOverworldReplayStep } from "../lib/game_state_patch.js";
 
 type AuthMode = "login" | "register";
 type DialogName = "settings" | "saves" | "pipboy" | null;
@@ -281,6 +281,9 @@ export function AppRoot() {
       const response = await moveInterior(x, y);
       await replayInteriorRoute(response.replay.steps);
       patchGameState(response.replay.finalPatch);
+      if (response.replay.companionStep) {
+        commitGameState((prev) => prev ? applyCompanionStep(prev, response.replay.companionStep!) : prev);
+      }
       return response.replay.finalPatch.worldState.player_x === x && response.replay.finalPatch.worldState.player_y === y;
     } catch (moveError) {
       setError(moveError instanceof Error ? moveError.message : "Failed to move inside the current area.");

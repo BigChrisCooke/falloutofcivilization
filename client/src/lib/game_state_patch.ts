@@ -1,6 +1,7 @@
 import type {
   GameState,
   GameStatePatch,
+  InteriorCompanionStep,
   InteriorReplayStep,
   OverworldReplayStep
 } from "./api.js";
@@ -84,4 +85,15 @@ export function applyInteriorReplayStep(previousState: GameState, step: Interior
       player_y: step.position.y
     }
   }, previousState.locations);
+}
+
+export function applyCompanionStep(previousState: GameState, companionStep: InteriorCompanionStep): GameState {
+  return {
+    ...previousState,
+    companions: previousState.companions.map((c) =>
+      c.companionId === companionStep.companionId
+        ? { ...c, x: companionStep.to.x, y: companionStep.to.y }
+        : c
+    )
+  };
 }

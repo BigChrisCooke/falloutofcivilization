@@ -262,9 +262,15 @@ export interface OverworldRouteReplay {
   finalPatch: TravelRouteFinalPatch;
 }
 
+export interface InteriorCompanionStep {
+  companionId: string;
+  to: { x: number; y: number };
+}
+
 export interface InteriorRouteReplay {
   steps: InteriorReplayStep[];
   finalPatch: InteriorRouteFinalPatch;
+  companionStep?: InteriorCompanionStep | null;
 }
 
 interface SessionResponse {
