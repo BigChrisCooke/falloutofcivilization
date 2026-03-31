@@ -4,6 +4,7 @@ import type {
   DialogueTree,
   QuestDefinition
 } from "../../../game/src/index.js";
+import { hexNeighbors } from "../../../game/src/index.js";
 
 import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
@@ -311,7 +312,16 @@ export class DialogueService {
           if (companionDef) {
             const existing = await this.companionRepo.find(saveId, option.companionRecruit);
             if (!existing) {
-              await this.companionRepo.recruit(saveId, option.companionRecruit);
+              const worldState = await this.gameStateRepo.getWorldState(saveId);
+              let spawnPosition: { x: number; y: number } | undefined;
+              if (worldState?.player_x !== null && worldState?.player_y !== null && worldState) {
+                const playerPos = { x: worldState.player_x!, y: worldState.player_y! };
+                const neighbors = hexNeighbors(playerPos);
+                // Pick the first neighbor behind the player (higher y = visually behind in iso)
+                neighbors.sort((a, b) => b.y - a.y || a.x - b.x);
+                spawnPosition = neighbors[0] ?? playerPos;
+              }
+              await this.companionRepo.recruit(saveId, option.companionRecruit, spawnPosition);
               result.companionRecruited = option.companionRecruit;
               result.stateUpdated = true;
             }

@@ -1,5 +1,5 @@
 import { computeAllSkillValues, getSkillPointCost, SKILL_DEFINITIONS, SKILL_IDS } from "../../../game/src/skills.js";
-import { buildExplorationRoute, findPath, toTileKey, type HexPoint } from "../../../game/src/index.js";
+import { buildExplorationRoute, findPath, hexDistance, hexNeighbors, toTileKey, type HexPoint, type InteriorMapDefinition } from "../../../game/src/index.js";
 import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
@@ -124,7 +124,9 @@ export class GameService {
           storyStage: row.story_stage,
           storyStageTitle: currentStage?.title ?? null,
           hasNewStory: row.story_stage > row.story_stage_viewed,
-          recruitedAt: row.recruited_at
+          recruitedAt: row.recruited_at,
+          x: row.companion_x,
+          y: row.companion_y
         };
       }),
       locations: regionLocations.map((location) => ({
@@ -324,6 +326,18 @@ export class GameService {
       player_y: nextPlayerPosition.y,
       updated_at: Date.now()
     });
+
+    // Place companion near vault spawn point when entering vault
+    if (screen === "vault" && vaultLocation?.interiorMapId && vaultSpawnPoint) {
+      const vaultInterior = getInteriorMap(content, vaultLocation.interiorMapId);
+      const companions = await this.companionRepo.getAll(saveId);
+      if (companions.length > 0) {
+        const adjacentPos = this.findAdjacentPassableHex(vaultSpawnPoint, vaultInterior);
+        if (adjacentPos) {
+          await this.companionRepo.setPosition(saveId, companions[0]!.companion_id, adjacentPos.x, adjacentPos.y);
+        }
+      }
+    }
   }
 
   public async enterLocation(saveId: string, locationId: string): Promise<void> {
@@ -385,6 +399,16 @@ export class GameService {
           entered_locations_json: JSON.stringify(enteredLocations),
           updated_at: now
         });
+      }
+
+      // Place companion near spawn point
+      const interiorMap = getInteriorMap(content, location.interiorMapId);
+      const companions = await this.companionRepo.getAll(saveId);
+      if (companions.length > 0) {
+        const companionAdjacentPos = this.findAdjacentPassableHex(spawnPoint, interiorMap);
+        if (companionAdjacentPos) {
+          await this.companionRepo.setPosition(saveId, companions[0]!.companion_id, companionAdjacentPos.x, companionAdjacentPos.y);
+        }
       }
 
       await this.checkCompanionStoryProgression(saveId);
@@ -512,19 +536,7 @@ export class GameService {
         : getInteriorSpawnPoint(interiorMap);
     const targetPosition = { x, y };
 
-    const passableSet = new Set<string>();
-
-    for (let rowIndex = 0; rowIndex < interiorMap.layout.length; rowIndex += 1) {
-      const row = interiorMap.layout[rowIndex] ?? [];
-
-      for (let columnIndex = 0; columnIndex < row.length; columnIndex += 1) {
-        const point = { x: columnIndex, y: rowIndex };
-
-        if (isPassableInteriorTile(getInteriorTile(point, interiorMap))) {
-          passableSet.add(toTileKey(point));
-        }
-      }
-    }
+    const passableSet = this.buildPassableSet(interiorMap);
 
     const route = findPath(currentPosition, targetPosition, passableSet);
 
@@ -542,8 +554,14 @@ export class GameService {
 
     await this.gameStateRepo.updateWorldState(nextWorldState);
 
+    // Companion loose-follow step
+    const companionStep = await this.runCompanionFollowStep(
+      saveId, currentPosition, finalPosition, passableSet
+    );
+
     return {
       steps: route.map((position) => ({ position })),
+      companionStep,
       finalPatch: {
         worldState: nextWorldState
       }
@@ -580,6 +598,12 @@ export class GameService {
     }
 
     const location = getInteriorLocation(content, worldState.current_location_id);
+
+    // Clear companion interior position when leaving
+    const companions = await this.companionRepo.getAll(saveId);
+    for (const companion of companions) {
+      await this.companionRepo.clearPosition(saveId, companion.companion_id);
+    }
 
     await this.dialogueService.resetAllDialoguePositions(saveId);
     await this.restoreOverworldFromLocation(saveId, worldState, location);
@@ -775,7 +799,22 @@ export class GameService {
       throw new Error("This companion has departed and cannot be re-recruited.");
     }
 
-    await this.companionRepo.recruit(saveId, companionId);
+    const spawnPosition = await this.findCompanionSpawnPosition(saveId);
+    await this.companionRepo.recruit(saveId, companionId, spawnPosition ?? undefined);
+  }
+
+  private async findCompanionSpawnPosition(saveId: string): Promise<{ x: number; y: number } | null> {
+    const content = getGameContent();
+    const worldState = await this.gameStateRepo.getWorldState(saveId);
+    if (!worldState?.current_map_id || worldState.player_x === null || worldState.player_y === null) {
+      return null;
+    }
+
+    const interiorMap = content.interiorMaps.find((m) => m.id === worldState.current_map_id);
+    if (!interiorMap) return null;
+
+    const playerPos = { x: worldState.player_x, y: worldState.player_y };
+    return this.findAdjacentPassableHex(playerPos, interiorMap);
   }
 
   public async savePlayerSpecial(saveId: string, special: Record<string, number>): Promise<{ questCompleted?: string }> {
@@ -927,6 +966,156 @@ export class GameService {
 
       await this.saveRepo.updateSkills(saveId, JSON.stringify(newAllocated), remaining);
     });
+  }
+
+  private async runCompanionFollowStep(
+    saveId: string,
+    playerFrom: HexPoint,
+    playerTo: HexPoint,
+    passableSet: Set<string>
+  ): Promise<{ companionId: string; from: HexPoint; to: HexPoint } | null> {
+    const companions = await this.companionRepo.getAll(saveId);
+    const companion = companions[0];
+    if (!companion) return null;
+
+    // Initialize companion position if not set
+    let companionPos: HexPoint;
+    if (companion.companion_x !== null && companion.companion_y !== null) {
+      companionPos = { x: companion.companion_x, y: companion.companion_y };
+    } else {
+      const adjacent = this.findAdjacentPassableHexExcluding(playerFrom, passableSet, new Set([toTileKey(playerFrom)]));
+      companionPos = adjacent ?? playerFrom;
+    }
+
+    const distToPlayer = hexDistance(companionPos, playerTo);
+    const playerKey = toTileKey(playerTo);
+
+    // Compute follow target
+    let followTarget: HexPoint;
+    if (distToPlayer >= 4) {
+      // Regroup: target adjacent to player
+      const adjacent = this.findAdjacentPassableHexExcluding(playerTo, passableSet, new Set([playerKey]));
+      followTarget = adjacent ?? playerTo;
+    } else {
+      // Loose follow: target 1-2 hexes behind player (opposite direction of travel)
+      followTarget = this.computeLooseFollowTarget(playerFrom, playerTo, passableSet);
+    }
+
+    // Take one step toward the follow target
+    const companionKey = toTileKey(companionPos);
+    const followTargetKey = toTileKey(followTarget);
+
+    if (companionKey === followTargetKey) {
+      // Already at target, persist and return
+      await this.companionRepo.setPosition(saveId, companion.companion_id, companionPos.x, companionPos.y);
+      return null;
+    }
+
+    // Block companion from stepping onto the player's tile
+    const blockedSet = new Set([playerKey]);
+    const path = findPath(companionPos, followTarget, passableSet, blockedSet);
+    const nextStep = path?.[0];
+
+    if (nextStep && passableSet.has(toTileKey(nextStep))) {
+      await this.companionRepo.setPosition(saveId, companion.companion_id, nextStep.x, nextStep.y);
+      return { companionId: companion.companion_id, from: companionPos, to: nextStep };
+    }
+
+    // Can't move, persist current position
+    await this.companionRepo.setPosition(saveId, companion.companion_id, companionPos.x, companionPos.y);
+    return null;
+  }
+
+  private computeLooseFollowTarget(
+    playerFrom: HexPoint,
+    playerTo: HexPoint,
+    passableSet: Set<string>
+  ): HexPoint {
+    // Direction of travel: from playerFrom to playerTo
+    const dx = playerTo.x - playerFrom.x;
+    const dy = playerTo.y - playerFrom.y;
+
+    // "Behind" the player means opposite direction of travel
+    // Try to find a passable tile 1-2 hexes behind
+    const behindCandidates: HexPoint[] = [];
+
+    // Candidate 1 hex behind (opposite direction)
+    const behind1: HexPoint = { x: playerTo.x - dx, y: playerTo.y - dy };
+    // Candidate 2 hexes behind
+    const behind2: HexPoint = { x: playerTo.x - 2 * dx, y: playerTo.y - 2 * dy };
+
+    if (passableSet.has(toTileKey(behind1)) && toTileKey(behind1) !== toTileKey(playerTo)) {
+      behindCandidates.push(behind1);
+    }
+    if (passableSet.has(toTileKey(behind2)) && toTileKey(behind2) !== toTileKey(playerTo)) {
+      behindCandidates.push(behind2);
+    }
+
+    if (behindCandidates.length > 0) {
+      return behindCandidates[0]!;
+    }
+
+    // Fallback: any adjacent passable tile behind the player (higher y preferred)
+    const playerKey = toTileKey(playerTo);
+    const neighbors = hexNeighbors(playerTo)
+      .filter((n) => passableSet.has(toTileKey(n)) && toTileKey(n) !== playerKey)
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+
+    return neighbors[0] ?? playerFrom;
+  }
+
+  private findAdjacentPassableHexExcluding(
+    center: HexPoint,
+    passableSet: Set<string>,
+    excludeKeys: Set<string>
+  ): HexPoint | null {
+    const neighbors = hexNeighbors(center)
+      .filter((n) => {
+        const key = toTileKey(n);
+        return passableSet.has(key) && !excludeKeys.has(key);
+      })
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+
+    return neighbors[0] ?? null;
+  }
+
+  private findAdjacentPassableHex(
+    playerPos: HexPoint,
+    interiorMap: InteriorMapDefinition
+  ): { x: number; y: number } | null {
+    const passableSet = this.buildPassableSet(interiorMap);
+    const playerKey = toTileKey(playerPos);
+    const neighbors = hexNeighbors(playerPos);
+
+    // Prefer hex behind the player (higher y = visually behind in iso)
+    neighbors.sort((a, b) => b.y - a.y || a.x - b.x);
+
+    for (const neighbor of neighbors) {
+      const key = toTileKey(neighbor);
+      if (passableSet.has(key) && key !== playerKey) {
+        return neighbor;
+      }
+    }
+
+    return null;
+  }
+
+  private buildPassableSet(interiorMap: InteriorMapDefinition): Set<string> {
+    const passableSet = new Set<string>();
+
+    for (let rowIndex = 0; rowIndex < interiorMap.layout.length; rowIndex += 1) {
+      const row = interiorMap.layout[rowIndex] ?? [];
+
+      for (let columnIndex = 0; columnIndex < row.length; columnIndex += 1) {
+        const point = { x: columnIndex, y: rowIndex };
+
+        if (isPassableInteriorTile(getInteriorTile(point, interiorMap))) {
+          passableSet.add(toTileKey(point));
+        }
+      }
+    }
+
+    return passableSet;
   }
 }
 

@@ -92,6 +92,8 @@ export interface CompanionInstanceRow {
   story_stage: number;
   story_stage_viewed: number;
   departed: number;
+  companion_x: number | null;
+  companion_y: number | null;
 }
 
 export interface AuthUser {

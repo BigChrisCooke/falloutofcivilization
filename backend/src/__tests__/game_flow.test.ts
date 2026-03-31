@@ -138,7 +138,7 @@ describe("game flow", () => {
 
     expect(vaultMoveResponse.status).toBe(200);
     expect(vaultMoveResponse.body).not.toHaveProperty("state");
-    expect(Object.keys(vaultMoveResponse.body.replay).sort()).toEqual(["finalPatch", "steps"]);
+    expect(Object.keys(vaultMoveResponse.body.replay).sort()).toEqual(["companionStep", "finalPatch", "steps"]);
     expect(vaultMoveResponse.body.replay.steps).toEqual([{ position: { x: 2, y: 3 } }]);
     expect(vaultMoveResponse.body.replay.finalPatch.worldState.player_x).toBe(2);
     expect(vaultMoveResponse.body.replay.finalPatch.worldState.player_y).toBe(3);
@@ -221,7 +221,7 @@ describe("game flow", () => {
 
     expect(tavernMoveResponse.status).toBe(200);
     expect(tavernMoveResponse.body).not.toHaveProperty("state");
-    expect(Object.keys(tavernMoveResponse.body.replay).sort()).toEqual(["finalPatch", "steps"]);
+    expect(Object.keys(tavernMoveResponse.body.replay).sort()).toEqual(["companionStep", "finalPatch", "steps"]);
     expect(tavernMoveResponse.body.replay.steps).toHaveLength(2);
     expectContiguousRoute(tavernMoveResponse.body.replay.steps, { x: 8, y: 10 });
     expect(tavernMoveResponse.body.replay.steps[1]).toEqual({ position: { x: 8, y: 8 } });

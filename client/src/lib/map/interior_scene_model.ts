@@ -124,28 +124,33 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
   const activeCompanion = state.companions[0];
 
   if (activeCompanion?.tokenColor) {
-    const occupiedKeys = new Set([
-      currentTileKey,
-      ...markers.map((m) => toTileKey(m.point))
-    ]);
-    const passableKeys = new Set(
-      tiles.filter((t) => t.isPassable).map((t) => t.key)
-    );
+    let companionPoint: { x: number; y: number } | null = null;
 
-    // Prefer the tile directly "behind" the player (higher y = visually behind in iso)
-    // by sorting neighbors with higher y first, then by distance
-    const neighbors = hexNeighbors(currentPoint)
-      .filter((n) => {
-        const key = toTileKey(n);
-        return passableKeys.has(key) && !occupiedKeys.has(key);
-      })
-      .sort((a, b) => b.y - a.y || a.x - b.x);
+    // Use stored position from state if available
+    if (activeCompanion.x !== null && activeCompanion.y !== null) {
+      companionPoint = { x: activeCompanion.x, y: activeCompanion.y };
+    } else {
+      // Fall back to adjacent-to-player when position is not yet set
+      const occupiedKeys = new Set([
+        currentTileKey,
+        ...markers.map((m) => toTileKey(m.point))
+      ]);
+      const passableKeys = new Set(
+        tiles.filter((t) => t.isPassable).map((t) => t.key)
+      );
 
-    // If no adjacent tile is free, scan all passable tiles sorted by distance
-    const companionPoint = neighbors[0] ?? tiles
-      .filter((t) => t.isPassable && !occupiedKeys.has(t.key))
-      .sort((a, b) => hexDistance(currentPoint, a.point) - hexDistance(currentPoint, b.point))[0]?.point
-      ?? null;
+      const neighbors = hexNeighbors(currentPoint)
+        .filter((n) => {
+          const key = toTileKey(n);
+          return passableKeys.has(key) && !occupiedKeys.has(key);
+        })
+        .sort((a, b) => b.y - a.y || a.x - b.x);
+
+      companionPoint = neighbors[0] ?? tiles
+        .filter((t) => t.isPassable && !occupiedKeys.has(t.key))
+        .sort((a, b) => hexDistance(currentPoint, a.point) - hexDistance(currentPoint, b.point))[0]?.point
+        ?? null;
+    }
 
     if (companionPoint) {
       companion = {

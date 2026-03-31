@@ -218,6 +218,8 @@ export interface GameState {
     storyStageTitle: string | null;
     hasNewStory: boolean;
     recruitedAt: number;
+    x: number | null;
+    y: number | null;
   }>;
   factionStanding: Record<string, number>;
   locations: LocationSummary[];
