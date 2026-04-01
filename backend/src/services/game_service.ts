@@ -1034,6 +1034,16 @@ export class GameService {
     return result;
   }
 
+  /** Check if all evidence-chain goals are completed for a companion. */
+  public async areAllEvidenceGoalsComplete(
+    saveId: string,
+    companionId: string,
+    evidenceGoalIds: string[]
+  ): Promise<boolean> {
+    const completedGoals = await this.companionRepo.getCompletedGoals(saveId, companionId);
+    return evidenceGoalIds.every((id) => completedGoals.includes(id));
+  }
+
   private async activateEligibleGoal(
     saveId: string,
     companion: import("../shared/types.js").CompanionInstanceRow,
@@ -1083,6 +1093,12 @@ export class GameService {
       const point = { x: goal.target.tileX, y: goal.target.tileY };
       if (interiorMap.layout[point.y]?.[point.x]) return point;
       return null;
+    }
+
+    if (goal.target.type === "npc") {
+      const npc = interiorMap.npcs.find((n) => n.id === goal.target.npcId);
+      if (!npc || npc.x === undefined || npc.y === undefined) return null;
+      return { x: npc.x, y: npc.y };
     }
 
     // tile_type target: find first matching tile in the layout

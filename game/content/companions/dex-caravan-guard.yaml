@@ -208,6 +208,71 @@ storyDialogues:
             label: "We'll get him."
             response: "*Dex's expression hardens with purpose.* We will. One crate at a time."
 
+  goal_comm_terminal:
+    rootNodeId: terminal_discovery
+    nodes:
+      - id: terminal_discovery
+        text: "*Dex is hunched over the terminal, scrolling through data.* Route logs. Someone was using this terminal to coordinate shipments through the valley — drop points, timing windows, pickup codes. And look at this... *He taps the screen.* A delivery manifest signed 'H. Reeves.' Harland Reeves."
+        options:
+          - id: ask_what_it_means
+            label: "What does that tell us?"
+            next: what_it_tells_us
+          - id: getting_close
+            label: "We're getting close."
+            next: close_response
+      - id: what_it_tells_us
+        text: "It tells us Harland wasn't just skimming off the top — he was running a parallel operation. Using Crimson Caravan infrastructure to move stolen goods while the real shipments got ambushed. The terminal logs show drop points in the valley. He's been here, recently."
+        options:
+          - id: track_him
+            label: "Then we can track him."
+            response: "*Dex copies the coordinates onto a scrap of paper.* We're building a case, piece by piece. When this is over, there won't be anywhere left for him to hide."
+      - id: close_response
+        text: "*Dex nods slowly.* Closer than he knows. These route logs prove he was coordinating from inside the valley. That means he's not some distant exec pulling strings from the Hub — he's local. And local means findable."
+        options:
+          - id: well_find_him
+            label: "We'll find him."
+            response: "*Dex's jaw tightens.* Yeah. We will. And he's going to answer for every name on that cargo manifest."
+
+  goal_survivor_witness:
+    rootNodeId: witness_found
+    nodes:
+      - id: witness_found
+        text: "*Dex approaches you, shaken.* I just talked to someone — a trader who was at the staging area the night before the ambush. They saw Harland. Saw him meeting with raiders, going over maps. This isn't secondhand rumor anymore. We have a witness."
+        options:
+          - id: ask_details
+            label: "What exactly did they see?"
+            next: witness_details
+          - id: enough_proof
+            label: "That's enough to bring him in."
+            next: enough_response
+      - id: witness_details
+        text: "They said Harland showed up at dusk with two men — not caravan types. Military surplus gear, no insignias. He spread a map on a crate and pointed out the ridge where our convoy would pass the next morning. Told them exactly which wagon carried the high-value cargo. My friends never had a chance."
+        options:
+          - id: will_testify
+            label: "Will they testify?"
+            next: testify_response
+          - id: thats_it
+            label: "That's the last piece. We have everything we need."
+            next: everything_response
+      - id: testify_response
+        text: "*Dex exhales.* They're scared, but they agreed — if we guarantee protection. Between the shipping labels, the terminal logs, and an eyewitness... we've got Harland dead to rights. The question now is what we do with it."
+        options:
+          - id: together
+            label: "Whatever comes next, we decide together."
+            response: "*Dex meets your eyes.* Together. Yeah. I wouldn't want to do this with anyone else."
+      - id: enough_response
+        text: "Enough and then some. Labels, route data, and now a living witness. Three months of carrying this, and the picture is finally complete. *His voice gets quiet.* Marco, Suki, Hank, Pete... this is for all of them."
+        options:
+          - id: honor_them
+            label: "We'll make sure it counts."
+            response: "*Dex puts a hand on your shoulder.* It already does. You gave me the chance to see this through. That means everything."
+      - id: everything_response
+        text: "*Dex takes a breath.* Yeah. Labels. Terminal logs. A witness who can put Harland at the scene. The case is airtight. Now we just need to decide how this ends."
+        options:
+          - id: your_call
+            label: "This has always been your fight. What do you want to do?"
+            response: "*Dex is quiet for a long moment.* I want to look him in the eye. But I want to do it right. When I'm ready... I'll need your help. For real this time."
+
 goals:
   - id: investigate_supply_crate
     target:
@@ -221,6 +286,32 @@ goals:
       dialogueTreeId: goal_supply_crate
       loyaltyDelta: 5
       storyNote: "Dex investigated a supply crate and found Crimson Caravan shipping labels — evidence that stolen cargo from the ambush is still circulating."
+
+  - id: check_comm_terminal
+    target:
+      type: tile_type
+      tileType: terminal
+    triggerCondition:
+      storyStage: 2
+    frequency: once
+    playerCanHelp: false
+    onComplete:
+      dialogueTreeId: goal_comm_terminal
+      loyaltyDelta: 5
+      storyNote: "Dex found route logs on a comm terminal proving Harland coordinated stolen shipments through the valley using Crimson Caravan infrastructure."
+
+  - id: find_survivor_witness
+    target:
+      type: npc
+      npcId: mara_witness
+    triggerCondition:
+      storyStage: 3
+    frequency: once
+    playerCanHelp: false
+    onComplete:
+      dialogueTreeId: goal_survivor_witness
+      loyaltyDelta: 5
+      storyNote: "Dex found an eyewitness who saw Harland meeting with raiders the night before the ambush — the final piece of evidence linking him to the attack."
 
 reactions:
   positive:

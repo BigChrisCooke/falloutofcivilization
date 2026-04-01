@@ -251,6 +251,10 @@ export const companionGoalSchema = z.object({
       locationId: z.string().min(1),
       tileX: z.number().int(),
       tileY: z.number().int()
+    }),
+    z.object({
+      type: z.literal("npc"),
+      npcId: z.string().min(1)
     })
   ]),
   triggerCondition: z.object({
