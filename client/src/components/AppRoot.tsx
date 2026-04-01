@@ -21,6 +21,7 @@ import {
   travel,
   updateScreen,
   type AuthUser,
+  type ConclusionInitiation,
   type GameState,
   type GameStatePatch,
   type GoalCompletionResult,
@@ -52,6 +53,7 @@ export function AppRoot() {
   const [showOverworldSkills, setShowOverworldSkills] = useState(false);
   const prevLevelRef = useRef<number | null>(null);
   const [pendingGoalCompletion, setPendingGoalCompletion] = useState<GoalCompletionResult | null>(null);
+  const [pendingConclusion, setPendingConclusion] = useState<ConclusionInitiation | null>(null);
   const movementLockedRef = useRef(false);
 
   const commitGameState = useCallback((resolveNextState: (previousState: GameState | null) => GameState | null) => {
@@ -245,6 +247,9 @@ export function AppRoot() {
     try {
       const response = await enterLocation(locationId);
       updateGameState(response.state);
+      if (response.conclusionInitiation) {
+        setPendingConclusion(response.conclusionInitiation);
+      }
     } catch (locationError) {
       setError(locationError instanceof Error ? locationError.message : "Failed to enter location.");
     }
@@ -508,6 +513,8 @@ export function AppRoot() {
               onQuestGranted={handleQuestGranted}
               pendingGoalCompletion={pendingGoalCompletion}
               onGoalCompletionDismissed={() => setPendingGoalCompletion(null)}
+              pendingConclusion={pendingConclusion}
+              onConclusionDismissed={() => setPendingConclusion(null)}
             />
           ) : gameState.worldState.current_screen === "vault" && gameState.currentInteriorMap ? (
             <InteriorMapPanel
@@ -519,6 +526,8 @@ export function AppRoot() {
               onQuestGranted={handleQuestGranted}
               pendingGoalCompletion={pendingGoalCompletion}
               onGoalCompletionDismissed={() => setPendingGoalCompletion(null)}
+              pendingConclusion={pendingConclusion}
+              onConclusionDismissed={() => setPendingConclusion(null)}
             />
           ) : (
             <div style={{ position: "relative" }}>

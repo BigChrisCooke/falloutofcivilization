@@ -211,6 +211,53 @@ export class GameService {
     };
   }
 
+  public async respondToConclusion(
+    saveId: string,
+    companionId: string,
+    accepted: boolean
+  ): Promise<{ loyaltyDelta: number; newLoyalty: number; questStarted: string | null }> {
+    const companion = await this.companionRepo.find(saveId, companionId);
+    if (!companion) {
+      throw new Error("Companion not found.");
+    }
+    if (!companion.conclusion_triggered) {
+      throw new Error("Conclusion has not been triggered for this companion.");
+    }
+    if (companion.conclusion_accepted !== null) {
+      throw new Error("Conclusion response has already been recorded.");
+    }
+
+    await this.companionRepo.setConclusionAccepted(saveId, companionId, accepted);
+
+    let loyaltyDelta: number;
+    let questStarted: string | null = null;
+
+    if (accepted) {
+      loyaltyDelta = 15;
+      questStarted = "dex_harland_reckoning";
+      // Start the conclusion quest
+      const questState = await this.gameStateRepo.getQuestState(saveId);
+      if (questState) {
+        const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
+        if (!activeQuests.includes(questStarted)) {
+          activeQuests.push(questStarted);
+          await this.gameStateRepo.updateQuestState({
+            ...questState,
+            active_quests_json: JSON.stringify(activeQuests),
+            updated_at: Date.now()
+          });
+        }
+      }
+    } else {
+      loyaltyDelta = -5;
+    }
+
+    const newLoyalty = Math.max(0, Math.min(100, companion.loyalty + loyaltyDelta));
+    await this.companionRepo.updateLoyalty(saveId, companionId, newLoyalty);
+
+    return { loyaltyDelta, newLoyalty, questStarted };
+  }
+
   public async getCompanionStoryDialogue(
     saveId: string,
     companionId: string
@@ -340,7 +387,11 @@ export class GameService {
     }
   }
 
-  public async enterLocation(saveId: string, locationId: string): Promise<void> {
+  private static readonly EVIDENCE_GOAL_IDS = ["investigate_supply_crate", "check_comm_terminal", "find_survivor_witness"];
+
+  public async enterLocation(saveId: string, locationId: string): Promise<ConclusionInitiation | null> {
+    let conclusionInitiation: ConclusionInitiation | null = null;
+
     await withTransaction(async () => {
       const content = getGameContent();
       const worldState = await this.gameStateRepo.getWorldState(saveId);
@@ -413,10 +464,45 @@ export class GameService {
 
         const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
         await this.activateEligibleGoal(saveId, companion, interiorMap, location.id, playerCharacter?.karma ?? 0, content);
+
+        // Check for conclusion initiation: all evidence goals complete, not yet triggered
+        if (!companion.conclusion_triggered) {
+          const allComplete = await this.areAllEvidenceGoalsComplete(
+            saveId, companion.companion_id, GameService.EVIDENCE_GOAL_IDS
+          );
+          if (allComplete) {
+            await this.companionRepo.setConclusionTriggered(saveId, companion.companion_id);
+            const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+            const dialogueTreeId = "conclusion_initiation";
+            const tree = companionDef?.storyDialogues[dialogueTreeId];
+            if (tree) {
+              conclusionInitiation = {
+                companionId: companion.companion_id,
+                companionName: companionDef?.name ?? companion.companion_id,
+                dialogueTreeId,
+                dialogueTree: {
+                  rootNodeId: tree.rootNodeId,
+                  nodes: tree.nodes.map((n) => ({
+                    id: n.id,
+                    text: n.text,
+                    options: n.options.map((o) => ({
+                      id: o.id,
+                      label: o.label,
+                      response: o.response,
+                      next: o.next
+                    }))
+                  }))
+                }
+              };
+            }
+          }
+        }
       }
 
       await this.checkCompanionStoryProgression(saveId);
     });
+
+    return conclusionInitiation;
   }
 
   public async travel(saveId: string, x: number, y: number) {
@@ -1392,4 +1478,14 @@ interface CompanionTurnResult {
   from: HexPoint;
   to: HexPoint;
   goalCompleted: GoalCompletionResult | null;
+}
+
+export interface ConclusionInitiation {
+  companionId: string;
+  companionName: string;
+  dialogueTreeId: string;
+  dialogueTree: {
+    rootNodeId: string;
+    nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+  };
 }

@@ -50,6 +50,11 @@ const companionDialogueSchema = z.object({
   companionId: z.string().min(1)
 });
 
+const conclusionRespondSchema = z.object({
+  companionId: z.string().min(1),
+  accepted: z.boolean()
+});
+
 const specialSchema = z.object({
   str: z.number().int().min(1).max(10),
   per: z.number().int().min(1).max(10),
@@ -122,9 +127,10 @@ export function createGameRouter(
 
     try {
       const payload = enterLocationSchema.parse(request.body);
-      await gameService.enterLocation(request.currentSaveId, payload.locationId);
+      const conclusionInitiation = await gameService.enterLocation(request.currentSaveId, payload.locationId);
       response.json({
-        state: await gameService.getState(request.currentSaveId)
+        state: await gameService.getState(request.currentSaveId),
+        conclusionInitiation: conclusionInitiation ?? undefined
       });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to enter location.");
@@ -382,6 +388,29 @@ export function createGameRouter(
       response.json({ node });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to reset dialogue.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/companion/conclusion/respond", async (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = conclusionRespondSchema.parse(request.body);
+      const result = await gameService.respondToConclusion(
+        request.currentSaveId,
+        payload.companionId,
+        payload.accepted
+      );
+      response.json({
+        result,
+        state: await gameService.getState(request.currentSaveId)
+      });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to process conclusion response.");
       response.status(400).json({ error: message });
     }
   });

@@ -285,6 +285,16 @@ export interface InteriorRouteReplay {
   goalCompleted?: GoalCompletionResult | null;
 }
 
+export interface ConclusionInitiation {
+  companionId: string;
+  companionName: string;
+  dialogueTreeId: string;
+  dialogueTree: {
+    rootNodeId: string;
+    nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+  };
+}
+
 interface SessionResponse {
   authenticated: boolean;
   user: AuthUser | null;
@@ -401,7 +411,7 @@ export function updateScreen(screen: "overworld" | "vault"): Promise<{ state: Ga
   });
 }
 
-export function enterLocation(locationId: string): Promise<{ state: GameState }> {
+export function enterLocation(locationId: string): Promise<{ state: GameState; conclusionInitiation?: ConclusionInitiation }> {
   return request("/api/game/location/enter", {
     method: "POST",
     body: JSON.stringify({ locationId })
@@ -503,5 +513,12 @@ export function resetDialogue(npcId: string): Promise<{ node: DialogueNode | nul
   return request("/api/game/dialogue/reset", {
     method: "POST",
     body: JSON.stringify({ npcId })
+  });
+}
+
+export function respondToConclusion(companionId: string, accepted: boolean): Promise<{ result: { loyaltyDelta: number; newLoyalty: number; questStarted: string | null }; state: GameState }> {
+  return request("/api/game/companion/conclusion/respond", {
+    method: "POST",
+    body: JSON.stringify({ companionId, accepted })
   });
 }

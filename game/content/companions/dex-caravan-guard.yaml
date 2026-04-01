@@ -273,6 +273,46 @@ storyDialogues:
             label: "This has always been your fight. What do you want to do?"
             response: "*Dex is quiet for a long moment.* I want to look him in the eye. But I want to do it right. When I'm ready... I'll need your help. For real this time."
 
+  conclusion_initiation:
+    rootNodeId: dex_approaches
+    nodes:
+      - id: dex_approaches
+        text: "*Dex steps in front of you, blocking the path. His expression is serious — more serious than you've ever seen it.* Hey. Stop. I need to talk to you. Not about the wasteland, not about the next location. About Harland. About finishing this."
+        options:
+          - id: whats_up
+            label: "What's going on, Dex?"
+            next: lay_it_out
+          - id: im_listening
+            label: "I'm listening."
+            next: lay_it_out
+      - id: lay_it_out
+        text: "I've got the shipping labels from the crate. Route logs from the terminal. And a witness who saw Harland planning the whole thing with his own eyes. Three pieces of evidence. Three months of carrying this. It's enough. More than enough."
+        options:
+          - id: what_now
+            label: "So what do you want to do?"
+            next: the_ask
+      - id: the_ask
+        text: "*Dex takes a breath.* I want to go after him. Not alone — not anymore. I'm asking you, straight up: will you help me find Harland and make him answer for what he did to my crew? This isn't a side errand. This is the thing. The real thing."
+        options:
+          - id: accept
+            label: "I'm in. Let's finish this together."
+            next: accept_response
+          - id: decline
+            label: "I can't commit to that right now, Dex."
+            next: decline_response
+      - id: accept_response
+        text: "*Dex's shoulders drop — like he's been bracing for a hit that never came.* You mean that? *He extends his hand.* Then let's do this. I've been carrying this weight alone for too long. With you backing me up... Harland doesn't stand a chance."
+        options:
+          - id: shake
+            label: "Together. Whatever it takes."
+            response: "*Dex grips your hand.* Together. *His voice is steady now.* I know where to start. Let me tell you what I've pieced together."
+      - id: decline_response
+        text: "*Dex's jaw tightens. He looks away for a moment, then back at you.* ...Alright. I hear you. I'm not going to pretend that doesn't sting. But I respect honesty more than empty promises. *He pauses.* The offer stands. If you change your mind, I'll be here."
+        options:
+          - id: understand
+            label: "I understand. And I appreciate what you've shared with me."
+            response: "*Dex nods once.* Yeah. *He steps aside.* Let's keep moving. We've still got work to do out here, even if it's not my work."
+
 goals:
   - id: investigate_supply_crate
     target:

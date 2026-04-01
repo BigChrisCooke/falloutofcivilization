@@ -96,6 +96,8 @@ export interface CompanionInstanceRow {
   companion_y: number | null;
   active_goal_id: string | null;
   goal_progress: string | null;
+  conclusion_triggered: number;
+  conclusion_accepted: number | null;
 }
 
 export interface AuthUser {

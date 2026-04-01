@@ -92,6 +92,20 @@ export class CompanionRepo {
     return row?.goal_progress ? JSON.parse(row.goal_progress) : [];
   }
 
+  public async setConclusionTriggered(saveId: string, companionId: string): Promise<void> {
+    await getDb().run(
+      "UPDATE companion_instances SET conclusion_triggered = 1 WHERE save_id = ? AND companion_id = ? AND departed = 0",
+      [saveId, companionId]
+    );
+  }
+
+  public async setConclusionAccepted(saveId: string, companionId: string, accepted: boolean): Promise<void> {
+    await getDb().run(
+      "UPDATE companion_instances SET conclusion_accepted = ? WHERE save_id = ? AND companion_id = ? AND departed = 0",
+      [accepted ? 1 : 0, saveId, companionId]
+    );
+  }
+
   public async remove(saveId: string, companionId: string): Promise<void> {
     await getDb().run(
       "UPDATE companion_instances SET departed = 1, loyalty = 0 WHERE save_id = ? AND companion_id = ?",

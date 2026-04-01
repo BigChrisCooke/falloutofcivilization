@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { GameState, GoalCompletionResult } from "../lib/api.js";
-import { collectItem, getCompanionStoryDialogue } from "../lib/api.js";
+import type { GameState, GoalCompletionResult, ConclusionInitiation } from "../lib/api.js";
+import { collectItem, getCompanionStoryDialogue, respondToConclusion } from "../lib/api.js";
 import { interiorRuntimeAdapter } from "../lib/map/interior_adapter.js";
 import { buildInteriorSceneModel } from "../lib/map/interior_scene_model.js";
 import { useRetainedMapRuntime } from "../lib/map/map_runtime.js";
@@ -20,10 +20,12 @@ interface InteriorMapPanelProps {
   onQuestGranted?: (questId: string) => void;
   pendingGoalCompletion?: GoalCompletionResult | null;
   onGoalCompletionDismissed?: () => void;
+  pendingConclusion?: ConclusionInitiation | null;
+  onConclusionDismissed?: () => void;
 }
 
 
-export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefresh, onQuestGranted, pendingGoalCompletion, onGoalCompletionDismissed }: InteriorMapPanelProps) {
+export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefresh, onQuestGranted, pendingGoalCompletion, onGoalCompletionDismissed, pendingConclusion, onConclusionDismissed }: InteriorMapPanelProps) {
   const map = state.currentInteriorMap;
 
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
@@ -45,9 +47,34 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
     currentNodeId: string;
   } | null>(null);
   const [companionReactionBubble, setCompanionReactionBubble] = useState<{ companionName: string; text: string; departed: boolean } | null>(null);
+  const [conclusionDialogue, setConclusionDialogue] = useState<{
+    companionId: string;
+    companionName: string;
+    nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+    currentNodeId: string;
+  } | null>(null);
 
   const collectedLoot = useMemo(() => new Set(state.collectedItemIds), [state.collectedItemIds]);
   const collectedActions = useMemo(() => new Set(state.collectedActionIds), [state.collectedActionIds]);
+
+  // Auto-trigger conclusion initiation dialogue
+  useEffect(() => {
+    if (pendingConclusion?.dialogueTree) {
+      setActiveNpcId(null);
+      setActiveLootId(null);
+      setActiveInteractableId(null);
+      setShowPlayerPanel(false);
+      setCompanionDialogue(null);
+      setConclusionDialogue({
+        companionId: pendingConclusion.companionId,
+        companionName: pendingConclusion.companionName,
+        nodes: pendingConclusion.dialogueTree.nodes,
+        currentNodeId: pendingConclusion.dialogueTree.rootNodeId
+      });
+      onConclusionDismissed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingConclusion]);
 
   // Auto-trigger goal completion dialogue when a goal is completed
   useEffect(() => {
@@ -382,6 +409,49 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
                     End conversation
                   </button>
                 )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Conclusion Initiation Dialogue */}
+        {conclusionDialogue && (() => {
+          const currentNode = conclusionDialogue.nodes.find((n) => n.id === conclusionDialogue.currentNodeId);
+          if (!currentNode) return null;
+
+          async function handleConclusionOption(option: { id: string; label: string; response?: string; next?: string }) {
+            if (option.next) {
+              setConclusionDialogue((prev) => prev ? { ...prev, currentNodeId: option.next! } : prev);
+              return;
+            }
+            // Terminal node — determine accept/decline from option id
+            const accepted = option.id === "accept" || option.id === "shake";
+            try {
+              const { state: newState } = await respondToConclusion(conclusionDialogue!.companionId, accepted);
+              onStateRefresh(newState);
+            } catch {
+              // silently fail
+            }
+            setConclusionDialogue(null);
+          }
+
+          return (
+            <div className="interaction-panel companion-story-panel">
+              <div className="interaction-panel-header">
+                <span className="eyebrow">{conclusionDialogue.companionName} &middot; The Reckoning</span>
+              </div>
+              <p className="companion-story-text">{currentNode.text}</p>
+              <div className="interaction-options">
+                {currentNode.options.map((option) => (
+                  <button
+                    key={option.id}
+                    className="ghost-button interaction-option"
+                    type="button"
+                    onClick={() => void handleConclusionOption(option)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </div>
           );

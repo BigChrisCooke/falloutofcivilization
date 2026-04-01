@@ -1,0 +1,19 @@
+id: dex_harland_reckoning
+name: "The Reckoning"
+description: "Dex has gathered enough evidence to confront Harland — the logistics manager who arranged the ambush that killed his caravan crew. Help Dex track down Harland and bring him to justice."
+grantedBy: dex
+objectives:
+  - id: find_harland
+    description: "Track down Harland in the valley."
+    type: visit
+    target: harland_hideout
+  - id: confront_harland
+    description: "Confront Harland with the evidence."
+    type: talk
+    target: harland
+rewards:
+  karma: 15
+  caps: 100
+mapMarker:
+  locationId: caravan_waystation
+  label: "Find Harland"
