@@ -57,6 +57,19 @@ export {
 } from "./rules/pathfinding.js";
 export { isPassableTile } from "./tiles.js";
 export {
+  buildInitialNpcs,
+  buildPassableSet,
+  computeMaxHp,
+  computeNpcDamage,
+  computeNpcHitChance,
+  computePlayerDamage,
+  computePlayerHitChance,
+  resolveNpcAttack,
+  resolvePlayerAttack,
+  type CombatNpc,
+  type RollFn
+} from "./rules/combat.js";
+export {
   SKILL_DEFINITIONS,
   SKILL_IDS,
   getSkillPointCost,

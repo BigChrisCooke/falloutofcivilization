@@ -68,6 +68,9 @@ export class SaveService {
       skills_json: null,
       tagged_skills_json: null,
       unspent_skill_points: 0,
+      hp: 0,
+      max_hp: 0,
+      equipped_weapon_id: null,
       created_at: now
     };
 

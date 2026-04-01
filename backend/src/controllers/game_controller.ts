@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z, ZodError } from "zod";
 
 import { requireAuth } from "../middleware/authenticate.js";
+import { CombatService } from "../services/combat_service.js";
 import { DialogueService } from "../services/dialogue_service.js";
 import { GameService } from "../services/game_service.js";
 import { InventoryService } from "../services/inventory_service.js";
@@ -50,6 +51,14 @@ const companionDialogueSchema = z.object({
   companionId: z.string().min(1)
 });
 
+const equipWeaponSchema = z.object({
+  weaponId: z.string().min(1)
+});
+
+const attackTargetSchema = z.object({
+  targetNpcId: z.string().min(1)
+});
+
 const specialSchema = z.object({
   str: z.number().int().min(1).max(10),
   per: z.number().int().min(1).max(10),
@@ -71,7 +80,8 @@ function formatErrorMessage(error: unknown, fallback: string): string {
 export function createGameRouter(
   gameService: GameService,
   dialogueService: DialogueService,
-  inventoryService: InventoryService
+  inventoryService: InventoryService,
+  combatService: CombatService = new CombatService()
 ): Router {
   const router = Router();
 
@@ -382,6 +392,38 @@ export function createGameRouter(
       response.json({ node });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to reset dialogue.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/combat/equip", async (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = equipWeaponSchema.parse(request.body);
+      await combatService.equipWeapon(request.currentSaveId, payload.weaponId);
+      response.json({ state: await gameService.getState(request.currentSaveId) });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to equip weapon.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/combat/attack", async (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const payload = attackTargetSchema.parse(request.body);
+      const result = await combatService.attackTarget(request.currentSaveId, payload.targetNpcId);
+      response.json({ result, state: await gameService.getState(request.currentSaveId) });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to attack target.");
       response.status(400).json({ error: message });
     }
   });

@@ -5,7 +5,7 @@ regionId: frontier_valley
 position:
   x: 8
   y: 18
-interiorMapId: null
+interiorMapId: dry_lake_bed_arena
 factionTags: []
 questTags:
   - exploration

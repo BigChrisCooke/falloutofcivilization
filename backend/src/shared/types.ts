@@ -34,7 +34,19 @@ export interface PlayerCharacterRow {
   skills_json: string | null;
   tagged_skills_json: string | null;
   unspent_skill_points: number;
+  hp: number;
+  max_hp: number;
+  equipped_weapon_id: string | null;
   created_at: number;
+}
+
+export interface CombatStateRow {
+  save_id: string;
+  map_id: string;
+  turn_number: number;
+  active_turn: string;
+  npcs_json: string;
+  updated_at: number;
 }
 
 export interface WorldStateRow {

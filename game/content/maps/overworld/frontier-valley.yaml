@@ -42,9 +42,9 @@ layout:
   # Row 17 - Ruined suburb / Powder Ganger area
   - [sand, sand, road, sand, sand, road, road, sand, sand, sand, road, road, sand, sand, scrub, scrub, sand, sand, sand, road, sand, sand, road, sand, road, road, sand, sand, rock, rock, rock, rock, rock, ridge, ridge, ridge, ridge, ridge, ridge, ridge]
   # Row 18 - Southern wastes / Dry Lake
-  - [sand, sand, road, sand, sand, road, sand, sand, water, water, road, sand, sand, scrub, sand, sand, sand, sand, sand, road, road, sand, road, road, road, sand, sand, rock, rock, rock, rock, rock, rock, road, rock, ridge, ridge, ridge, ridge, ridge]
+  - [sand, sand, road, sand, sand, road, sand, sand, dry_lake_bed, dry_lake_bed, road, sand, sand, scrub, sand, sand, sand, sand, sand, road, road, sand, road, road, road, sand, sand, rock, rock, rock, rock, rock, rock, road, rock, ridge, ridge, ridge, ridge, ridge]
   # Row 19 - Mining camp area
-  - [sand, sand, road, road, sand, road, sand, water, water, water, road, sand, sand, sand, sand, sand, sand, scrub, sand, sand, road, sand, sand, sand, road, sand, rock, rock, rock, rock, rock, rock, rock, road, rock, ridge, ridge, ridge, ridge, ridge]
+  - [sand, sand, road, road, sand, road, sand, dry_lake_bed, dry_lake_bed, dry_lake_bed, road, sand, sand, sand, sand, sand, sand, scrub, sand, sand, road, sand, sand, sand, road, sand, rock, rock, rock, rock, rock, rock, rock, road, rock, ridge, ridge, ridge, ridge, ridge]
   # Row 20 - Water purification area / Far south
   - [sand, sand, sand, road, road, road, water, water, water, water, road, road, sand, sand, road, road, sand, sand, sand, sand, road, road, sand, sand, road, rock, rock, rock, rock, rock, rock, rock, road, road, rock, ridge, ridge, ridge, ridge, ridge]
   # Row 21 - Southern marshes

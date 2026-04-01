@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { CombatHud } from "./CombatHud.js";
 import { HexOverworld } from "./HexOverworld.js";
 import { InteriorMapPanel } from "./InteriorMapPanel.js";
 import { PipBoyOverlay } from "./PipBoyOverlay.js";
 import { SkillAllocationPanel } from "./SkillAllocationPanel.js";
 
 import {
+  attackTarget,
   createSave,
   deleteSave,
   enterLocation,
+  equipWeapon,
   exitInterior,
   getGameState,
   getSession,
@@ -49,6 +52,7 @@ export function AppRoot() {
   const [highlightedLocationId, setHighlightedLocationId] = useState<string | null>(null);
   const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
   const [showOverworldSkills, setShowOverworldSkills] = useState(false);
+  const [combatMessage, setCombatMessage] = useState<string | null>(null);
   const prevLevelRef = useRef<number | null>(null);
   const movementLockedRef = useRef(false);
 
@@ -219,6 +223,29 @@ export function AppRoot() {
       setTimeout(() => setSaveConfirmation(null), 3000);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save game.");
+    }
+  }
+
+  async function handleEquipWeapon(weaponId: string) {
+    setError(null);
+
+    try {
+      const response = await equipWeapon(weaponId);
+      updateGameState(response.state);
+    } catch (equipError) {
+      setError(equipError instanceof Error ? equipError.message : "Failed to equip weapon.");
+    }
+  }
+
+  async function handleAttack(targetNpcId: string) {
+    setError(null);
+
+    try {
+      const response = await attackTarget(targetNpcId);
+      updateGameState(response.state);
+      setCombatMessage(response.result.message);
+    } catch (attackError) {
+      setError(attackError instanceof Error ? attackError.message : "Failed to attack.");
     }
   }
 
@@ -475,14 +502,27 @@ export function AppRoot() {
           </section>
 
           {gameState.worldState.current_screen === "location" && gameState.currentInteriorMap ? (
-            <InteriorMapPanel
-              state={gameState}
-              variant="location"
-              onMove={(x, y) => handleInteriorMove(x, y)}
-              onExit={(exitId) => void handleInteriorExit(exitId)}
-              onStateRefresh={(newState) => updateGameState(newState)}
-              onQuestGranted={handleQuestGranted}
-            />
+            <>
+              <InteriorMapPanel
+                state={gameState}
+                variant="location"
+                onMove={(x, y) => handleInteriorMove(x, y)}
+                onExit={(exitId) => void handleInteriorExit(exitId)}
+                onStateRefresh={(newState) => updateGameState(newState)}
+                onQuestGranted={handleQuestGranted}
+              />
+              {gameState.combatState && (
+                <CombatHud
+                  combatState={gameState.combatState}
+                  playerCharacter={gameState.playerCharacter}
+                  weaponCatalog={gameState.weaponCatalog}
+                  inventory={gameState.inventory}
+                  onEquipWeapon={(weaponId) => void handleEquipWeapon(weaponId)}
+                  onAttack={(targetNpcId) => void handleAttack(targetNpcId)}
+                  lastMessage={combatMessage}
+                />
+              )}
+            </>
           ) : gameState.worldState.current_screen === "vault" && gameState.currentInteriorMap ? (
             <InteriorMapPanel
               state={gameState}

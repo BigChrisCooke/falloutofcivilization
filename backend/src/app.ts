@@ -9,6 +9,7 @@ import { createGameRouter } from "./controllers/game_controller.js";
 import { createSaveRouter } from "./controllers/save_controller.js";
 import { attachAuth } from "./middleware/authenticate.js";
 import { AuthService } from "./services/auth_service.js";
+import { CombatService } from "./services/combat_service.js";
 import { getGameContent } from "./services/content_service.js";
 import { DialogueService } from "./services/dialogue_service.js";
 import { GameService } from "./services/game_service.js";
@@ -16,12 +17,13 @@ import { InventoryService } from "./services/inventory_service.js";
 import { SaveService } from "./services/save_service.js";
 import type { AppConfig } from "./shared/config.js";
 
-export function createApp(config: AppConfig) {
+export function createApp(config: AppConfig, combatService?: CombatService) {
   getGameContent();
 
   const authService = new AuthService(config);
   const saveService = new SaveService();
-  const gameService = new GameService();
+  const resolvedCombatService = combatService ?? new CombatService();
+  const gameService = new GameService(resolvedCombatService);
   const dialogueService = new DialogueService();
   const inventoryService = new InventoryService();
   const app = express();
@@ -46,7 +48,7 @@ export function createApp(config: AppConfig) {
 
   app.use("/api/auth", createAuthRouter(authService, config));
   app.use("/api/saves", createSaveRouter(authService, saveService));
-  app.use("/api/game", createGameRouter(gameService, dialogueService, inventoryService));
+  app.use("/api/game", createGameRouter(gameService, dialogueService, inventoryService, resolvedCombatService));
 
   if (existsSync(clientIndexPath)) {
     app.use(express.static(config.clientDistPath));

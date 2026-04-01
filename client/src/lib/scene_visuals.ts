@@ -292,12 +292,27 @@ export function createQuestMarker(): Container {
 }
 
 export const LOCATION_TILE_IMAGES: Record<string, string> = {
-  camp: "/tiles/western_indians.png",
+  camp: "/tiles/modern_campsite.png",
   facility: "/tiles/western_watertower.png",
   faction_hq: "/tiles/western_sheriff.png",
   market: "/tiles/western_station.png",
   shop: "/tiles/western_general.png",
-  tavern: "/tiles/western_saloon.png"
+  tavern: "/tiles/western_saloon.png",
+  abandoned_gas_station: "/tiles/modern_petrol.png",
+  radio_tower: "/tiles/military_rockets.png",
+  church: "/tiles/medieval_church.png",
+  cave: "/tiles/cave.png",
+  mining_camp: "/tiles/medieval_blacksmith.png",
+  solar_spire: "/tiles/scifi_energy.png",
+  wreck: "/tiles/scifi_port.png",
+  rest_stop: "/tiles/modern_trailerpark.png",
+  prewar_hospital: "/tiles/modern_oldBuilding.png",
+  ruined_suburb: "/tiles/modern_villageLarge.png",
+  bunker: "/tiles/brotherhood_vault.png",
+  vault: "/tiles/Vault.png",
+  scrapyard: "/tiles/rustys_scrapyard.png",
+  military: "/tiles/military_entrance.png",
+  dry_lake_bed: "/tiles/dry_lake_bed.png"
 };
 
 export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
@@ -313,7 +328,8 @@ export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
   ],
   road: [
     "/tiles/stone_07.png", "/tiles/stone_12.png", "/tiles/stone_13.png",
-    "/tiles/stone_14.png", "/tiles/stone_15.png"
+    "/tiles/stone_14.png", "/tiles/stone_billboard.png", "/tiles/stone_billboard_2.png",
+    "/tiles/Mountain_6.png", "/tiles/dirt_19.png", "/tiles/dirt_20.png"
   ],
   rock: [
     "/tiles/mars_07.png", "/tiles/mars_16.png", "/tiles/mars_17.png",
@@ -322,7 +338,20 @@ export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
   mesa: [
     "/tiles/dirt_06.png", "/tiles/dirt_11.png", "/tiles/dirt_12.png",
     "/tiles/dirt_13.png", "/tiles/dirt_14.png", "/tiles/dirt_15.png",
-    "/tiles/dirt_16.png", "/tiles/dirt_17.png", "/tiles/dirt_18.png"
+    "/tiles/dirt_16.png", "/tiles/dirt_17.png", "/tiles/dirt_18.png",
+    "/tiles/dirt_19.png", "/tiles/dirt_20.png", "/tiles/dirt_22.png"
+  ],
+  ridge: [
+    "/tiles/Mountain_1.png", "/tiles/Mountain_2.png", "/tiles/Mountain_3.png",
+    "/tiles/Mountain_4.png", "/tiles/Mountain_6.png", "/tiles/Mountain_Pass_1.png"
+  ],
+  water: [
+    "/tiles/swamp_1.png", "/tiles/swamp2.png", "/tiles/swamp3.png",
+    "/tiles/swamp4.png", "/tiles/swamp5.png"
+  ],
+  dry_lake_bed: [
+    "/tiles/dry_lake_bed.png", "/tiles/dry_lake_bed_2.png", "/tiles/dry_river_bed.png",
+    "/tiles/dirt_19.png", "/tiles/dirt_20.png"
   ]
 };
 
@@ -341,18 +370,26 @@ function hashTileKey(key: string): number {
 export async function preloadLocationTileImages(): Promise<void> {
   const locationEntries = Object.entries(LOCATION_TILE_IMAGES);
   for (const [type, path] of locationEntries) {
-    const texture = await Assets.load<Texture>(path);
-    loadedTileTextures.set(type, texture);
+    try {
+      const texture = await Assets.load<Texture>(path);
+      loadedTileTextures.set(type, texture);
+    } catch {
+      console.warn(`[tiles] failed to load location tile: ${path}`);
+    }
   }
 
   const terrainEntries = Object.entries(TERRAIN_TILE_IMAGES);
   for (const [terrain, paths] of terrainEntries) {
     const textures: Texture[] = [];
     for (const path of paths) {
-      const texture = await Assets.load<Texture>(path);
-      textures.push(texture);
+      try {
+        const texture = await Assets.load<Texture>(path);
+        textures.push(texture);
+      } catch {
+        console.warn(`[tiles] failed to load terrain tile: ${path}`);
+      }
     }
-    loadedTerrainTextures.set(terrain, textures);
+    if (textures.length > 0) loadedTerrainTextures.set(terrain, textures);
   }
 
   tileTexturesLoaded = true;

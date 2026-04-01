@@ -1,0 +1,71 @@
+id: dry_lake_bed_arena
+name: Dry Lake Bed
+theme: wasteland
+layout:
+  # Row 0 - North edge (rock barrier)
+  - [rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, rock]
+  # Row 1 - Open arena with rock cover
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 2 - NPC spawn zone (open)
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 3 - NPC spawn zone
+  - [rock, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, rock]
+  # Row 4 - Open
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 5 - Mid arena
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 6 - Cover cluster west
+  - [rock, dry_lake_bed, dry_lake_bed, rock, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 7 - Open
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 8 - Scattered rocks
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 9 - Open
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 10 - Center rock cluster
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 11 - Open
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 12 - Scattered cover
+  - [rock, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, rock]
+  # Row 13 - Open
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 14 - Cover near player side
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 15 - Open
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 16 - Rock cluster south
+  - [rock, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 17 - Player spawn row
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 18 - Open south
+  - [rock, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, dry_lake_bed, rock]
+  # Row 19 - Exit row
+  - [rock, rock, rock, rock, rock, rock, rock, rock, rock, rock, dry_lake_bed, dry_lake_bed, rock, rock, rock, rock, rock, rock, rock, rock]
+spawnPoints:
+  - id: player_spawn
+    x: 10
+    y: 17
+exits:
+  - id: back_to_overworld
+    target: frontier_valley
+    x: 10
+    y: 19
+npcs:
+  - id: raider_a
+    name: Raider
+    disposition: hostile
+    hp: 30
+    ac: 2
+    x: 8
+    y: 2
+  - id: raider_b
+    name: Raider Scout
+    disposition: hostile
+    hp: 22
+    ac: 1
+    x: 12
+    y: 3
+interactables: []
+loot: []
+questHooks: []

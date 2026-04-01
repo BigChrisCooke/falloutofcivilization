@@ -112,7 +112,10 @@ export const weaponDefinitionSchema = z.object({
   weight: z.number().positive(),
   value: z.number().int().nonnegative(),
   rarity: rarityEnum,
-  description: z.string().min(1)
+  description: z.string().min(1),
+  range: z.number().int().positive().default(1),
+  ammoType: z.string().min(1).optional(),
+  specialStat: specialStatEnum.optional()
 });
 
 // --- World content schemas ---
@@ -156,7 +159,7 @@ export const overworldMapSchema = z.object({
 export const interiorMapSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  theme: z.enum(["vault", "cave", "wasteland_tavern", "prewar-reactor", "military", "workshop", "market", "ruins", "church", "camp", "wreck", "industrial", "radio_station", "suburb", "hospital"]),
+  theme: z.enum(["vault", "cave", "wasteland_tavern", "prewar-reactor", "military", "workshop", "market", "ruins", "church", "camp", "wreck", "industrial", "radio_station", "suburb", "hospital", "wasteland"]),
   layout: z.array(z.array(z.string().min(1))).min(1),
   spawnPoints: z.array(
     z.object({
@@ -213,6 +216,8 @@ export const interiorMapSchema = z.object({
       x: z.number().int().optional(),
       y: z.number().int().optional(),
       interactRange: z.number().int().min(1).optional(),
+      hp: z.number().int().positive().optional(),
+      ac: z.number().int().nonnegative().default(0),
       dialogue: dialogueTreeSchema.optional()
     })
   ).default([]),
