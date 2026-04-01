@@ -106,6 +106,13 @@ export class CompanionRepo {
     );
   }
 
+  public async resetConclusionAccepted(saveId: string, companionId: string): Promise<void> {
+    await getDb().run(
+      "UPDATE companion_instances SET conclusion_accepted = NULL WHERE save_id = ? AND companion_id = ? AND departed = 0",
+      [saveId, companionId]
+    );
+  }
+
   public async remove(saveId: string, companionId: string): Promise<void> {
     await getDb().run(
       "UPDATE companion_instances SET departed = 1, loyalty = 0 WHERE save_id = ? AND companion_id = ?",

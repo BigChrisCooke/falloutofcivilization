@@ -106,6 +106,7 @@ export function DialoguePanel({
         for (const [faction, delta] of Object.entries(qc.factionDeltas)) {
           rewardParts.push(`+${delta} ${faction}`);
         }
+        if (qc.loyaltyDelta) rewardParts.push(`+${qc.loyaltyDelta} Loyalty`);
         const rewardText = rewardParts.length > 0 ? ` — ${rewardParts.join(", ")}` : "";
         const toastText = `Quest complete: ${qc.questName}${rewardText}`;
         setQuestNotification(toastText);

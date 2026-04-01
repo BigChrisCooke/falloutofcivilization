@@ -77,6 +77,8 @@ export interface QuestCompletionResult {
   factionDeltas: Record<string, number>;
   itemsGranted: Array<{ itemId: string; label: string; quantity: number }>;
   capsGranted: number;
+  loyaltyDelta: number;
+  companionId: string | null;
 }
 
 export interface DialogueSelectResult {
@@ -761,7 +763,9 @@ export class DialogueService {
       karmaDelta: 0,
       factionDeltas: {},
       itemsGranted: [],
-      capsGranted: 0
+      capsGranted: 0,
+      loyaltyDelta: 0,
+      companionId: questDef.grantedBy ?? null
     };
 
     if (questDef.rewards) {
@@ -803,6 +807,15 @@ export class DialogueService {
           description: "Bottle caps - the universally accepted currency of the wasteland.",
           collected_at: Date.now()
         });
+      }
+
+      if (questDef.rewards.loyaltyDelta && questDef.grantedBy) {
+        result.loyaltyDelta = questDef.rewards.loyaltyDelta;
+        const companion = await this.companionRepo.find(saveId, questDef.grantedBy);
+        if (companion && !companion.departed) {
+          const newLoyalty = Math.max(0, Math.min(100, companion.loyalty + questDef.rewards.loyaltyDelta));
+          await this.companionRepo.updateLoyalty(saveId, questDef.grantedBy, newLoyalty);
+        }
       }
     }
 

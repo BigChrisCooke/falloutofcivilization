@@ -14,6 +14,7 @@ objectives:
 rewards:
   karma: 15
   caps: 100
+  loyaltyDelta: 10
 mapMarker:
   locationId: caravan_waystation
   label: "Find Harland"

@@ -297,14 +297,16 @@ export function AppRoot() {
         const gc = response.replay.goalCompleted;
         // Update companion loyalty in local state if changed
         if (gc.loyaltyDelta && gc.loyaltyDelta !== 0) {
+          const goalCompanionId = response.replay.companionStep?.companionId;
           commitGameState((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
-              companions: prev.companions.map((c) => ({
-                ...c,
-                loyalty: c.loyalty + (gc.loyaltyDelta ?? 0)
-              }))
+              companions: prev.companions.map((c) =>
+                c.companionId === goalCompanionId
+                  ? { ...c, loyalty: c.loyalty + (gc.loyaltyDelta ?? 0) }
+                  : c
+              )
             };
           });
         }

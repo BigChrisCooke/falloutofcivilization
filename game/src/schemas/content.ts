@@ -89,7 +89,8 @@ export const questSchema = z.object({
     karma: z.number().int().optional(),
     factionDeltas: z.record(z.number().int()).optional(),
     items: z.array(grantItemSchema.extend({ description: z.string().optional() })).optional(),
-    caps: z.number().int().optional()
+    caps: z.number().int().optional(),
+    loyaltyDelta: z.number().int().optional()
   }).optional(),
   mapMarker: z.object({
     locationId: z.string().min(1),

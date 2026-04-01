@@ -65,6 +65,8 @@ export interface QuestCompletionResult {
   factionDeltas: Record<string, number>;
   itemsGranted: Array<{ itemId: string; label: string; quantity: number }>;
   capsGranted: number;
+  loyaltyDelta: number;
+  companionId: string | null;
 }
 
 export interface DialogueSelectResult {

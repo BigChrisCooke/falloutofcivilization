@@ -273,6 +273,37 @@ storyDialogues:
             label: "This has always been your fight. What do you want to do?"
             response: "*Dex is quiet for a long moment.* I want to look him in the eye. But I want to do it right. When I'm ready... I'll need your help. For real this time."
 
+  quest_resolution:
+    rootNodeId: resolution_scene
+    nodes:
+      - id: resolution_scene
+        text: "*Dex finds you after the dust settles. He looks different — lighter, somehow. Like something heavy has finally been set down.* It's done. Harland answered for what he did. The evidence we gathered — the labels, the terminal logs, the witness — it all held up. My crew... they got their justice."
+        options:
+          - id: how_feel
+            label: "How do you feel?"
+            next: feeling
+          - id: deserved
+            label: "They deserved that. All of them."
+            next: they_deserved
+      - id: feeling
+        text: "*He's quiet for a moment.* I thought I'd feel... I don't know. Triumphant? Relieved? Mostly I just feel tired. Good tired, though. Like the end of a long haul when you finally see the settlement lights. *He looks at you.* I couldn't have done this without you. Not just the fighting — the believing. You believed me when I was just some stranded guard with a grudge and a theory."
+        options:
+          - id: never_just
+            label: "You were never 'just' anything, Dex."
+            next: final_beat
+      - id: they_deserved
+        text: "*Dex nods slowly.* Marco. Suki. Hank. Old Pete. Maybe Chen, wherever she is — she'll hear about this. *His voice catches.* Seven years on the north road together, and it took three months with you to set things right. That says something about you."
+        options:
+          - id: team_effort
+            label: "It was a team effort."
+            next: final_beat
+      - id: final_beat
+        text: "*Dex straightens up and looks out at the wasteland.* You know what? I think I'm done looking backward. Got a future to figure out now — and I'd like to figure it out with you, if you'll have me. Not because I owe you. Because there's nobody else I'd rather have watching my back."
+        options:
+          - id: count_on_it
+            label: "Count on it."
+            response: "*Dex grins — that rare, genuine grin.* Then let's get moving. The wasteland's not going to explore itself."
+
   conclusion_initiation:
     rootNodeId: dex_approaches
     nodes:

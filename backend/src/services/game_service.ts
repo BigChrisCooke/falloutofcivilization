@@ -465,13 +465,14 @@ export class GameService {
         const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
         await this.activateEligibleGoal(saveId, companion, interiorMap, location.id, playerCharacter?.karma ?? 0, content);
 
-        // Check for conclusion initiation: all evidence goals complete, not yet triggered
-        if (!companion.conclusion_triggered) {
+        // Check for conclusion initiation: all evidence goals complete, not yet triggered (or previously declined)
+        if (!companion.conclusion_triggered || companion.conclusion_accepted === 0) {
           const allComplete = await this.areAllEvidenceGoalsComplete(
             saveId, companion.companion_id, GameService.EVIDENCE_GOAL_IDS
           );
           if (allComplete) {
             await this.companionRepo.setConclusionTriggered(saveId, companion.companion_id);
+            await this.companionRepo.resetConclusionAccepted(saveId, companion.companion_id);
             const companionDef = content.companions.find((c) => c.id === companion.companion_id);
             const dialogueTreeId = "conclusion_initiation";
             const tree = companionDef?.storyDialogues[dialogueTreeId];
@@ -1182,7 +1183,8 @@ export class GameService {
     }
 
     if (goal.target.type === "npc") {
-      const npc = interiorMap.npcs.find((n) => n.id === goal.target.npcId);
+      const targetNpcId = goal.target.npcId;
+      const npc = interiorMap.npcs.find((n) => n.id === targetNpcId);
       if (!npc || npc.x === undefined || npc.y === undefined) return null;
       return { x: npc.x, y: npc.y };
     }
