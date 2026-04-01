@@ -193,23 +193,17 @@ storyDialogues:
     rootNodeId: crate_discovery
     nodes:
       - id: crate_discovery
-        text: "*Dex crouches beside the crate, turning something over in his hands.* These shipping labels... Crimson Caravan. This is our cargo. The stuff they insured and wrote off. Someone's been moving it through the valley this whole time."
+        text: "*Dex crouches beside the crate, turning something over in his hands. He peels a shipping label free and tucks it into his jacket.* These labels... Crimson Caravan. This is our cargo. The stuff they insured and wrote off. Someone's been moving it through the valley this whole time."
         options:
           - id: ask_meaning
             label: "What does that mean?"
             next: what_it_means
-          - id: take_label
-            label: "Pocket the label. Could be useful evidence."
-            next: evidence
       - id: what_it_means
-        text: "It means Harland didn't just arrange the ambush — he set up a whole distribution chain. Our cargo, our friends' cargo, all of it funneled through dummy traders. This is bigger than one crooked logistics manager."
+        text: "It means Harland didn't just arrange the ambush — he set up a whole distribution chain. Our cargo, our friends' cargo, all of it funneled through dummy traders. Dates, route codes, Harland's authorization stamp — it's all on this label. *He pats his jacket pocket.* This is bigger than one crooked logistics manager."
         options:
           - id: keep_digging
             label: "We'll keep digging."
-            response: "*Dex nods, folding the label carefully.* Yeah. Every crate like this is another piece of the puzzle. Thanks for letting me check this out."
-      - id: evidence
-        text: "*Dex hands you the label.* Good thinking. Dates, route codes, Harland's authorization stamp — it's all here. If we ever get him in front of a judge, this is the kind of thing that makes a case."
-        options:
+            response: "*Dex nods.* Yeah. Every crate like this is another piece of the puzzle. Thanks for letting me check this out."
           - id: well_get_him
             label: "We'll get him."
             response: "*Dex's expression hardens with purpose.* We will. One crate at a time."
@@ -225,6 +219,7 @@ goals:
     playerCanHelp: true
     onComplete:
       dialogueTreeId: goal_supply_crate
+      loyaltyDelta: 5
       storyNote: "Dex investigated a supply crate and found Crimson Caravan shipping labels — evidence that stolen cargo from the ambush is still circulating."
 
 reactions:

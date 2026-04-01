@@ -235,6 +235,7 @@ export const interiorMapSchema = z.object({
 export const companionGoalOnCompleteSchema = z.object({
   dialogueTreeId: z.string().min(1).optional(),
   karmaDelta: z.number().int().optional(),
+  loyaltyDelta: z.number().int().optional(),
   storyNote: z.string().min(1).optional()
 });
 

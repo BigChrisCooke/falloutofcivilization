@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { GameState } from "../lib/api.js";
+import type { GameState, GoalCompletionResult } from "../lib/api.js";
 import { collectItem, getCompanionStoryDialogue } from "../lib/api.js";
 import { interiorRuntimeAdapter } from "../lib/map/interior_adapter.js";
 import { buildInteriorSceneModel } from "../lib/map/interior_scene_model.js";
@@ -18,10 +18,12 @@ interface InteriorMapPanelProps {
   onExit: (exitId: string) => void;
   onStateRefresh: (state: GameState) => void;
   onQuestGranted?: (questId: string) => void;
+  pendingGoalCompletion?: GoalCompletionResult | null;
+  onGoalCompletionDismissed?: () => void;
 }
 
 
-export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefresh, onQuestGranted }: InteriorMapPanelProps) {
+export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefresh, onQuestGranted, pendingGoalCompletion, onGoalCompletionDismissed }: InteriorMapPanelProps) {
   const map = state.currentInteriorMap;
 
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
@@ -46,6 +48,26 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
 
   const collectedLoot = useMemo(() => new Set(state.collectedItemIds), [state.collectedItemIds]);
   const collectedActions = useMemo(() => new Set(state.collectedActionIds), [state.collectedActionIds]);
+
+  // Auto-trigger goal completion dialogue when a goal is completed
+  useEffect(() => {
+    if (pendingGoalCompletion?.dialogueTree) {
+      const companion = state.companions[0];
+      const tree = pendingGoalCompletion.dialogueTree;
+      setActiveNpcId(null);
+      setActiveLootId(null);
+      setActiveInteractableId(null);
+      setShowPlayerPanel(false);
+      setCompanionDialogue({
+        companionName: companion?.name ?? "Companion",
+        stageTitle: "Investigation",
+        nodes: tree.nodes,
+        currentNodeId: tree.rootNodeId
+      });
+      onGoalCompletionDismissed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingGoalCompletion]);
 
   // Auto-trigger Old Timer dialogue on first entry when SPECIAL not set
   useEffect(() => {

@@ -572,6 +572,7 @@ export class GameService {
       steps: route.map((position) => ({ position })),
       companionStep,
       companionHelpAvailable,
+      goalCompleted: companionStep?.goalCompleted ?? null,
       finalPatch: {
         worldState: nextWorldState
       }
@@ -1231,14 +1232,49 @@ export class GameService {
       }
     }
 
+    // Apply loyaltyDelta
+    let newLoyalty: number | null = null;
+    if (goal.onComplete.loyaltyDelta) {
+      const currentRow = await this.companionRepo.find(saveId, companion.companion_id);
+      if (currentRow) {
+        const updated = Math.max(0, Math.min(100, currentRow.loyalty + goal.onComplete.loyaltyDelta));
+        await this.companionRepo.updateLoyalty(saveId, companion.companion_id, updated);
+        newLoyalty = updated;
+      }
+    }
+
     // Mark goal complete and clear active goal
     await this.companionRepo.markGoalComplete(saveId, companion.companion_id, goal.id);
+
+    // Resolve dialogue tree if specified
+    let dialogueTree: GoalCompletionResult["dialogueTree"] = null;
+    if (goal.onComplete.dialogueTreeId && companionDef) {
+      const tree = companionDef.storyDialogues[goal.onComplete.dialogueTreeId];
+      if (tree) {
+        dialogueTree = {
+          rootNodeId: tree.rootNodeId,
+          nodes: tree.nodes.map((n) => ({
+            id: n.id,
+            text: n.text,
+            options: n.options.map((o) => ({
+              id: o.id,
+              label: o.label,
+              response: o.response,
+              next: o.next
+            }))
+          }))
+        };
+      }
+    }
 
     return {
       goalId: goal.id,
       dialogueTreeId: goal.onComplete.dialogueTreeId ?? null,
+      dialogueTree,
       storyNote: goal.onComplete.storyNote ?? null,
-      karmaDelta: goal.onComplete.karmaDelta ?? null
+      karmaDelta: goal.onComplete.karmaDelta ?? null,
+      loyaltyDelta: goal.onComplete.loyaltyDelta ?? null,
+      newLoyalty
     };
   }
 
@@ -1325,8 +1361,14 @@ interface InteriorReplayStep {
 interface GoalCompletionResult {
   goalId: string;
   dialogueTreeId: string | null;
+  dialogueTree: {
+    rootNodeId: string;
+    nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+  } | null;
   storyNote: string | null;
   karmaDelta: number | null;
+  loyaltyDelta: number | null;
+  newLoyalty: number | null;
 }
 
 interface CompanionTurnResult {

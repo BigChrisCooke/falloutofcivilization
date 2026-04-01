@@ -267,10 +267,22 @@ export interface InteriorCompanionStep {
   to: { x: number; y: number };
 }
 
+export interface GoalCompletionResult {
+  goalId: string;
+  dialogueTreeId: string | null;
+  dialogueTree: {
+    rootNodeId: string;
+    nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
+  } | null;
+  loyaltyDelta: number | null;
+  storyNote: string | null;
+}
+
 export interface InteriorRouteReplay {
   steps: InteriorReplayStep[];
   finalPatch: InteriorRouteFinalPatch;
   companionStep?: InteriorCompanionStep | null;
+  goalCompleted?: GoalCompletionResult | null;
 }
 
 interface SessionResponse {

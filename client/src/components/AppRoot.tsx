@@ -23,6 +23,7 @@ import {
   type AuthUser,
   type GameState,
   type GameStatePatch,
+  type GoalCompletionResult,
   type InteriorReplayStep,
   type OverworldReplayStep,
   type SaveGame
@@ -50,6 +51,7 @@ export function AppRoot() {
   const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
   const [showOverworldSkills, setShowOverworldSkills] = useState(false);
   const prevLevelRef = useRef<number | null>(null);
+  const [pendingGoalCompletion, setPendingGoalCompletion] = useState<GoalCompletionResult | null>(null);
   const movementLockedRef = useRef(false);
 
   const commitGameState = useCallback((resolveNextState: (previousState: GameState | null) => GameState | null) => {
@@ -284,6 +286,28 @@ export function AppRoot() {
       if (response.replay.companionStep) {
         commitGameState((prev) => prev ? applyCompanionStep(prev, response.replay.companionStep!) : prev);
       }
+
+      // Auto-trigger goal completion dialogue
+      if (response.replay.goalCompleted) {
+        const gc = response.replay.goalCompleted;
+        // Update companion loyalty in local state if changed
+        if (gc.loyaltyDelta && gc.loyaltyDelta !== 0) {
+          commitGameState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              companions: prev.companions.map((c) => ({
+                ...c,
+                loyalty: c.loyalty + (gc.loyaltyDelta ?? 0)
+              }))
+            };
+          });
+        }
+        if (gc.dialogueTree) {
+          setPendingGoalCompletion(gc);
+        }
+      }
+
       return response.replay.finalPatch.worldState.player_x === x && response.replay.finalPatch.worldState.player_y === y;
     } catch (moveError) {
       setError(moveError instanceof Error ? moveError.message : "Failed to move inside the current area.");
@@ -482,6 +506,8 @@ export function AppRoot() {
               onExit={(exitId) => void handleInteriorExit(exitId)}
               onStateRefresh={(newState) => updateGameState(newState)}
               onQuestGranted={handleQuestGranted}
+              pendingGoalCompletion={pendingGoalCompletion}
+              onGoalCompletionDismissed={() => setPendingGoalCompletion(null)}
             />
           ) : gameState.worldState.current_screen === "vault" && gameState.currentInteriorMap ? (
             <InteriorMapPanel
@@ -491,6 +517,8 @@ export function AppRoot() {
               onExit={(exitId) => void handleInteriorExit(exitId)}
               onStateRefresh={(newState) => updateGameState(newState)}
               onQuestGranted={handleQuestGranted}
+              pendingGoalCompletion={pendingGoalCompletion}
+              onGoalCompletionDismissed={() => setPendingGoalCompletion(null)}
             />
           ) : (
             <div style={{ position: "relative" }}>
