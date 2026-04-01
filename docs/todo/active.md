@@ -1,10 +1,17 @@
 # Things to do
 # Add things in here that you're actively working on
 # Sometimes can be fleshed out and waiting for you to copy and paste to AI
+To add a new battle type later: create arena_combat_service.ts, import the same pure functions from game/src/rules/combat.ts, follow the rollFn constructor pattern, add arena_combat_service.test.ts. No base class changes needed.
 
-1.) The first quest the player accepts should be auto highlighted as if the player clicked on it in in the pip-boy 3000 quest tab, this automatically highlights the next location, which makes it easier and clearer.
 
-2.) Whoever the player talks to first, (most likely The Overseer Hale, or Doc Mitchell) should ask the player in the Dialogue: "Have you checked out your pip boy yet? That will help you around the Wasteland!"
-3.) On the map tab in the pip boy, having selected location and current location, both yellow, is confusing. Change current location to just a white box outline, and selected location to THE CURRENT yellow/ ORANGE.
+I'm worried about these new, more detailed graphics making the game load slower online. Is there a more efficient way to load them quickly, happy to lose some image quality, or only load the tiles nearest to the player, rather than pre-load them all at once. What's best practice for this  type of isometric exploration RPG?
 
-4.) There should be a map key on the right of the PIP-BOY map tab, to explain what the different colors mean. Green = You, white outline of square = CURRENT LOCATION. Green square highlight outline= quest location
+still need to have the ability to change direction when I click during pathfinding.
+
+Need to do indoor tiles
+
+Need to update all other tiles
+
+More variety
+
+Need character graphics

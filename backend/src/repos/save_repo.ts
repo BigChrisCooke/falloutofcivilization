@@ -125,4 +125,12 @@ export class SaveRepo {
       saveId
     ]);
   }
+
+  public async updateHp(saveId: string, hp: number, maxHp: number): Promise<void> {
+    await getDb().run("UPDATE player_characters SET hp = ?, max_hp = ? WHERE save_id = ?", [hp, maxHp, saveId]);
+  }
+
+  public async setEquippedWeapon(saveId: string, weaponId: string | null): Promise<void> {
+    await getDb().run("UPDATE player_characters SET equipped_weapon_id = ? WHERE save_id = ?", [weaponId, saveId]);
+  }
 }

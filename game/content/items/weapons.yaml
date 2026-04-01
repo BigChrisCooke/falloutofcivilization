@@ -7,6 +7,8 @@
   weight: 0.5
   value: 5
   rarity: common
+  range: 3
+  specialStat: str
   description: "A solid resin cue ball from a pre-war pool table. Surprisingly heavy for its size. Makes a satisfying crack when it connects with something — or someone."
 
 # Small Guns — Pistols
@@ -18,6 +20,9 @@
   weight: 2.5
   value: 50
   rarity: common
+  range: 8
+  ammoType: 9mm_rounds
+  specialStat: agl
   description: "A reliable semi-automatic pistol chambered in 9mm. Standard issue for caravan guards and settlers who can afford one. Nothing fancy, but it'll keep you breathing."
 
 - id: 10mm_pistol
@@ -28,6 +33,9 @@
   weight: 3.5
   value: 75
   rarity: common
+  range: 8
+  ammoType: 10mm_rounds
+  specialStat: agl
   description: "The N99 10mm pistol — the sidearm that won the Resource Wars, if you believe the propaganda. Two centuries later, it's still the most common handgun in the wasteland. There's a reason for that."
 
 - id: 357_magnum
@@ -38,6 +46,9 @@
   weight: 4.0
   value: 150
   rarity: uncommon
+  range: 10
+  ammoType: 357_rounds
+  specialStat: agl
   description: "A double-action revolver with serious stopping power. Six rounds of .357 magnum will put down most things that aren't wearing power armor. The kick is enough to remind you you're alive."
 
 # Energy Weapons — Pistols
@@ -49,6 +60,9 @@
   weight: 3.5
   value: 200
   rarity: uncommon
+  range: 10
+  ammoType: energy_cell
+  specialStat: agl
   description: "An AER9 laser pistol in working condition. The focused beam can punch through leather armor like paper. Runs on microfusion cells — expensive to feed, but devastatingly effective."
 
 - id: plasma_pistol
@@ -59,6 +73,9 @@
   weight: 3.5
   value: 300
   rarity: rare
+  range: 8
+  ammoType: energy_cell
+  specialStat: agl
   description: "A compact plasma weapon that fires superheated bolts of ionized gas. The projectiles are slow but hit like a freight train. One good shot will turn a raider into a puddle of green goo."
 
 # Small Guns — Rifles
@@ -70,6 +87,9 @@
   weight: 5.5
   value: 35
   rarity: common
+  range: 12
+  ammoType: 556_rounds
+  specialStat: agl
   description: "A weapon cobbled together from pipe fittings, scrap metal, and desperation. It's ugly, it jams, and the accuracy is questionable at best. But when you can't afford anything better, it beats throwing rocks."
 
 - id: hunting_rifle
@@ -80,6 +100,9 @@
   weight: 7.5
   value: 250
   rarity: common
+  range: 14
+  ammoType: 308_rounds
+  specialStat: agl
   description: "A bolt-action rifle with a walnut stock and iron sights. Pre-war hunters used these for bighorners and elk. Post-war hunters use them for raiders and deathclaws. Same principle, higher stakes."
 
 - id: service_rifle
@@ -90,6 +113,9 @@
   weight: 6.0
   value: 300
   rarity: uncommon
+  range: 12
+  ammoType: 556_rounds
+  specialStat: agl
   description: "Standard-issue NCR infantry weapon. Semi-automatic, chambered in 5.56mm. Mass-produced and reliable. Every NCR trooper carries one, and most of them even know how to use it."
 
 # Energy Weapons — Rifles
@@ -101,6 +127,9 @@
   weight: 7.0
   value: 400
   rarity: uncommon
+  range: 14
+  ammoType: energy_cell
+  specialStat: agl
   description: "An AER14 laser rifle — the Brotherhood of Steel's weapon of choice. The focused beam can cut through combat armor at range. Expensive, temperamental, and absolutely lethal in trained hands."
 
 - id: plasma_rifle
@@ -111,6 +140,9 @@
   weight: 8.0
   value: 600
   rarity: rare
+  range: 12
+  ammoType: energy_cell
+  specialStat: agl
   description: "A military-grade plasma rifle recovered from a pre-war armory. The superheated plasma bolts can melt through power armor given enough shots. The recoil compensation system still works, barely."
 
 # Small Guns — Shotguns
@@ -122,6 +154,9 @@
   weight: 4.5
   value: 120
   rarity: common
+  range: 4
+  ammoType: shotgun_shells
+  specialStat: agl
   description: "A double-barreled shotgun with the barrel cut down to something barely legal. Two shots, massive spread, and enough stopping power to clear a room. Reload time is the price you pay."
 
 - id: combat_shotgun
@@ -132,6 +167,9 @@
   weight: 7.0
   value: 350
   rarity: uncommon
+  range: 5
+  ammoType: shotgun_shells
+  specialStat: agl
   description: "A semi-automatic shotgun with an 8-round drum magazine. Pre-war military issue, designed for close-quarters combat. The drum feed mechanism is finicky, but when it works, nothing clears a hallway faster."
 
 # Melee Weapons
@@ -143,6 +181,8 @@
   weight: 1.0
   value: 30
   rarity: common
+  range: 1
+  specialStat: str
   description: "A military-issue fighting knife with a carbon steel blade. Sharp enough to shave with, balanced enough to throw. Every wastelander should carry one — it never runs out of ammo."
 
 - id: baseball_bat
@@ -153,6 +193,8 @@
   weight: 3.0
   value: 25
   rarity: common
+  range: 1
+  specialStat: str
   description: "An aluminum baseball bat, slightly dented from purposes the manufacturer never intended. America's pastime meets America's post-apocalypse. Batter up."
 
 - id: tire_iron
@@ -163,6 +205,8 @@
   weight: 4.0
   value: 20
   rarity: common
+  range: 1
+  specialStat: str
   description: "A heavy steel tire iron. Originally designed for changing tires on pre-war vehicles. Now primarily used for changing the structural integrity of skulls. Simple, effective, indestructible."
 
 - id: super_sledge
@@ -173,6 +217,8 @@
   weight: 12.0
   value: 500
   rarity: rare
+  range: 1
+  specialStat: str
   description: "A rocket-propelled sledgehammer. The kinetic storage device in the head amplifies each swing into a devastating blow that can crush power armor. The weight is brutal, but so is everything it hits."
 
 - id: power_fist
@@ -183,6 +229,8 @@
   weight: 6.0
   value: 350
   rarity: rare
+  range: 1
+  specialStat: str
   description: "A pneumatic gauntlet that delivers hydraulically-powered punches. Strap it on, make a fist, and let the servos do the work. The Brotherhood developed these for a reason — sometimes you need to punch through a wall."
 
 # Unique Weapons
@@ -194,6 +242,9 @@
   weight: 4.0
   value: 500
   rarity: unique
+  range: 10
+  ammoType: 357_rounds
+  specialStat: lck
   description: "A custom .357 revolver with an ivory grip and a four-leaf clover etched into the barrel. Legend says every sixth shot is a guaranteed critical hit. Whether that's luck or engineering is anyone's guess."
 
 - id: this_machine
@@ -204,4 +255,7 @@
   weight: 8.5
   value: 600
   rarity: unique
+  range: 14
+  ammoType: 308_rounds
+  specialStat: agl
   description: "A beautifully maintained M1 Garand battle rifle with 'WELL THIS MACHINE KILLS COMMIES' scratched into the stock. Pre-war patriotism meets post-war firepower. The en-bloc clip pings when empty — music to a marksman's ears."

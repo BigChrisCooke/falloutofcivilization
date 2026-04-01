@@ -1,11 +1,13 @@
-import { computeAllSkillValues, getSkillPointCost, SKILL_DEFINITIONS, SKILL_IDS } from "../../../game/src/skills.js";
-import { buildExplorationRoute, findPath, hexDistance, hexNeighbors, toTileKey, type CompanionDefinition, type CompanionGoal, type HexPoint, type InteriorMapDefinition } from "../../../game/src/index.js";
+import { computeAllSkillValues, getSkillPointCost, SKILL_DEFINITIONS, SKILL_IDS, computeSkillValue } from "../../../game/src/skills.js";
+import { bestStepToward, buildExplorationRoute, buildPassableSet, findPath, hexDistance, hexNeighbors, toTileKey, type CombatNpc, type CompanionDefinition, type CompanionGoal, type HexPoint, type InteriorMapDefinition } from "../../../game/src/index.js";
 import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
+import { CombatRepo } from "../repos/combat_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
 import { SaveRepo } from "../repos/save_repo.js";
 import type { MapDiscoveryRow, PlayerCharacterRow, QuestStateRow, WorldStateRow } from "../shared/types.js";
+import { CombatService } from "./combat_service.js";
 import { getGameContent } from "./content_service.js";
 import { DialogueService } from "./dialogue_service.js";
 import {
@@ -43,7 +45,10 @@ export class GameService {
   private readonly gameStateRepo = new GameStateRepo();
   private readonly inventoryRepo = new InventoryRepo();
   private readonly companionRepo = new CompanionRepo();
+  private readonly combatRepo = new CombatRepo();
   private readonly dialogueService = new DialogueService();
+
+  constructor(private readonly combatService: CombatService = new CombatService()) {}
 
   public async getState(saveId: string) {
     const content = getGameContent();
@@ -83,6 +88,7 @@ export class GameService {
     const collectedItemIds = inventoryRows.map((row) => row.item_id);
     const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
     const companionRows = await this.companionRepo.getAll(saveId);
+    const combatStateRow = await this.combatRepo.get(saveId);
     const questStateView = this.buildQuestStateView(
       questState,
       collectedItemIds,
@@ -145,8 +151,19 @@ export class GameService {
         weight: w.weight,
         value: w.value,
         rarity: w.rarity,
-        description: w.description
-      }))
+        description: w.description,
+        range: w.range,
+        ammoType: w.ammoType ?? null
+      })),
+      combatState: combatStateRow
+        ? {
+            active: true,
+            mapId: combatStateRow.map_id,
+            turnNumber: combatStateRow.turn_number,
+            activeTurn: combatStateRow.active_turn,
+            npcs: safeJsonParse<CombatNpc[]>(combatStateRow.npcs_json, [])
+          }
+        : null
     };
   }
 
@@ -503,6 +520,7 @@ export class GameService {
       await this.checkCompanionStoryProgression(saveId);
     });
 
+    await this.combatService.enterCombat(saveId);
     return conclusionInitiation;
   }
 
@@ -627,7 +645,7 @@ export class GameService {
         : getInteriorSpawnPoint(interiorMap);
     const targetPosition = { x, y };
 
-    const passableSet = this.buildPassableSet(interiorMap);
+    const passableSet = buildPassableSet(interiorMap);
 
     const route = findPath(currentPosition, targetPosition, passableSet);
 
@@ -763,6 +781,9 @@ export class GameService {
         ? safeJsonParse<Record<string, number> | null>(playerCharacter.special_json, null)
         : null,
       karma: playerCharacter.karma ?? 0,
+      hp: playerCharacter.hp ?? 0,
+      maxHp: playerCharacter.max_hp ?? 0,
+      equippedWeaponId: playerCharacter.equipped_weapon_id ?? null,
       skills: playerCharacter.special_json
         ? (() => {
             const special = safeJsonParse<Record<string, number>>(playerCharacter.special_json, {});
@@ -954,7 +975,6 @@ export class GameService {
       return { questCompleted };
     });
   }
-
   private async restoreOverworldFromLocation(
     saveId: string,
     worldState: WorldStateRow,
@@ -1414,7 +1434,7 @@ export class GameService {
     playerPos: HexPoint,
     interiorMap: InteriorMapDefinition
   ): { x: number; y: number } | null {
-    const passableSet = this.buildPassableSet(interiorMap);
+    const passableSet = buildPassableSet(interiorMap);
     const playerKey = toTileKey(playerPos);
     const neighbors = hexNeighbors(playerPos);
 
@@ -1431,23 +1451,6 @@ export class GameService {
     return null;
   }
 
-  private buildPassableSet(interiorMap: InteriorMapDefinition): Set<string> {
-    const passableSet = new Set<string>();
-
-    for (let rowIndex = 0; rowIndex < interiorMap.layout.length; rowIndex += 1) {
-      const row = interiorMap.layout[rowIndex] ?? [];
-
-      for (let columnIndex = 0; columnIndex < row.length; columnIndex += 1) {
-        const point = { x: columnIndex, y: rowIndex };
-
-        if (isPassableInteriorTile(getInteriorTile(point, interiorMap))) {
-          passableSet.add(toTileKey(point));
-        }
-      }
-    }
-
-    return passableSet;
-  }
 }
 
 const MAX_OVERWORLD_FOG_STEPS = 20;

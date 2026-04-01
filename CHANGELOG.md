@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-01
+[FEATURE] Turn-based combat system — player and hostile NPCs take turns attacking and moving on interior maps; combat triggered automatically on entering a location with hostile NPCs
+[FEATURE] Weapon equip and attack endpoints — players can equip weapons from their catalog and attack target NPCs, with hit chance derived from weapon skill + SPECIAL stats and damage reduced by NPC armor class
+[FEATURE] Combat state persistence — active combat stored per save with turn number, NPC positions, and HP; survives page reload
+[FEATURE] Player defeat and respawn — on death, player HP resets to max and position resets to interior spawn point; NPCs reset to starting positions
+[FEATURE] Starter ammo grant — entering combat automatically grants 30 rounds of each ammo type if the player has none
+[FEATURE] Companion position tracking and loose-follow movement — recruited companion moves one step toward the player each turn inside interiors
+[FEATURE] Companion goal system — companions pursue authored content goals (tile type or specific location targets) with configurable trigger conditions and completion rewards
+[FEATURE] Player-help companion interaction — companions can request player assistance with their active goal via dialogue
+[IMPROVEMENT] Combat rules extracted to `game/src/rules/combat.ts` as pure deterministic functions (hit chance, damage, NPC AI, passable set) — fully unit-tested with injectable roll function, no mocking needed
+[IMPROVEMENT] `CombatService` separated from `GameService` — combat orchestration is independently testable; future battle types (arena, boss, random encounter) plug in without touching core game flow
+[IMPROVEMENT] Weapon schema extended with `range`, `ammoType`, and `specialStat` fields; NPC schema extended with `hp` and `ac` combat stats
+[IMPROVEMENT] New tile images added for mountains, vaults, dry lake bed, factories, and full medieval/military/modern location sets
+
 ## [0.8.0] - 2026-03-30
 [FEATURE] Image-based overworld tiles — location hexes replaced with isometric building sprites (camp, tavern, shop, market, facility, faction HQ) with procedural fallback for unmapped types
 [FEATURE] Image-based terrain tiles — sand, scrub, road, rock, and mesa hexes use randomized sprite variants from tile image sets instead of procedural fills

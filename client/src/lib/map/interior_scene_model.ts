@@ -105,7 +105,24 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
 
   // Suppress recruited companion NPCs from the props layer
   const activeCompanionIds = new Set(state.companions.map((c) => c.companionId));
-  const visibleNpcs = placements.npcs.filter((npc) => !activeCompanionIds.has(npc.id));
+  // Override NPC positions from combat state when combat is active
+  const combatNpcPositions = state.combatState
+    ? new Map(state.combatState.npcs.map((n) => [n.id, { x: n.x, y: n.y, dead: n.dead }]))
+    : null;
+
+  const visibleNpcs = placements.npcs
+    .filter((npc) => !activeCompanionIds.has(npc.id))
+    .filter((npc) => {
+      if (!combatNpcPositions) return true;
+      const combatNpc = combatNpcPositions.get(npc.id);
+      return !combatNpc?.dead;
+    })
+    .map((npc) => {
+      if (!combatNpcPositions) return npc;
+      const combatNpc = combatNpcPositions.get(npc.id);
+      if (combatNpc) return { ...npc, point: { x: combatNpc.x, y: combatNpc.y } };
+      return npc;
+    });
 
   const markers: InteriorMarkerNode[] = [
     ...map.exits.map((exit) =>

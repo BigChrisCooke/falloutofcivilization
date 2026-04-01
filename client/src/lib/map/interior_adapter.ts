@@ -21,6 +21,7 @@ const MAX_INTERACT_DISTANCE = 2;
 
 let walkGeneration = 0;
 let walkLocked = false;
+let pendingMove: { destination: GridPoint; onArrive?: () => void } | null = null;
 
 function buildPassableSet(scene: InteriorSceneModel): Set<string> {
   const set = new Set<string>();
@@ -53,24 +54,27 @@ async function runMove(
   onArrive?: () => void
 ) {
   if (walkLocked) {
+    pendingMove = { destination, onArrive };
     return;
   }
 
   walkLocked = true;
+  pendingMove = null;
 
   try {
     const arrived = await handlers.onMove(destination.x, destination.y);
 
-    if (walkGeneration !== generation) {
-      return;
-    }
-
-    if (arrived) {
+    if (walkGeneration === generation && arrived) {
       onArrive?.();
     }
   } finally {
-    if (walkGeneration === generation) {
-      walkLocked = false;
+    walkLocked = false;
+
+    if (pendingMove) {
+      const { destination: pendingDest, onArrive: pendingOnArrive } = pendingMove;
+      pendingMove = null;
+      const nextGen = ++walkGeneration;
+      void runMove(pendingDest, nextGen, handlers, pendingOnArrive);
     }
   }
 }
@@ -91,7 +95,7 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
   resolveHover: (scene, worldPoint) => resolveInteriorHover(scene, worldPoint),
   resolveInteraction: (scene, worldPoint) => resolveInteriorInteractionTarget(scene, worldPoint),
   applyInteraction: (target, handlers, scene) => {
-    if (walkLocked) {
+    if (walkLocked && target.kind !== "tile") {
       return;
     }
 

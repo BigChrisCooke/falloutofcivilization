@@ -12,6 +12,7 @@ export interface OverworldRuntimeHandlers {
 
 let walkGeneration = 0;
 let walkLocked = false;
+let pendingTravel: { destination: { x: number; y: number }; onArrive?: () => void } | null = null;
 
 async function runTravel(
   destination: { x: number; y: number },
@@ -20,24 +21,27 @@ async function runTravel(
   onArrive?: () => void
 ) {
   if (walkLocked) {
+    pendingTravel = { destination, onArrive };
     return;
   }
 
   walkLocked = true;
+  pendingTravel = null;
 
   try {
     const arrived = await handlers.onTravel(destination.x, destination.y);
 
-    if (walkGeneration !== generation) {
-      return;
-    }
-
-    if (arrived) {
+    if (walkGeneration === generation && arrived) {
       onArrive?.();
     }
   } finally {
-    if (walkGeneration === generation) {
-      walkLocked = false;
+    walkLocked = false;
+
+    if (pendingTravel) {
+      const { destination: pendingDest, onArrive: pendingOnArrive } = pendingTravel;
+      pendingTravel = null;
+      const nextGen = ++walkGeneration;
+      void runTravel(pendingDest, nextGen, handlers, pendingOnArrive);
     }
   }
 }
@@ -58,10 +62,6 @@ export const overworldRuntimeAdapter: RetainedMapRuntimeAdapter<
   resolveHover: (scene, worldPoint) => resolveHoverTile(scene, worldPoint),
   resolveInteraction: (scene, worldPoint) => resolveInteractionTarget(scene, worldPoint),
   applyInteraction: (target, handlers, scene) => {
-    if (walkLocked) {
-      return;
-    }
-
     if (target.kind === "tile" || target.kind === "fog") {
       const myGeneration = ++walkGeneration;
       void runTravel(target.point, myGeneration, handlers);
@@ -76,7 +76,7 @@ export const overworldRuntimeAdapter: RetainedMapRuntimeAdapter<
       }
 
       if (location.isCurrent) {
-        handlers.onEnterLocation(target.locationId);
+        if (!walkLocked) handlers.onEnterLocation(target.locationId);
         return;
       }
 

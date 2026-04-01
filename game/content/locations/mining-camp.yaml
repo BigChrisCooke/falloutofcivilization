@@ -1,6 +1,6 @@
 id: mining_camp
 name: Pickaxe Mining Camp
-type: camp
+type: mining_camp
 regionId: frontier_valley
 position:
   x: 33

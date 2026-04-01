@@ -49,6 +49,27 @@ export interface WeaponDefinition {
   value: number;
   rarity: string;
   description: string;
+  range: number;
+  ammoType: string | null;
+}
+
+export interface CombatNpc {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  ac: number;
+  x: number;
+  y: number;
+  dead: boolean;
+}
+
+export interface CombatState {
+  active: true;
+  mapId: string;
+  turnNumber: number;
+  activeTurn: string;
+  npcs: CombatNpc[];
 }
 
 export interface DialogueNode {
@@ -112,6 +133,9 @@ export interface GameState {
       int: number; agl: number; lck: number;
     } | null;
     karma: number;
+    hp: number;
+    maxHp: number;
+    equippedWeaponId: string | null;
     skills: {
       values: Record<string, number>;
       allocated: Record<string, number>;
@@ -226,6 +250,7 @@ export interface GameState {
   factionStanding: Record<string, number>;
   locations: LocationSummary[];
   weaponCatalog: WeaponDefinition[];
+  combatState: CombatState | null;
 }
 
 export interface OverworldReplayStep {
@@ -522,5 +547,19 @@ export function respondToConclusion(companionId: string, accepted: boolean): Pro
   return request("/api/game/companion/conclusion/respond", {
     method: "POST",
     body: JSON.stringify({ companionId, accepted })
+  });
+}
+
+export function equipWeapon(weaponId: string): Promise<{ state: GameState }> {
+  return request("/api/game/combat/equip", {
+    method: "POST",
+    body: JSON.stringify({ weaponId })
+  });
+}
+
+export function attackTarget(targetNpcId: string): Promise<{ result: { hit: boolean; damage: number; message: string }; state: GameState }> {
+  return request("/api/game/combat/attack", {
+    method: "POST",
+    body: JSON.stringify({ targetNpcId })
   });
 }
