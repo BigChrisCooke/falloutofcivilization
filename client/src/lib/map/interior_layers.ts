@@ -19,8 +19,7 @@ export interface InteriorRetainedNodes {
   markerById: Map<string, Container>;
   glow: Graphics | null;
   courier: Container | null;
-  companionToken: Container | null;
-  companionId: string | null;
+  companionTokens: Map<string, Container>;
   lootTooltip: Container | null;
 }
 
@@ -60,8 +59,7 @@ export function createInteriorRetainedNodes(): InteriorRetainedNodes {
     markerById: new Map(),
     glow: null,
     courier: null,
-    companionToken: null,
-    companionId: null,
+    companionTokens: new Map(),
     lootTooltip: null
   };
 }
@@ -253,26 +251,24 @@ function syncActorLayer(
   retainedNodes.courier.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
   retainedNodes.courier.zIndex = scene.courier.zIndex;
 
-  // Companion token
-  if (scene.companion) {
-    // Recreate if companion changed
-    if (retainedNodes.companionId !== scene.companion.companionId) {
-      if (retainedNodes.companionToken) {
-        layers.actors.removeChild(retainedNodes.companionToken);
-        retainedNodes.companionToken.destroy({ children: true });
-      }
-      retainedNodes.companionToken = createCompanionToken(scene.companion.tokenColor);
-      retainedNodes.companionId = scene.companion.companionId;
-      layers.actors.addChild(retainedNodes.companionToken);
+  // Companion tokens — sync all active companions
+  const activeCompanionIds = new Set(scene.companions.map((c) => c.companionId));
+  for (const [id, token] of retainedNodes.companionTokens) {
+    if (!activeCompanionIds.has(id)) {
+      layers.actors.removeChild(token);
+      token.destroy({ children: true });
+      retainedNodes.companionTokens.delete(id);
     }
-
-    retainedNodes.companionToken!.position.set(scene.companion.anchor.x, scene.companion.anchor.y);
-    retainedNodes.companionToken!.zIndex = scene.companion.zIndex;
-  } else if (retainedNodes.companionToken) {
-    layers.actors.removeChild(retainedNodes.companionToken);
-    retainedNodes.companionToken.destroy({ children: true });
-    retainedNodes.companionToken = null;
-    retainedNodes.companionId = null;
+  }
+  for (const companion of scene.companions) {
+    if (!retainedNodes.companionTokens.has(companion.companionId)) {
+      const token = createCompanionToken(companion.tokenColor);
+      retainedNodes.companionTokens.set(companion.companionId, token);
+      layers.actors.addChild(token);
+    }
+    const token = retainedNodes.companionTokens.get(companion.companionId)!;
+    token.position.set(companion.anchor.x, companion.anchor.y);
+    token.zIndex = companion.zIndex;
   }
 }
 

@@ -134,7 +134,7 @@ export interface InteriorSceneModel {
   tiles: InteriorTileNode[];
   markers: InteriorMarkerNode[];
   courier: InteriorActorNode;
-  companion: CompanionActorNode | null;
+  companions: CompanionActorNode[];
 }
 
 export type MapInteractionTarget =

@@ -143,11 +143,13 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
     ...visibleNpcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, !npc.dead || !npc.looted, undefined, npc.interactRange, npc.dead, npc.weapon, npc.looted))
   ].sort((left, right) => left.zIndex - right.zIndex);
 
-  // Compute companion actor position if a companion is active
-  let companion: CompanionActorNode | null = null;
-  const activeCompanion = state.companions[0];
+  // Compute companion actor positions for all active companions
+  const companionNodes: CompanionActorNode[] = [];
+  const occupiedByCompanions = new Set<string>();
 
-  if (activeCompanion?.tokenColor) {
+  for (const activeCompanion of state.companions) {
+    if (!activeCompanion.tokenColor) continue;
+
     let companionPoint: { x: number; y: number } | null = null;
 
     // Use stored position from state if available
@@ -157,7 +159,8 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       // Fall back to adjacent-to-player when position is not yet set
       const occupiedKeys = new Set([
         currentTileKey,
-        ...markers.map((m) => toTileKey(m.point))
+        ...markers.map((m) => toTileKey(m.point)),
+        ...occupiedByCompanions
       ]);
       const passableKeys = new Set(
         tiles.filter((t) => t.isPassable).map((t) => t.key)
@@ -177,14 +180,15 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
     }
 
     if (companionPoint) {
-      companion = {
+      occupiedByCompanions.add(toTileKey(companionPoint));
+      companionNodes.push({
         id: `companion-${activeCompanion.companionId}`,
         companionId: activeCompanion.companionId,
         tokenColor: activeCompanion.tokenColor,
         point: companionPoint,
         anchor: getInteriorCourierAnchor(companionPoint),
         zIndex: getTileZIndex(companionPoint) + 85
-      };
+      });
     }
   }
 
@@ -204,6 +208,6 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       anchor: getInteriorCourierAnchor(currentPoint),
       zIndex: getTileZIndex(currentPoint) + 90
     },
-    companion
+    companions: companionNodes
   };
 }

@@ -127,6 +127,7 @@ export class GameService {
       companions: companionRows.map((row) => {
         const companionDef = content.companions.find((c) => c.id === row.companion_id);
         const currentStage = companionDef?.storyStages[row.story_stage];
+        const posValid = row.companion_map_id === worldState.current_map_id;
         return {
           companionId: row.companion_id,
           name: companionDef?.name ?? row.companion_id,
@@ -136,8 +137,8 @@ export class GameService {
           storyStageTitle: currentStage?.title ?? null,
           hasNewStory: row.story_stage > row.story_stage_viewed,
           recruitedAt: row.recruited_at,
-          x: row.companion_x,
-          y: row.companion_y
+          x: posValid ? row.companion_x : null,
+          y: posValid ? row.companion_y : null
         };
       }),
       locations: regionLocations.map((location) => ({
@@ -403,14 +404,16 @@ export class GameService {
       updated_at: Date.now()
     });
 
-    // Place companion near vault spawn point when entering vault
+    // Place all companions near vault spawn point when entering vault
     if (screen === "vault" && vaultLocation?.interiorMapId && vaultSpawnPoint) {
       const vaultInterior = getInteriorMap(content, vaultLocation.interiorMapId);
       const companions = await this.companionRepo.getAll(saveId);
-      if (companions.length > 0) {
-        const adjacentPos = this.findAdjacentPassableHex(vaultSpawnPoint, vaultInterior);
-        if (adjacentPos) {
-          await this.companionRepo.setPosition(saveId, companions[0]!.companion_id, adjacentPos.x, adjacentPos.y);
+      const occupied = new Set<string>();
+      for (const companion of companions) {
+        const pos = this.findAdjacentPassableHexExcluding(vaultSpawnPoint, buildPassableSet(vaultInterior), occupied);
+        if (pos) {
+          occupied.add(toTileKey(pos));
+          await this.companionRepo.setPosition(saveId, companion.companion_id, pos.x, pos.y, vaultLocation.interiorMapId);
         }
       }
     }
@@ -481,16 +484,21 @@ export class GameService {
         });
       }
 
-      // Place companion near spawn point and activate goal if eligible
+      // Place all companions near spawn point and activate goal if eligible
       const interiorMap = getInteriorMap(content, location.interiorMapId);
       const companions = await this.companionRepo.getAll(saveId);
       if (companions.length > 0) {
-        const companion = companions[0]!;
-        const companionAdjacentPos = this.findAdjacentPassableHex(spawnPoint, interiorMap);
-        if (companionAdjacentPos) {
-          await this.companionRepo.setPosition(saveId, companion.companion_id, companionAdjacentPos.x, companionAdjacentPos.y);
+        const passableSet = buildPassableSet(interiorMap);
+        const occupied = new Set<string>();
+        for (const companion of companions) {
+          const pos = this.findAdjacentPassableHexExcluding(spawnPoint, passableSet, occupied);
+          if (pos) {
+            occupied.add(toTileKey(pos));
+            await this.companionRepo.setPosition(saveId, companion.companion_id, pos.x, pos.y, location.interiorMapId);
+          }
         }
 
+        const companion = companions[0]!;
         const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
         await this.activateEligibleGoal(saveId, companion, interiorMap, location.id, playerCharacter?.karma ?? 0, content);
 
@@ -1293,7 +1301,7 @@ export class GameService {
       }
     }
 
-    await this.companionRepo.setPosition(saveId, companion.companion_id, newPos.x, newPos.y);
+    await this.companionRepo.setPosition(saveId, companion.companion_id, newPos.x, newPos.y, interiorMap.id);
 
     // Check if companion reached goal tile — fire completion
     let goalCompleted: GoalCompletionResult | null = null;

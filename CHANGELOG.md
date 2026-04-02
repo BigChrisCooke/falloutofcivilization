@@ -1,6 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+[FIX] Scavenge NPC ghost — dog tile marker now correctly suppressed after recruiting (NPC id `dog` → `scavenge` to match companion def)
+[FIX] Multiple companions now render simultaneously — scene model, input, and render layer all loop over all companions instead of hard-coding companions[0]
+[FIX] Companion stale coordinates — stored position is now tagged with `companion_map_id`; coordinates from a different map are ignored and the companion is placed adjacent to the player instead
+[FIX] All companions placed on map entry — both map-entry paths now loop all companions and place each at a separate adjacent tile (was companions[0] only)
+[FIX] Doc Mitchell no longer shows character-creation intro after character creation is complete — `hasTalked` conditional root routes returning players to a brief post-creation greeting
+[FIX] Mina dialogue ordering — `hasTalked` no longer shadows the dog-turd greeting; turd is acknowledged on first visit, normal return greeting used on subsequent visits; thank-you option added to turd greeting so players who pick it up first don't miss the stimpak
 
 ## [0.12.0] - 2026-04-03
 [FEATURE] Scavenge dog companion — feed him and pet him twice inside the Dusty Tavern to unlock the "Come with me, boy" recruit option; actions are tracked via the new `recordAction` dialogue field

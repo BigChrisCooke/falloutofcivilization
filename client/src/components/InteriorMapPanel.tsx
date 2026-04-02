@@ -106,7 +106,7 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
   // Auto-trigger goal completion dialogue when a goal is completed
   useEffect(() => {
     if (pendingGoalCompletion?.dialogueTree) {
-      const companion = state.companions[0];
+      const companion = state.companions.find((c) => c.companionId === pendingGoalCompletion.companionId) ?? state.companions[0];
       const tree = pendingGoalCompletion.dialogueTree;
       setActiveNpcId(null);
       setActiveLootId(null);
@@ -522,12 +522,17 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
         )}
 
         {/* Companion Speech Bubble Indicator */}
-        {state.companions[0]?.hasNewStory && !companionDialogue && !activeNpcId && !showCharacterCreation && (
-          <div className="companion-speech-indicator" onClick={() => handleCompanionClick(state.companions[0]!.companionId)}>
-            <span className="companion-speech-name">{state.companions[0]!.name}</span>
-            <span className="companion-speech-dots">...</span>
-          </div>
-        )}
+        {(() => {
+          const companionWithStory = !companionDialogue && !activeNpcId && !showCharacterCreation
+            ? state.companions.find((c) => c.hasNewStory)
+            : null;
+          return companionWithStory ? (
+            <div className="companion-speech-indicator" onClick={() => handleCompanionClick(companionWithStory.companionId)}>
+              <span className="companion-speech-name">{companionWithStory.name}</span>
+              <span className="companion-speech-dots">...</span>
+            </div>
+          ) : null;
+        })()}
 
         {/* Companion Interactive Dialogue */}
         {companionDialogue && (() => {

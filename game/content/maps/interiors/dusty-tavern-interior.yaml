@@ -85,7 +85,22 @@ npcs:
     y: 8
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: post_creation_greeting
       nodes:
+        - id: post_creation_greeting
+          text: "You're looking better. How's the head holding up?"
+          options:
+            - id: fine_thanks
+              label: "Fine. Thanks again for patching me up."
+              response: "Don't mention it. That's what I'm here for. Go talk to Mina if you haven't yet — she runs this place."
+            - id: ask_happened
+              label: "What happened to me again?"
+              next: what_happened
+            - id: ask_where_again
+              label: "Remind me — where are we?"
+              next: where_am_i
         - id: greeting
           text: "Whoa there — easy now. You hit your head real hard out there. Do you remember who you are?"
           options:
@@ -224,10 +239,15 @@ npcs:
           hasActions: [mina_mentioned_theft]
           nodeId: greeting_turd
         # Only one happened
-        - hasItem: dog_turd
-          nodeId: greeting_turd
         - theftWitnessed: true
           nodeId: caught_stealing_greeting
+        # Turd already mentioned — use normal return greeting
+        - hasItem: dog_turd
+          hasActions: [mina_mentioned_turd]
+          nodeId: return_greeting
+        # First visit with turd — Mina acknowledges it
+        - hasItem: dog_turd
+          nodeId: greeting_turd
         - hasTalked: true
           nodeId: return_greeting
         - karmaMin: 25
@@ -289,6 +309,12 @@ npcs:
         - id: greeting_turd
           text: "Well now, a new face in the Dusty Spur. Name's Mina. I run this place — or what's left of it. *She glances at your hands.* And thanks for cleaning up after Scavenge. Wash your hands before you touch anything in my bar, though."
           options:
+            - id: thank_mina_turd
+              label: "Doc Mitchell said I should thank you — for patching me up."
+              recordAction: mina_mentioned_turd
+              grantItems:
+                - { itemId: stimpak, label: "Stimpak" }
+              next: mina_thanks
             - id: ask_rumors
               label: "Heard any rumors?"
               recordAction: mina_mentioned_turd
@@ -894,7 +920,7 @@ npcs:
           options: []
 
   # ── Scavenge (dog) ─────────────────────────────────────────
-  - id: dog
+  - id: scavenge
     name: "Scavenge"
     disposition: friendly
     x: 5

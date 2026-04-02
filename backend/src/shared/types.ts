@@ -107,6 +107,7 @@ export interface CompanionInstanceRow {
   departed: number;
   companion_x: number | null;
   companion_y: number | null;
+  companion_map_id: string | null;
   active_goal_id: string | null;
   goal_progress: string | null;
   conclusion_triggered: number;
