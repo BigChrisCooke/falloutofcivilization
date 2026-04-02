@@ -300,6 +300,8 @@ export const companionSchema = z.object({
   tokenColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a hex color like #D97706"),
   recruitLocationId: z.string().min(1),
   recruitDialogueId: z.string().min(1),
+  conclusionGoals: z.array(z.string().min(1)).optional(),
+  conclusionQuestId: z.string().min(1).optional(),
   storyStages: z.array(companionStoryStageSchema).min(1),
   storyDialogues: z.record(z.string(), dialogueTreeSchema).default({}),
   goals: z.array(companionGoalSchema).default([]),
