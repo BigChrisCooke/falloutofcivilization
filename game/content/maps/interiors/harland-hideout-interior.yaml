@@ -1,0 +1,137 @@
+id: harland_hideout_interior
+name: Harland's Hideout
+theme: industrial
+layout:
+  - [wall, wall, wall, wall, wall, wall]
+  - [wall, floor, floor, desk, floor, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, floor, crate, floor, floor, wall]
+  - [wall, floor, floor, floor, floor, wall]
+  - [wall, wall, wall, exit, wall, wall]
+spawnPoints:
+  - id: hideout_entrance
+    x: 3
+    y: 4
+exits:
+  - id: to_harland_hideout
+    target: harland_hideout
+    x: 3
+    y: 5
+interactables:
+  - id: harland_desk
+    type: desk
+    label: Harland's Desk
+    actions:
+      - id: examine_desk
+        label: Examine
+        response: "A sturdy metal desk covered in ledgers, shipping manifests, and half-empty bottles. Everything is meticulously organized despite the squalid surroundings. The man who works here is a planner, not a brawler."
+      - id: read_ledger
+        label: Read the Ledger
+        response: "Columns of numbers, route codes, and delivery schedules — all in precise handwriting. Cross-referencing the dates with the Crimson Caravan ambush timeline shows a clear pattern: shipments were rerouted through dummy traders for weeks before and after the attack. This wasn't a one-time crime. It was an operation."
+  - id: supply_crates
+    type: container
+    label: Stacked Crates
+    actions:
+      - id: examine_crates
+        label: Examine
+        response: "Wooden crates stamped with Crimson Caravan logos, stacked three high. Some have been pried open — the contents redistributed and relabeled. The shipping dates match the weeks around the ambush. Harland has been running his stolen cargo operation right out of this room."
+npcs:
+  # ── Harland — Confrontation Target ──────────────────────
+  - id: harland
+    name: "Harland"
+    disposition: wary
+    x: 3
+    y: 1
+    dialogue:
+      rootNodeId: greeting
+      nodes:
+        - id: greeting
+          text: "*A man in a clean shirt and pressed slacks looks up from his desk, startled. His hand moves toward a drawer, then stops when he sees you're not alone.* ...Well. I was wondering when someone would find this place. You're here about the convoy, aren't you? The Crimson Caravan run."
+          options:
+            - id: justice_confront
+              label: "Harland Reeves. We have shipping labels, terminal logs, and an eyewitness. You're done."
+              next: justice_path
+            - id: direct_confront
+              label: "Six people died because of you. Dex wants answers."
+              next: confront_path
+            - id: ask_why
+              label: "Why? Why did you do it?"
+              next: why_path
+        - id: justice_path
+          text: "*Harland's composure cracks, just for a second. Then the mask slides back on.* Evidence. Of course. You've been thorough. *He leans back in his chair.* I suppose there's no point in denying it. The labels, the terminal logs — I always knew those would be a liability. And the witness... Mara, I assume? I wondered where she went."
+          options:
+            - id: justice_hand_over
+              label: "You're going to the NCR. They'll handle this properly."
+              next: justice_surrender
+            - id: justice_explain
+              label: "Before we turn you in — explain yourself. You owe them that much."
+              next: harland_explains
+        - id: confront_path
+          text: "*Harland's eyes flick to Dex, then back to you. Something shifts in his expression — not fear, exactly. Calculation.* Dex. The guard who played dead. I heard you survived. I'll admit, that wasn't part of the plan. *He spreads his hands.* So here we are. What happens next?"
+          options:
+            - id: confront_reckoning
+              label: "You look him in the eye and tell him why. Then we decide."
+              next: harland_explains
+            - id: confront_rough
+              label: "That depends on how honest you are in the next sixty seconds."
+              next: harland_explains
+        - id: why_path
+          text: "*Harland is quiet for a long moment.* That's the question, isn't it? Not 'did you do it' — everyone already knows the answer to that. You want the why."
+          options:
+            - id: yes_why
+              label: "Yeah. I do."
+              next: harland_explains
+        - id: harland_explains
+          text: "*Harland's voice drops.* The Crimson Caravan was bleeding money. Corporate decided to collect on insurance — they needed a 'lost convoy' and I was the one they asked to arrange it. I told them to use an empty run. They said no. Real cargo, real crew. 'Authenticity,' they called it. I had a choice: refuse and disappear, or cooperate and survive. I chose surviving."
+          options:
+            - id: no_excuse
+              label: "You chose surviving. Six people didn't get that choice."
+              next: no_excuse_response
+            - id: corporate_orders
+              label: "Corporate gave the order? This goes higher than you?"
+              next: corporate_response
+        - id: no_excuse_response
+          text: "*His jaw tightens.* You think I don't know that? Marco. Suki. Hank. Pete. I know their names. Every one. I didn't pull the trigger, but I drew the map. That distinction stopped mattering to me about a week after it happened."
+          options:
+            - id: turn_yourself_in
+              label: "Then turn yourself in. Do one right thing."
+              next: justice_surrender
+            - id: this_ends_here
+              label: "This ends here, Harland. One way or another."
+              next: confront_resolution
+        - id: corporate_response
+          text: "Goes all the way to the boardroom. I was middle management — I arranged the logistics, but the order came from above. They wanted the insurance payout and the stolen cargo resale. Double dip. *He pulls out a ledger.* I kept records. Names, dates, authorization codes. If you turn me in, I can give them the whole chain."
+          options:
+            - id: turn_in_with_evidence
+              label: "Give us the ledger. You testify, and the NCR gets everyone — not just you."
+              next: justice_surrender
+            - id: too_late_for_deals
+              label: "That doesn't undo what happened. Dex's friends are still dead."
+              next: confront_resolution
+        - id: justice_surrender
+          text: "*Harland stands slowly, hands visible.* Fine. I'll go with you. I'll testify — the whole operation, top to bottom. It won't bring them back, but maybe it stops it from happening again. *He looks at Dex.* For what it's worth... I'm sorry. I know that's not enough. It'll never be enough."
+          options:
+            - id: justice_done
+              label: "Let's go. The NCR can sort out the rest."
+              questComplete: dex_harland_reckoning
+              response: "*Harland picks up the ledger and walks to the door without being pushed. Dex watches him go, expression unreadable. It's not the ending anyone imagined — no shootout, no dramatic justice. Just a tired man surrendering to the truth. But it's done. It's finally done.*"
+        - id: confront_resolution
+          text: "*Harland meets Dex's eyes for the first time. Neither man speaks for a long moment.* I could run. I've been running since the ambush. But I'm tired of it. Tired of the ledgers, the lies, the looking over my shoulder. *He puts his hands on the desk.* Do what you came to do."
+          options:
+            - id: confront_done
+              label: "You'll leave the valley. Tonight. And you'll never touch another caravan."
+              questComplete: dex_harland_reckoning
+              response: "*Harland nods once, taking nothing but the clothes on his back. He pauses at the door.* The ledger's in the desk. Everything you need to bring down the people above me. Use it. *Then he's gone, swallowed by the wasteland dark. Dex watches the empty doorway for a long time.* It's done. Not the way I planned it... but it's done."
+loot:
+  - id: harland_ledger
+    label: Harland's Ledger
+    description: "A meticulous record of diverted shipments, insurance fraud, and raider payments. Names, dates, authorization codes — enough to bring down the entire corrupt operation within the Crimson Caravan."
+    x: 3
+    y: 1
+  - id: stolen_cargo_manifest
+    label: Stolen Cargo Manifest
+    description: "A manifest listing every item stolen from the ambushed convoy, with resale prices and buyer contacts. The handwriting is precise and unhurried — the work of a man who treated murder as a logistics problem."
+    x: 2
+    y: 3
+questHooks:
+  - dex_harland_reckoning

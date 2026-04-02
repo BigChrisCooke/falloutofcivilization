@@ -263,6 +263,110 @@ npcs:
             - id: back_main
               label: "I'll see what I can find."
               next: greeting
+  # ── Mara — Survivor Witness ───────────────────────────────
+  - id: mara_witness
+    name: "Mara"
+    disposition: wary
+    x: 6
+    y: 3
+    dialogue:
+      rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: return_greeting
+      nodes:
+        - id: return_greeting
+          text: "*Mara looks up sharply when she hears your footsteps, then relaxes slightly when she recognizes you.* You again. I already told you what I know. Unless you're here to tell me it's safe to leave?"
+          options:
+            - id: return_ask_safe
+              label: "Not yet. But we're working on it."
+              response: "*She wraps her arms around herself.* Working on it. Yeah. That's what everyone says. I've been 'working on it' for three months — hiding in a hospital, jumping at shadows. Just... make it count. Please."
+            - id: return_ask_details
+              label: "I need to hear the details again."
+              next: witness_details
+        - id: greeting
+          text: "*A woman huddled in the corner flinches when you approach. Her eyes dart to the exits before settling on you.* Don't — don't come any closer. I don't know you. Doc Sawyer said nobody would find me here."
+          options:
+            - id: ask_who
+              label: "Easy. I'm not here to hurt you. Who are you?"
+              next: who_are_you
+            - id: ask_hiding
+              label: "You're hiding from someone. I can see that. Why?"
+              next: why_hiding
+            - id: cha_reassure
+              label: "I'm a friend of Chen's. She's alive — and she sent me to find you."
+              specialGate: { stat: cha, min: 6 }
+              next: chen_mention
+            - id: karma_trust
+              label: "I'm trying to help someone who lost their crew in the ambush. Anything you saw could make the difference."
+              next: karma_appeal
+        - id: who_are_you
+          text: "*She studies you for a long moment.* Mara. I'm a trader — was a trader. I worked the staging areas along the north road. Water, rations, that sort of thing. Small operation. Nobody important. That's what I kept telling myself when I ran."
+          options:
+            - id: ask_ran_from
+              label: "Ran from what?"
+              next: why_hiding
+        - id: why_hiding
+          text: "*Her voice drops to barely a whisper.* I saw something I wasn't supposed to see. The night before the Crimson Caravan convoy got hit — the big ambush, the one that killed six people. I was at the staging area. And I saw... *She stops, shaking her head.* I can't. If they find out I talked, I'm dead."
+          options:
+            - id: cha_convince
+              label: "Mara, look at me. The people who did this are still out there. Your silence protects them, not you."
+              specialGate: { stat: cha, min: 6 }
+              next: witness_details
+            - id: karma_convince
+              label: "Six people died in that ambush. Their families deserve to know the truth. You're the only one who can give them that."
+              next: witness_details
+            - id: generic_push
+              label: "I understand you're scared. But I need to know what you saw."
+              next: still_scared
+        - id: still_scared
+          text: "*Mara shakes her head.* You don't understand. These aren't raiders — raiders are sloppy. What I saw was organized. Professional. The kind of people who clean up loose ends. And right now, I'm a loose end."
+          options:
+            - id: push_again
+              label: "Then help me take them down. That's the only way you'll ever be safe."
+              next: witness_details
+            - id: leave_alone
+              label: "Alright. I'll go. But think about it — you can find me on the road."
+              response: "*Mara watches you leave, something conflicted in her eyes.* Wait. *She takes a shaky breath.* ...Come back when I've had time to think. Please."
+        - id: chen_mention
+          text: "*Mara's composure cracks.* Chen? Chen's alive? *Her eyes fill with tears.* I saw her name on the crew manifest — I thought... everyone thought... *She takes a steadying breath.* If Chen survived, then maybe there's a chance this ends right. What do you need from me?"
+          options:
+            - id: tell_everything
+              label: "Everything you saw that night."
+              next: witness_details
+        - id: karma_appeal
+          text: "*Mara looks at you — really looks, searching for something.* You mean it, don't you? *She glances at the doorway, then back.* Alright. The crew that got hit — six people dead so someone could collect insurance money. I know because I saw it being planned."
+          options:
+            - id: ask_what_saw
+              label: "What exactly did you see?"
+              next: witness_details
+        - id: witness_details
+          text: "*Mara takes a breath and speaks quickly, like she's been rehearsing this for months.* The night before the ambush. Staging area on the north road. A man showed up at dusk — suit, not caravan clothes. Had two guys with him. Military surplus gear, no insignias. He spread a map on a cargo crate and started pointing things out. The ridge where the convoy would pass. Which wagon had the high-value cargo. Timing, positions, everything."
+          options:
+            - id: ask_who_was_he
+              label: "Did you recognize the man?"
+              next: identify_harland
+        - id: identify_harland
+          text: "Harland. His name was Harland — Harland Reeves. I'd seen him before at the Crimson Caravan offices. Logistics manager, handled route planning. He was laughing with those men. *Laughing.* Like it was a business deal, not a death sentence for six people. I hid behind a water tank until they left. Then I ran."
+          options:
+            - id: ask_testify
+              label: "Would you testify to what you saw? Officially?"
+              next: testify
+            - id: ask_evidence
+              label: "That's exactly what we needed. You just gave us the last piece."
+              next: last_piece
+        - id: testify
+          text: "*Mara's hands are shaking.* Testify? Against someone who can arrange ambushes and make six people disappear? *She closes her eyes.* ...Yes. If you can guarantee I won't end up like Marco and the others. I've been carrying this for three months. I'm tired of being afraid. Promise me you'll keep me safe, and I'll say it all again — to the NCR, to anyone who'll listen."
+          options:
+            - id: promise_safety
+              label: "You have my word. We'll keep you safe."
+              response: "*Mara nods slowly, wiping her eyes.* Then let's finish this. For Marco. For Suki. For all of them. Tell your friend — the caravan guard — that he's got his witness. I'll be here when he needs me."
+        - id: last_piece
+          text: "*Mara stares at you.* The last piece? You mean someone else has been investigating? *A flicker of hope crosses her face.* I've been sitting here thinking I was the only one who knew. That I'd die in this hospital and the truth would die with me. If you can actually bring Harland down..."
+          options:
+            - id: well_bring_him_down
+              label: "We will. You have my word."
+              response: "*Mara straightens up — just a little, but it's the first time she's looked anything other than terrified.* Then tell whoever's leading this that they've got an eyewitness. I'll say my piece. Just... come back for me when it's time. I'm not going anywhere."
 loot:
   - id: rad_away
     label: Rad-Away

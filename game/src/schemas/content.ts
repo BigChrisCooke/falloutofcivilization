@@ -40,6 +40,7 @@ export const dialogueOptionSchema = z.object({
   grantItems: z.array(grantItemSchema).optional(),
   companionRecruit: z.string().min(1).optional(),
   capsCost: z.number().int().positive().optional(),
+  discoverLocation: z.string().min(1).optional(),
   returnToRoot: z.boolean().optional(),
   noActiveQuestsGate: z.object({
     exclude: z.array(z.string().min(1)).optional()
@@ -299,6 +300,8 @@ export const companionSchema = z.object({
   tokenColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a hex color like #D97706"),
   recruitLocationId: z.string().min(1),
   recruitDialogueId: z.string().min(1),
+  conclusionGoals: z.array(z.string().min(1)).optional(),
+  conclusionQuestId: z.string().min(1).optional(),
   storyStages: z.array(companionStoryStageSchema).min(1),
   storyDialogues: z.record(z.string(), dialogueTreeSchema).default({}),
   goals: z.array(companionGoalSchema).default([]),

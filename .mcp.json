@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "telora-products": {
+      "command": "node",
+      "args": [
+        "/home/jeremy/.nvm/versions/node/v20.17.0/lib/node_modules/@telora/daemon/node_modules/@telora/mcp-products/dist/index.js"
+      ],
+      "env": {
+        "TELORA_TRACKER_ID": "cba09050-ea56-47ef-a2eb-b4ceea0fbc9a",
+        "TELORA_URL": "https://api.syntelyos.com",
+        "TELORA_MCP_PROFILE": "execution"
+      }
+    }
+  }
+}
