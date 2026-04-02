@@ -91,6 +91,10 @@ npcs:
               label: "I'm looking for Danny — the Kings courier. Any idea where the Powder Gangers took him?"
               questGate: { questId: kings_rescue_danny }
               next: danny_location
+            - id: ask_harland_tip
+              label: "I'm tracking a man named Harland. Logistics manager, Crimson Caravan. Heard he's in the valley."
+              questGate: { questId: dex_harland_reckoning }
+              next: harland_tip
         - id: greeting
           text: "Another drifter. Welcome to the waystation — long as you're buying, selling, or moving on. Name's Cassidy. I run the caravan through this stretch of nowhere."
           options:
@@ -127,6 +131,10 @@ npcs:
               label: "I'm looking for Danny — the Kings courier. Any idea where the Powder Gangers took him?"
               questGate: { questId: kings_rescue_danny }
               next: danny_location
+            - id: ask_harland_tip_first
+              label: "I'm tracking a man named Harland. Logistics manager, Crimson Caravan. Heard he's in the valley."
+              questGate: { questId: dex_harland_reckoning }
+              next: harland_tip
         - id: trade_routes
           text: "Three main routes through Frontier Valley. North fork is safest — Jacobstown traders keep it clean. East road is fast but risky, Powder Gangers have been hitting anything that moves. South to Nipton is a death sentence right now — Legion's got it locked down."
           options:
@@ -223,6 +231,23 @@ npcs:
             - id: danny_thanks
               label: "Thanks, Cassidy. I'll head there."
               response: "Watch yourself. The Powder Gangers don't take kindly to uninvited guests. And if you do find Danny — tell him he still owes me for that water."
+        - id: harland_tip
+          text: "*Cassidy's expression sharpens.* Harland. Yeah, I know that name. He came through here about a month ago — tried to hire one of my guards for 'private security work.' I turned him down. Something about the way he talked — too careful, too rehearsed. Like a man who's practiced lying until it sounds natural."
+          options:
+            - id: ask_where_harland
+              label: "Do you know where he went?"
+              next: harland_location_tip
+        - id: harland_location_tip
+          text: "*Cassidy lowers her voice.* East. Into the ridge country, along the old supply road. One of my drivers spotted a light in a building that's supposed to be abandoned — some kind of depot or warehouse tucked into the rocks. Whoever's in there is running supply crates in and out at night. That's not scavenger behavior. That's an operation."
+          options:
+            - id: mark_hideout
+              label: "That's got to be him. Can you show me where on the map?"
+              discoverLocation: harland_hideout
+              response: "*Cassidy pulls out a worn trade map and taps a spot along the eastern ridge road.* Here. Past the mining camp, where the road cuts through the rocks. Old supply depot — easy to miss if you're not looking. *She folds the map.* Watch yourself. Anyone hiding that hard has a reason, and the reason is usually guns."
+            - id: thanks_cassidy_harland
+              label: "Thanks, Cassidy. That's exactly what I needed."
+              discoverLocation: harland_hideout
+              response: "Don't thank me yet. Whatever Harland's into out there, it's the kind of trouble that gets people killed. The ridge road is rough — make sure you're supplied before you head out. And if things go sideways... well, I don't know anything about it."
         - id: cha_rude_response
           text: "*Cassidy's expression goes flat.* ...Wow. You know, most people at least pretend to have manners before they insult someone's livelihood. I sell supplies that keep people alive. What do you do, besides make enemies?"
           options: []

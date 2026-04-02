@@ -40,6 +40,7 @@ export const dialogueOptionSchema = z.object({
   grantItems: z.array(grantItemSchema).optional(),
   companionRecruit: z.string().min(1).optional(),
   capsCost: z.number().int().positive().optional(),
+  discoverLocation: z.string().min(1).optional(),
   returnToRoot: z.boolean().optional(),
   noActiveQuestsGate: z.object({
     exclude: z.array(z.string().min(1)).optional()
