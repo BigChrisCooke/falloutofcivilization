@@ -1,13 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 
 import { interiorRuntimeAdapter } from "./interior_adapter.js";
 import { overworldRuntimeAdapter } from "./overworld_adapter.js";
 import type { InteriorSceneModel, OverworldSceneModel } from "./types.js";
 
-async function flushAsyncWork() {
-  await Promise.resolve();
-  await Promise.resolve();
-}
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function createOverworldScene(): OverworldSceneModel {
   return {
@@ -109,9 +108,21 @@ function createInteriorScene(): InteriorSceneModel {
   };
 }
 
+const minimalFinalPatch = {
+  playerCharacter: {} as never,
+  worldState: { player_x: 4, player_y: 1, current_screen: "overworld" as const, current_location_id: null, current_panel: null },
+  mapDiscovery: { discoveredLocationIds: [], discoveredTileKeys: [] },
+  questState: {},
+  currentLocation: null,
+  currentInteriorMap: null
+};
+
 describe("route request adapters", () => {
   it("issues one overworld travel request for a far tile", async () => {
-    const onTravel = vi.fn().mockResolvedValue(true);
+    vi.useFakeTimers();
+    const onTravelRequest = vi.fn().mockResolvedValue({ steps: [], finalPatch: minimalFinalPatch });
+    const onTravelStep = vi.fn();
+    const onTravelComplete = vi.fn();
     const onEnterLocation = vi.fn();
 
     overworldRuntimeAdapter.applyInteraction(
@@ -120,22 +131,22 @@ describe("route request adapters", () => {
         point: { x: 4, y: 1 },
         tileKey: "4,1"
       },
-      {
-        onTravel,
-        onEnterLocation
-      },
+      { onTravelRequest, onTravelStep, onTravelComplete, onEnterLocation },
       createOverworldScene()
     );
 
-    await flushAsyncWork();
+    await vi.runAllTimersAsync();
 
-    expect(onTravel).toHaveBeenCalledTimes(1);
-    expect(onTravel).toHaveBeenCalledWith(4, 1);
+    expect(onTravelRequest).toHaveBeenCalledTimes(1);
+    expect(onTravelRequest).toHaveBeenCalledWith(4, 1);
     expect(onEnterLocation).not.toHaveBeenCalled();
   });
 
   it("travels once before entering a distant location", async () => {
-    const onTravel = vi.fn().mockResolvedValue(true);
+    vi.useFakeTimers();
+    const onTravelRequest = vi.fn().mockResolvedValue({ steps: [], finalPatch: minimalFinalPatch });
+    const onTravelStep = vi.fn();
+    const onTravelComplete = vi.fn();
     const onEnterLocation = vi.fn();
 
     overworldRuntimeAdapter.applyInteraction(
@@ -144,25 +155,25 @@ describe("route request adapters", () => {
         locationId: "dusty_tavern",
         tileKey: "4,1"
       },
-      {
-        onTravel,
-        onEnterLocation
-      },
+      { onTravelRequest, onTravelStep, onTravelComplete, onEnterLocation },
       createOverworldScene()
     );
 
-    await flushAsyncWork();
+    await vi.runAllTimersAsync();
 
-    expect(onTravel).toHaveBeenCalledTimes(1);
-    expect(onTravel).toHaveBeenCalledWith(4, 1);
+    expect(onTravelRequest).toHaveBeenCalledTimes(1);
+    expect(onTravelRequest).toHaveBeenCalledWith(4, 1);
     expect(onEnterLocation).toHaveBeenCalledTimes(1);
     expect(onEnterLocation).toHaveBeenCalledWith("dusty_tavern");
   });
 
   it("issues one interior move request for a far tile", async () => {
-    const onMove = vi.fn().mockResolvedValue(true);
+    vi.useFakeTimers();
+    const onStep = vi.fn();
+    const onMoveSettled = vi.fn();
     const handlers = {
-      onMove,
+      onStep,
+      onMoveSettled,
       onExit: vi.fn(),
       onNpcClick: vi.fn(),
       onLootClick: vi.fn(),
@@ -181,9 +192,9 @@ describe("route request adapters", () => {
       createInteriorScene()
     );
 
-    await flushAsyncWork();
+    await vi.runAllTimersAsync();
 
-    expect(onMove).toHaveBeenCalledTimes(1);
-    expect(onMove).toHaveBeenCalledWith(8, 8);
+    expect(onMoveSettled).toHaveBeenCalledTimes(1);
+    expect(onMoveSettled).toHaveBeenCalledWith(8, 8);
   });
 });

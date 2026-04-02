@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-04-02
+[FIX] Interior movement no longer teleports — player now walks step-by-step to clicked tiles; stale walk state is reset on map entry so clicks always work from the correct position
+[IMPROVEMENT] Walk and travel animation loops moved into the adapter layer; React components pass lightweight callbacks instead of managing async movement state
+
 ## [0.9.0] - 2026-04-01
 [FEATURE] Turn-based combat system — player and hostile NPCs take turns attacking and moving on interior maps; combat triggered automatically on entering a location with hostile NPCs
 [FEATURE] Weapon equip and attack endpoints — players can equip weapons from their catalog and attack target NPCs, with hit chance derived from weapon skill + SPECIAL stats and damage reduced by NPC armor class

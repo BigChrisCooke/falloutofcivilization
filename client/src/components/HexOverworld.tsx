@@ -1,4 +1,4 @@
-import type { GameState } from "../lib/api.js";
+import type { GameState, OverworldReplayStep, TravelRouteFinalPatch } from "../lib/api.js";
 import { useRetainedMapRuntime } from "../lib/map/map_runtime.js";
 import { buildOverworldSceneModel } from "../lib/map/overworld_scene_model.js";
 import { overworldRuntimeAdapter } from "../lib/map/overworld_adapter.js";
@@ -8,14 +8,18 @@ interface HexOverworldProps {
   selectedQuestId?: string | null;
   highlightedLocationId: string | null;
   onHighlightLocation: (locationId: string | null) => void;
-  onTravel: (x: number, y: number) => Promise<boolean>;
+  onTravelRequest: (x: number, y: number) => Promise<{ steps: OverworldReplayStep[]; finalPatch: TravelRouteFinalPatch }>;
+  onTravelStep: (step: OverworldReplayStep) => void;
+  onTravelComplete: (finalPatch: TravelRouteFinalPatch) => void;
   onEnterLocation: (locationId: string) => void;
 }
 
-export function HexOverworld({ state, selectedQuestId, highlightedLocationId, onHighlightLocation, onTravel, onEnterLocation }: HexOverworldProps) {
+export function HexOverworld({ state, selectedQuestId, highlightedLocationId, onHighlightLocation, onTravelRequest, onTravelStep, onTravelComplete, onEnterLocation }: HexOverworldProps) {
   const scene = buildOverworldSceneModel(state, selectedQuestId, highlightedLocationId);
   const sceneHostRef = useRetainedMapRuntime(scene, overworldRuntimeAdapter, {
-    onTravel,
+    onTravelRequest,
+    onTravelStep,
+    onTravelComplete,
     onEnterLocation
   });
   const currentTileLocations = state.locations.filter(

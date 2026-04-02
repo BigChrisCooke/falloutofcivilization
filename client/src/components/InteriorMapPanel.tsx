@@ -14,7 +14,8 @@ import { TaggedSkillsPanel } from "./TaggedSkillsPanel.js";
 interface InteriorMapPanelProps {
   state: GameState;
   variant: "vault" | "location";
-  onMove: (x: number, y: number) => Promise<boolean>;
+  onStep: (x: number, y: number) => void;
+  onMoveSettled: (x: number, y: number) => void;
   onExit: (exitId: string) => void;
   onStateRefresh: (state: GameState) => void;
   onQuestGranted?: (questId: string) => void;
@@ -25,7 +26,7 @@ interface InteriorMapPanelProps {
 }
 
 
-export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefresh, onQuestGranted, pendingGoalCompletion, onGoalCompletionDismissed, pendingConclusion, onConclusionDismissed }: InteriorMapPanelProps) {
+export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit, onStateRefresh, onQuestGranted, pendingGoalCompletion, onGoalCompletionDismissed, pendingConclusion, onConclusionDismissed }: InteriorMapPanelProps) {
   const map = state.currentInteriorMap;
 
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
@@ -155,7 +156,8 @@ export function InteriorMapPanel({ state, variant, onMove, onExit, onStateRefres
   const scene = buildInteriorSceneModel(state, collectedLoot);
 
   const sceneHostRef = useRetainedMapRuntime(scene, interiorRuntimeAdapter, {
-    onMove,
+    onStep,
+    onMoveSettled,
     onExit,
     onNpcClick: (npcId) => {
       setActiveNpcId(npcId);
