@@ -29,6 +29,9 @@ interactables:
       - id: examine_board
         label: Examine
         response: "A weathered corkboard covered in hand-scrawled notices. You read through them: 'WANTED: Raiders on north road. 200 caps bounty. See NCR.' 'LOST: Courier, Kings territory. Info to The King's Court.' 'TRADING: Pre-war books for medical supplies. Ask for Ada.' 'WARNING: Strange lights seen near old reactor. Stay clear.' The board tells the story of a community trying to hold itself together."
+      - id: read_survivor_notice
+        label: Read Faded Note
+        response: "A scrap of paper pinned near the bottom, half-hidden behind other notices. Handwritten in shaky script: 'Looking for Mara T. — last seen heading south toward the old hospital. She saw something on the north road the night before the big ambush. Hasn't been heard from since. If anyone knows where she is, tell her Chen is alive.' The ink is faded but the desperation isn't."
   - id: water_barrel
     type: container
     label: Water Barrel
