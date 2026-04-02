@@ -56,6 +56,7 @@ npcs:
     name: "Boss Eddie"
     disposition: hostile
     factionId: powder_gangers
+    weapon: pipe_rifle
     x: 5
     y: 1
     dialogue:
@@ -63,7 +64,29 @@ npcs:
       conditionalRoots:
         - questCompleted: danger_in_the_hollow
           nodeId: post_quest_greeting
+        - karmaMin: 25
+          nodeId: mock_karma_greeting
+        - karmaMax: -25
+          nodeId: fear_karma_greeting
       nodes:
+        - id: mock_karma_greeting
+          text: "*Eddie barely glances up from his papers.* A saint walks into a Powder Ganger camp. Sounds like a joke. What do you want, do-gooder? If you're here to talk me out of something, save your breath."
+          options:
+            - id: mk_just_business
+              label: "I'm here to talk business."
+              response: "*He raises an eyebrow.* Business. Fine. But don't insult my crew with that look you've got going."
+            - id: mk_leave
+              label: "Never mind."
+              response: "Thought so. Door's that way."
+        - id: fear_karma_greeting
+          text: "*Eddie sets down his papers and gives you his full attention — the kind of attention that means his boys are already watching the exits.* Word gets around. Heard some things about you. Before we go any further... you picking a fight, or are you open to something more profitable?"
+          options:
+            - id: fk_profitable
+              label: "I'm always open to profitable."
+              next: greeting
+            - id: fk_just_scoping
+              label: "Just scoping the area."
+              response: "*He holds your gaze for a long moment.* Sure you are. Don't take anything on your way out."
         - id: post_quest_greeting
           text: "*Eddie leans back in his chair, fingers laced behind his head. For once, he doesn't look like he's about to have someone shot.* Look who it is. The hollow-clearer. My boys can move through that territory without losing limbs now. That's worth something."
           options:
@@ -342,6 +365,7 @@ npcs:
     name: "Scrambler"
     disposition: hostile
     factionId: powder_gangers
+    weapon: pipe_rifle
     x: 2
     y: 2
     dialogue:
@@ -428,6 +452,7 @@ npcs:
     name: "Chains"
     disposition: hostile
     factionId: powder_gangers
+    weapon: pipe_rifle
     x: 7
     y: 2
     dialogue:
@@ -505,6 +530,7 @@ npcs:
     name: "Meyers"
     disposition: hostile
     factionId: powder_gangers
+    weapon: pipe_rifle
     x: 8
     y: 4
     dialogue:

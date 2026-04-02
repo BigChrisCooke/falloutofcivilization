@@ -183,6 +183,16 @@ function syncFeedbackLayer(
 function syncMarkerNode(marker: Container, sceneMarker: InteriorMarkerNode): void {
   marker.position.set(sceneMarker.markerPosition.x, sceneMarker.markerPosition.y);
   marker.zIndex = sceneMarker.zIndex;
+
+  if (sceneMarker.kind === "npc") {
+    if (sceneMarker.dead) {
+      marker.rotation = Math.PI / 2;
+      marker.alpha = 0.7;
+    } else {
+      marker.rotation = 0;
+      marker.alpha = 1;
+    }
+  }
 }
 
 function syncPropLayer(

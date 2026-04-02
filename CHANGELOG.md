@@ -1,6 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+[FEATURE] Scavenge dog companion — feed him and pet him twice inside the Dusty Tavern to unlock the "Come with me, boy" recruit option; actions are tracked via the new `recordAction` dialogue field
+[FEATURE] Thrown weapons consumed on use — throwing weapons (e.g. cue ball) leave your inventory on attack (hit or miss) and appear as a pickable floor item at the target tile
+[FEATURE] `map_loot` system — runtime-dropped items persist per save via a new DB table; collected via a new `POST /map-loot/:id/collect` endpoint that stacks or adds the item to inventory
+[FEATURE] `recordAction` / `hasActions` dialogue system — options can record named actions to a save's action list; `conditionalRoots` entries can gate on all listed actions being present (AND semantics)
+[IMPROVEMENT] `conditionalRoots` AND logic — all fields on a conditional root entry must match before it activates (previously any single match would fire)
+[IMPROVEMENT] Mina dual-greeting — if you steal AND have the dog turd, Mina mentions each grievance on successive visits rather than only one
+[IMPROVEMENT] New tile art — mountain, vault, cave, dirt, grass, sand, stone, swamp, mars, factory, military, medieval, modern, western, scifi, and location-specific .webp tiles added
 
 ## [0.11.0] - 2026-04-02
 [FEATURE] Karma-reactive NPC dialogue — most faction NPCs warm up to positive karma; raiders and powder gangers mock good characters and show respect/fear toward bad karma

@@ -185,6 +185,9 @@ export function DialoguePanel({
       )}
 
       <div className="interaction-options">
+        {node.options.some((opt) => opt.id.startsWith("class_")) && (
+          <p className="player-prompt">Yeah I&apos;m fine. Before I was more of a&hellip;</p>
+        )}
         {node.options
           .filter((opt) => opt.id !== justSelectedId)
           .map((opt) => (

@@ -9,6 +9,7 @@ interface CombatHudProps {
   inventory: GameState["inventory"];
   onEquipWeapon: (weaponId: string) => void;
   onAttack: (targetNpcId: string) => void;
+  onResetArena?: () => void;
   lastMessage: string | null;
 }
 
@@ -34,6 +35,7 @@ export function CombatHud({
   inventory,
   onEquipWeapon,
   onAttack,
+  onResetArena,
   lastMessage
 }: CombatHudProps) {
   const [showWeaponPicker, setShowWeaponPicker] = useState(false);
@@ -151,6 +153,16 @@ export function CombatHud({
           onClick={handleAttackClick}
         >
           Attack
+        </button>
+      )}
+
+      {isVictory && onResetArena && (
+        <button
+          className="ghost-button combat-reset-arena"
+          type="button"
+          onClick={onResetArena}
+        >
+          Revive opponents
         </button>
       )}
 

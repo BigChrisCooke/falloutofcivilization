@@ -58,6 +58,7 @@ export interface WorldStateRow {
   current_panel: string | null;
   player_x: number | null;
   player_y: number | null;
+  theft_witnesses_json: string | null;
   updated_at: number;
 }
 
@@ -110,6 +111,17 @@ export interface CompanionInstanceRow {
   goal_progress: string | null;
   conclusion_triggered: number;
   conclusion_accepted: number | null;
+}
+
+export interface MapLootRow {
+  id: string;
+  save_id: string;
+  map_id: string;
+  item_id: string;
+  label: string;
+  x: number;
+  y: number;
+  dropped_at: number;
 }
 
 export interface AuthUser {

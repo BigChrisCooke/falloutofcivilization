@@ -5,8 +5,10 @@ import {
   computeMaxHp,
   computeSkillValue,
   hexDistance,
+  hexNeighbors,
   resolveNpcAttack,
   resolvePlayerAttack,
+  toTileKey,
   type CombatNpc,
   type RollFn
 } from "../../../game/src/index.js";
@@ -14,6 +16,7 @@ import { withTransaction } from "../db/connection.js";
 import { CombatRepo } from "../repos/combat_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
+import { MapLootRepo } from "../repos/map_loot_repo.js";
 import { SaveRepo } from "../repos/save_repo.js";
 import type { PlayerCharacterRow } from "../shared/types.js";
 import { getGameContent } from "./content_service.js";
@@ -48,6 +51,39 @@ const AMMO_TYPES: Record<string, string> = {
   "energy_cell": "Energy Cell"
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * If the dead NPC shares a tile with another dead NPC, nudge it to the nearest
+ * passable tile not occupied by any other NPC (dead or alive).
+ */
+function resolveCorpseOverlap(npc: CombatNpc, allNpcs: CombatNpc[], passableSet: Set<string>): void {
+  const occupiedByOther = new Set(
+    allNpcs.filter((n) => n.id !== npc.id).map((n) => toTileKey({ x: n.x, y: n.y }))
+  );
+
+  if (!occupiedByOther.has(toTileKey({ x: npc.x, y: npc.y }))) return;
+
+  // BFS outward to find the nearest free passable tile
+  const visited = new Set<string>([toTileKey({ x: npc.x, y: npc.y })]);
+  const queue: Array<{ x: number; y: number }> = [{ x: npc.x, y: npc.y }];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    for (const neighbor of hexNeighbors(current)) {
+      const key = toTileKey(neighbor);
+      if (visited.has(key)) continue;
+      visited.add(key);
+      if (passableSet.has(key) && !occupiedByOther.has(key)) {
+        npc.x = neighbor.x;
+        npc.y = neighbor.y;
+        return;
+      }
+      queue.push(neighbor);
+    }
+  }
+}
+
 // ─── NPC base damage (placeholder until content-authored) ─────────────────────
 const NPC_BASE_DAMAGE = 8;
 const PLAYER_AC = 0;
@@ -59,6 +95,7 @@ export class CombatService {
   private readonly inventoryRepo = new InventoryRepo();
   private readonly combatRepo = new CombatRepo();
   private readonly gameStateRepo = new GameStateRepo();
+  private readonly mapLootRepo = new MapLootRepo();
 
   constructor(private readonly rollFn: RollFn = Math.random) {}
 
@@ -72,8 +109,15 @@ export class CombatService {
     const interiorMap = content.interiorMaps.find((m) => m.id === worldState.current_map_id);
     if (!interiorMap) return;
 
-    const hostileNpcs = interiorMap.npcs.filter((n) => n.disposition === "hostile" && n.hp !== undefined);
+    let hostileNpcs = interiorMap.npcs.filter((n) => n.disposition === "hostile" && n.hp !== undefined);
     if (hostileNpcs.length === 0) return;
+
+    // Arena: randomly pick 2–3 opponents from the pool each fight
+    if (worldState.current_map_id === "dry_lake_bed_arena") {
+      const shuffled = [...hostileNpcs].sort(() => this.rollFn() - 0.5);
+      const count = this.rollFn() < 0.5 ? 2 : 3;
+      hostileNpcs = shuffled.slice(0, Math.min(count, shuffled.length));
+    }
 
     const existing = await this.combatRepo.get(saveId);
     if (existing) return;
@@ -176,10 +220,32 @@ export class CombatService {
 
       if (hit) {
         target.hp = Math.max(0, target.hp - damage);
-        if (target.hp <= 0) target.dead = true;
+        if (target.hp <= 0) {
+          target.dead = true;
+          const interiorMapDef = content.interiorMaps.find((m) => m.id === combatRow.map_id);
+          if (interiorMapDef) {
+            resolveCorpseOverlap(target, npcs, buildPassableSet(interiorMapDef));
+          }
+        }
         message = `Hit! ${damage} damage to ${target.name}.`;
       } else {
         message = `Missed ${target.name}!`;
+      }
+
+      // Throwing weapons are consumed on use (hit or miss) and land at the target tile
+      if (weapon.category === "throwing") {
+        await this.inventoryRepo.removeItem(saveId, weapon.id);
+        await this.saveRepo.setEquippedWeapon(saveId, null);
+        await this.mapLootRepo.drop({
+          id: crypto.randomUUID(),
+          save_id: saveId,
+          map_id: combatRow.map_id,
+          item_id: weapon.id,
+          label: weapon.name,
+          x: target.x,
+          y: target.y,
+          dropped_at: Date.now()
+        });
       }
 
       const livingNpcs = npcs.filter((n) => !n.dead);
@@ -302,6 +368,74 @@ export class CombatService {
     }
 
     return { messages };
+  }
+
+  // ─── lootBody ─────────────────────────────────────────────────────────────
+
+  public async lootBody(saveId: string, npcId: string): Promise<{ weaponId: string | null; weaponLabel: string | null }> {
+    return withTransaction(async () => {
+      const combatRow = await this.combatRepo.get(saveId);
+      if (!combatRow) throw new Error("No active combat.");
+
+      const npcs = safeJsonParse<CombatNpc[]>(combatRow.npcs_json, []);
+      const npc = npcs.find((n) => n.id === npcId && n.dead);
+      if (!npc) throw new Error("NPC not found or not dead.");
+      if (npc.looted) return { weaponId: null, weaponLabel: null };
+
+      npc.looted = true;
+      let weaponLabel: string | null = null;
+
+      if (npc.weapon) {
+        const content = getGameContent();
+        const weaponDef = content.weapons.find((w) => w.id === npc.weapon);
+        if (weaponDef) {
+          weaponLabel = weaponDef.name;
+          await this.inventoryRepo.addItem({
+            save_id: saveId,
+            item_id: weaponDef.id,
+            label: weaponDef.name,
+            owned_by: null,
+            quantity: 1,
+            description: weaponDef.description,
+            tags: JSON.stringify(["weapon"]),
+            collected_at: Date.now()
+          });
+          if (weaponDef.ammoType) {
+            const ammoLabel = AMMO_TYPES[weaponDef.ammoType] ?? weaponDef.ammoType;
+            const existing = await this.inventoryRepo.findItem(saveId, weaponDef.ammoType);
+            if (existing) {
+              await this.inventoryRepo.updateQuantity(saveId, weaponDef.ammoType, existing.quantity + 5);
+            } else {
+              await this.inventoryRepo.addItem({
+                save_id: saveId,
+                item_id: weaponDef.ammoType,
+                label: ammoLabel,
+                owned_by: null,
+                quantity: 5,
+                description: null,
+                tags: JSON.stringify(["ammo"]),
+                collected_at: Date.now()
+              });
+            }
+          }
+        }
+      }
+
+      await this.combatRepo.upsert({
+        ...combatRow,
+        npcs_json: JSON.stringify(npcs),
+        updated_at: Date.now()
+      });
+
+      return { weaponId: npc.weapon, weaponLabel };
+    });
+  }
+
+  // ─── resetArena ───────────────────────────────────────────────────────────
+
+  public async resetArena(saveId: string): Promise<void> {
+    await this.combatRepo.delete(saveId);
+    await this.enterCombat(saveId);
   }
 
   // ─── grantStarterAmmo ─────────────────────────────────────────────────────

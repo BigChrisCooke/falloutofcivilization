@@ -3,11 +3,13 @@
 # Sometimes can be fleshed out and waiting for you to copy and paste to AI
 To add a new battle type later: create arena_combat_service.ts, import the same pure functions from game/src/rules/combat.ts, follow the rollFn constructor pattern, add arena_combat_service.test.ts. No base class changes needed.
 
-1.) Choose a class with Doc Mitchell like it's TTRPG, don't get stuck in the stats table, that can happen in the background.
+need a loading screen to "pre-fetch" all the images
 
-2.) just cos it's turned based, don't need to wait and do nothing. Sea of Stars gives you the ability to click at the right time for a well-times boost.
+"i have a lot of images for the game, first check if the web server is setup to handle multiple requests and if there is a bottleneck serving the images, second plan a loading screen so images can be prefetched with a progress bar"
 
-Make the Dusty Tavern a Companion choice
+2.) just cos it's turned based, don't need to wait and do nothing. Sea of Stars gives you the ability to click at the right time for a well-timed boost to damage.
+
+Make Scavenge in the Dusty Tavern, give you the dialogue option of joining you as your Companion if you feed him and pet him twice.
 
 Use Buffs, debuffs, status effects, perks, all stacking, and change with companion (who's sub class you can choose for some interesting options)
 

@@ -6,6 +6,8 @@ import { CombatService } from "../services/combat_service.js";
 import { DialogueService } from "../services/dialogue_service.js";
 import { GameService } from "../services/game_service.js";
 import { InventoryService } from "../services/inventory_service.js";
+import { MapLootRepo } from "../repos/map_loot_repo.js";
+import { InventoryRepo } from "../repos/inventory_repo.js";
 
 const updateScreenSchema = z.object({
   screen: z.enum(["overworld", "vault"])
@@ -453,6 +455,72 @@ export function createGameRouter(
       response.json({ result, state: await gameService.getState(request.currentSaveId) });
     } catch (error) {
       const message = formatErrorMessage(error, "Failed to attack target.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/combat/reset", async (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+    try {
+      await combatService.resetArena(request.currentSaveId);
+      response.json({ state: await gameService.getState(request.currentSaveId) });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to reset arena.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/combat/loot/:npcId", async (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const npcId = request.params["npcId"];
+      if (!npcId) throw new Error("Missing npcId.");
+      const result = await combatService.lootBody(request.currentSaveId, npcId);
+      response.json({ ...result, state: await gameService.getState(request.currentSaveId) });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to loot body.");
+      response.status(400).json({ error: message });
+    }
+  });
+
+  router.post("/map-loot/:lootId/collect", async (request, response) => {
+    if (!request.currentSaveId) {
+      response.status(400).json({ error: "No active save loaded." });
+      return;
+    }
+
+    try {
+      const lootId = request.params["lootId"];
+      if (!lootId) throw new Error("Missing lootId.");
+      const mapLootRepo = new MapLootRepo();
+      const inventoryRepo = new InventoryRepo();
+      const row = await mapLootRepo.find(request.currentSaveId, lootId);
+      if (!row) throw new Error("Loot item not found.");
+      const existing = await inventoryRepo.findItem(request.currentSaveId, row.item_id);
+      if (existing) {
+        await inventoryRepo.updateQuantity(request.currentSaveId, row.item_id, existing.quantity + 1);
+      } else {
+        await inventoryRepo.addItem({
+          save_id: request.currentSaveId,
+          item_id: row.item_id,
+          label: row.label,
+          owned_by: null,
+          quantity: 1,
+          description: null,
+          collected_at: Date.now()
+        });
+      }
+      await mapLootRepo.remove(request.currentSaveId, lootId);
+      response.json({ state: await gameService.getState(request.currentSaveId) });
+    } catch (error) {
+      const message = formatErrorMessage(error, "Failed to collect item.");
       response.status(400).json({ error: message });
     }
   });

@@ -1,0 +1,43 @@
+id: scavenge
+name: Scavenge
+bio: "A scrappy wasteland mutt who took up residence at the Dusty Spur. Nobody remembers where he came from. He's been here longer than most of the furniture. Turns out all he needed was someone worth following."
+tokenColor: "#92400E"
+recruitLocationId: dusty_tavern
+recruitDialogueId: companion_ready
+storyStages:
+  - id: good_boy
+    title: "Good Boy"
+    triggerCondition:
+      type: immediate
+    dialogueTreeId: scavenge_idle
+storyDialogues:
+  scavenge_idle:
+    rootNodeId: idle_start
+    nodes:
+      - id: idle_start
+        text: "*Scavenge looks up at you, tail wagging slowly. He's watching. Always watching.*"
+        options:
+          - id: good_boy
+            label: "Good boy."
+            response: "*He barks once — short, decisive — and leans against your leg. Yep. He's staying.*"
+          - id: how_you_doing
+            label: "How you holding up, boy?"
+            response: "*Scavenge tilts his head, considers the question with great seriousness, then licks your hand. Probably fine.*"
+goals: []
+reactions:
+  positive:
+    - id: pos_1
+      text: "*Scavenge's tail wags in approval.*"
+    - id: pos_2
+      text: "*He gives a short bark. That meant something good.*"
+    - id: pos_3
+      text: "*Scavenge trots a circle around you. He seems pleased.*"
+  negative:
+    - id: neg_1
+      text: "*Scavenge whines softly and looks away.*"
+    - id: neg_2
+      text: "*He puts his ears back and sits very still. He doesn't like this.*"
+    - id: neg_3
+      text: "*Scavenge presses against your leg — whether in comfort or protest is unclear.*"
+  warning: "*Scavenge growls low in his chest. He's not happy about this at all.*"
+  farewell: "*Scavenge watches you walk away. He sits for a long time, staring at the door. Then he walks slowly back to his spot by the bar. He doesn't touch the food.*"

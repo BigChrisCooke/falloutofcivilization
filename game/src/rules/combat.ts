@@ -24,6 +24,8 @@ export interface CombatNpc {
   x: number;
   y: number;
   dead: boolean;
+  weapon: string | null;
+  looted: boolean;
 }
 
 // ─── HP ───────────────────────────────────────────────────────────────────────
@@ -166,6 +168,7 @@ export function buildInitialNpcs(
     ac?: number;
     x?: number;
     y?: number;
+    weapon?: string;
   }>
 ): CombatNpc[] {
   return hostileNpcs.map((n) => ({
@@ -176,7 +179,9 @@ export function buildInitialNpcs(
     ac: n.ac ?? 0,
     x: n.x ?? 0,
     y: n.y ?? 0,
-    dead: false
+    dead: false,
+    weapon: n.weapon ?? null,
+    looted: false
   }));
 }
 

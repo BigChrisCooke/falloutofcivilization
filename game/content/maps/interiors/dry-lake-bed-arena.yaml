@@ -55,6 +55,7 @@ npcs:
   - id: raider_a
     name: Raider
     disposition: hostile
+    weapon: pipe_rifle
     hp: 30
     ac: 2
     x: 8
@@ -62,10 +63,26 @@ npcs:
   - id: raider_b
     name: Raider Scout
     disposition: hostile
+    weapon: pipe_rifle
     hp: 22
     ac: 1
     x: 12
     y: 3
+  - id: raider_c
+    name: Raider Veteran
+    disposition: hostile
+    weapon: hunting_rifle
+    hp: 38
+    ac: 3
+    x: 5
+    y: 4
+  - id: raider_d
+    name: Raider Brawler
+    disposition: hostile
+    hp: 45
+    ac: 1
+    x: 15
+    y: 4
 interactables: []
 loot: []
 questHooks: []

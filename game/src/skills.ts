@@ -16,8 +16,7 @@ export interface SkillDefinition {
 
 export const SKILL_DEFINITIONS: SkillDefinition[] = [
   // ── Combat skills (unaffected by difficulty) ──────────────
-  { id: "small_guns",     name: "Small Guns",     stats: ["agl"],        category: "combat",  initialValue: (s) => 5 + 4 * (s.agl ?? 0) },
-  { id: "big_guns",       name: "Big Guns",       stats: ["agl"],        category: "combat",  initialValue: (s) => 2 * (s.agl ?? 0) },
+  { id: "guns",           name: "Guns",           stats: ["agl"],        category: "combat",  initialValue: (s) => 5 + 4 * (s.agl ?? 0) },
   { id: "energy_weapons", name: "Energy Weapons", stats: ["agl"],        category: "combat",  initialValue: (s) => 2 * (s.agl ?? 0) },
   { id: "unarmed",        name: "Unarmed",        stats: ["agl", "str"], category: "combat",  initialValue: (s) => 30 + 2 * ((s.str ?? 0) + (s.agl ?? 0)) },
   { id: "melee_weapons",  name: "Melee Weapons",  stats: ["agl", "str"], category: "combat",  initialValue: (s) => 20 + 2 * ((s.str ?? 0) + (s.agl ?? 0)) },
@@ -25,10 +24,8 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
 
   // ── Active skills (difficulty: -10 hard, +20 easy) ───────
   { id: "first_aid",      name: "First Aid",      stats: ["per", "int"], category: "active",  initialValue: (s) => 2 * ((s.per ?? 0) + (s.int ?? 0)) },
-  { id: "doctor",         name: "Doctor",          stats: ["per", "int"], category: "active",  initialValue: (s) => 5 + (s.per ?? 0) + (s.int ?? 0) },
   { id: "sneak",          name: "Sneak",           stats: ["agl"],        category: "active",  initialValue: (s) => 5 + 3 * (s.agl ?? 0) },
   { id: "lockpick",       name: "Lockpick",        stats: ["per", "agl"], category: "active",  initialValue: (s) => 10 + (s.per ?? 0) + (s.agl ?? 0) },
-  { id: "steal",          name: "Steal",           stats: ["agl"],        category: "active",  initialValue: (s) => 3 * (s.agl ?? 0) },
   { id: "traps",          name: "Traps",           stats: ["per", "agl"], category: "active",  initialValue: (s) => 10 + (s.per ?? 0) + (s.agl ?? 0) },
   { id: "science",        name: "Science",         stats: ["int"],        category: "active",  initialValue: (s) => 4 * (s.int ?? 0) },
   { id: "repair",         name: "Repair",          stats: ["int"],        category: "active",  initialValue: (s) => 3 * (s.int ?? 0) },

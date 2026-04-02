@@ -38,6 +38,7 @@ npcs:
   - id: cave_raider
     name: Cave Raider
     disposition: hostile
+    weapon: pipe_rifle
     x: 3
     y: 1
     dialogue:

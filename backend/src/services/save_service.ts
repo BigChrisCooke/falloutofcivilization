@@ -83,6 +83,7 @@ export class SaveService {
       current_panel: "location",
       player_x: 2,
       player_y: 2,
+      theft_witnesses_json: "[]",
       updated_at: now
     };
 

@@ -16,9 +16,9 @@ interface PipBoyOverlayProps {
 }
 
 const WEAPON_CATEGORY_LABELS: Record<string, string> = {
-  small_guns: "Small Guns",
-  big_guns: "Big Guns",
+  guns: "Guns",
   energy_weapons: "Energy Weapons",
+  unarmed: "Unarmed",
   melee_weapons: "Melee Weapons",
   throwing: "Throwing"
 };

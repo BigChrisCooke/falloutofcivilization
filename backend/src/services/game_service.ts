@@ -5,6 +5,7 @@ import { CompanionRepo } from "../repos/companion_repo.js";
 import { CombatRepo } from "../repos/combat_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
 import { InventoryRepo } from "../repos/inventory_repo.js";
+import { MapLootRepo } from "../repos/map_loot_repo.js";
 import { SaveRepo } from "../repos/save_repo.js";
 import type { MapDiscoveryRow, PlayerCharacterRow, QuestStateRow, WorldStateRow } from "../shared/types.js";
 import { CombatService } from "./combat_service.js";
@@ -46,6 +47,7 @@ export class GameService {
   private readonly inventoryRepo = new InventoryRepo();
   private readonly companionRepo = new CompanionRepo();
   private readonly combatRepo = new CombatRepo();
+  private readonly mapLootRepo = new MapLootRepo();
   private readonly dialogueService = new DialogueService();
 
   constructor(private readonly combatService: CombatService = new CombatService()) {}
@@ -89,6 +91,9 @@ export class GameService {
     const collectedActionIds = safeJsonParse<string[]>(questState.collected_actions_json, []);
     const companionRows = await this.companionRepo.getAll(saveId);
     const combatStateRow = await this.combatRepo.get(saveId);
+    const mapLootRows = worldState.current_map_id
+      ? await this.mapLootRepo.getForMap(saveId, worldState.current_map_id)
+      : [];
     const questStateView = this.buildQuestStateView(
       questState,
       collectedItemIds,
@@ -163,7 +168,14 @@ export class GameService {
             activeTurn: combatStateRow.active_turn,
             npcs: safeJsonParse<CombatNpc[]>(combatStateRow.npcs_json, [])
           }
-        : null
+        : null,
+      mapLoot: mapLootRows.map((row) => ({
+        id: row.id,
+        itemId: row.item_id,
+        label: row.label,
+        x: row.x,
+        y: row.y
+      }))
     };
   }
 

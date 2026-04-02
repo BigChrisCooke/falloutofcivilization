@@ -7,6 +7,7 @@ import { SkillAllocationPanel } from "./SkillAllocationPanel.js";
 
 import {
   attackTarget,
+  resetArena,
   createSave,
   deleteSave,
   enterLocation,
@@ -264,6 +265,17 @@ export function AppRoot() {
     }
   }
 
+  async function handleResetArena() {
+    setError(null);
+    try {
+      const response = await resetArena();
+      updateGameState(response.state);
+      setCombatMessage(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reset arena.");
+    }
+  }
+
   async function handleScreenChange(screen: "overworld" | "vault") {
     setError(null);
 
@@ -489,6 +501,7 @@ export function AppRoot() {
                   inventory={gameState.inventory}
                   onEquipWeapon={(weaponId) => void handleEquipWeapon(weaponId)}
                   onAttack={(targetNpcId) => void handleAttack(targetNpcId)}
+                  onResetArena={gameState.combatState.mapId === "dry_lake_bed_arena" ? () => void handleResetArena() : undefined}
                   lastMessage={combatMessage}
                 />
               )}

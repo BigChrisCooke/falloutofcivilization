@@ -39,6 +39,7 @@ export const dialogueOptionSchema = z.object({
   karmaDelta: z.number().int().optional(),
   grantItems: z.array(grantItemSchema).optional(),
   companionRecruit: z.string().min(1).optional(),
+  recordAction: z.string().min(1).optional(),
   capsCost: z.number().int().positive().optional(),
   returnToRoot: z.boolean().optional(),
   noActiveQuestsGate: z.object({
@@ -58,11 +59,15 @@ export const dialogueTreeSchema = z.object({
     questCompleted: z.string().min(1).optional(),
     questFailed: z.string().min(1).optional(),
     karmaMin: z.number().int().optional(),
+    karmaMax: z.number().int().optional(),
     factionMin: z.object({
       factionId: z.string().min(1),
       min: z.number().int()
     }).optional(),
     hasTalked: z.boolean().optional(),
+    hasItem: z.string().min(1).optional(),
+    hasActions: z.array(z.string().min(1)).optional(),
+    theftWitnessed: z.boolean().optional(),
     nodeId: z.string().min(1)
   })).optional(),
   nodes: z.array(dialogueNodeSchema).min(1)
@@ -100,7 +105,7 @@ export const questSchema = z.object({
 
 // --- Weapon definition schema ---
 
-export const weaponCategoryEnum = z.enum(["small_guns", "big_guns", "energy_weapons", "melee_weapons", "throwing"]);
+export const weaponCategoryEnum = z.enum(["guns", "energy_weapons", "unarmed", "melee_weapons", "throwing"]);
 export const damageTypeEnum = z.enum(["ballistic", "energy", "melee", "explosive"]);
 export const rarityEnum = z.enum(["common", "uncommon", "rare", "unique"]);
 
@@ -219,6 +224,7 @@ export const interiorMapSchema = z.object({
       interactRange: z.number().int().min(1).optional(),
       hp: z.number().int().positive().optional(),
       ac: z.number().int().nonnegative().default(0),
+      weapon: z.string().min(1).optional(),
       dialogue: dialogueTreeSchema.optional()
     })
   ).default([]),

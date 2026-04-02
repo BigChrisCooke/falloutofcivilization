@@ -72,6 +72,9 @@ export interface InteriorMarkerNode {
   zIndex: number;
   ownedBy?: string;
   interactRange?: number;
+  dead?: boolean;
+  weapon?: string | null;
+  looted?: boolean;
 }
 
 export interface InteriorActorNode {
@@ -145,6 +148,7 @@ export type InteriorInteractionTarget =
   | { kind: "tile"; point: GridPoint; tileKey: string }
   | { kind: "exit"; exitId: string; tileKey: string }
   | { kind: "npc"; npcId: string }
+  | { kind: "deadnpc"; npcId: string; npcName: string; weapon: string | null; looted: boolean }
   | { kind: "loot"; lootId: string }
   | { kind: "interactable"; interactableId: string }
   | { kind: "companion"; companionId: string }

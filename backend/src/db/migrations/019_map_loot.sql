@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS map_loot (
+  id TEXT PRIMARY KEY,
+  save_id TEXT NOT NULL REFERENCES save_games(id) ON DELETE CASCADE,
+  map_id TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  x INTEGER NOT NULL,
+  y INTEGER NOT NULL,
+  dropped_at INTEGER NOT NULL
+);
