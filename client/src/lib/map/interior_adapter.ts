@@ -3,12 +3,13 @@ import { Container } from "pixi.js";
 import { hexDistance } from "../iso.js";
 import { resolveInteriorHover, resolveInteriorInteractionTarget } from "./interior_input.js";
 import { syncInteriorScene, createInteriorLayerContainers, type InteriorLayerContainers, type InteriorRetainedNodes } from "./interior_layers.js";
-import { findNearestAdjacentTile, findPath, type GridPoint } from "./hex_pathfinding.js";
+import { delay, findNearestAdjacentTile, findPath, STEP_DELAY_MS, type GridPoint } from "./hex_pathfinding.js";
 import type { InteriorSceneModel } from "./types.js";
 import type { RetainedMapRuntimeAdapter } from "./map_runtime.js";
 
 export interface InteriorRuntimeHandlers {
-  onMove: (x: number, y: number) => Promise<boolean>;
+  onStep: (x: number, y: number) => void;
+  onMoveSettled: (x: number, y: number) => void;
   onExit: (exitId: string) => void;
   onNpcClick: (npcId: string) => void;
   onLootClick: (lootId: string) => void;
@@ -19,9 +20,10 @@ export interface InteriorRuntimeHandlers {
 
 const MAX_INTERACT_DISTANCE = 2;
 
-let walkGeneration = 0;
-let walkLocked = false;
-let pendingMove: { destination: GridPoint; onArrive?: () => void } | null = null;
+let stepQueue: Array<{ x: number; y: number }> = [];
+let visualPos: { x: number; y: number } | null = null;
+let walkLoopRunning = false;
+let pendingOnArrive: (() => void) | null = null;
 
 function buildPassableSet(scene: InteriorSceneModel): Set<string> {
   const set = new Set<string>();
@@ -47,35 +49,49 @@ function buildNpcBlockedSet(scene: InteriorSceneModel): Set<string> {
   return set;
 }
 
-async function runMove(
+async function walkLoop(handlers: InteriorRuntimeHandlers) {
+  walkLoopRunning = true;
+
+  while (stepQueue.length > 0) {
+    const next = stepQueue.shift()!;
+    visualPos = next;
+    handlers.onStep(next.x, next.y);
+
+    if (stepQueue.length > 0) {
+      await delay(STEP_DELAY_MS);
+    }
+  }
+
+  if (visualPos) {
+    const settled = visualPos;
+    handlers.onMoveSettled(settled.x, settled.y);
+    pendingOnArrive?.();
+    pendingOnArrive = null;
+  }
+
+  walkLoopRunning = false;
+}
+
+function startWalk(
   destination: GridPoint,
-  generation: number,
+  scene: InteriorSceneModel,
   handlers: InteriorRuntimeHandlers,
   onArrive?: () => void
 ) {
-  if (walkLocked) {
-    pendingMove = { destination, onArrive };
+  const from: GridPoint = visualPos ?? scene.courier.point;
+  const passableSet = buildPassableSet(scene);
+  const npcBlocked = buildNpcBlockedSet(scene);
+  const path = findPath(from, destination, passableSet, npcBlocked);
+
+  if (!path) {
     return;
   }
 
-  walkLocked = true;
-  pendingMove = null;
+  stepQueue = path;
+  pendingOnArrive = onArrive ?? null;
 
-  try {
-    const arrived = await handlers.onMove(destination.x, destination.y);
-
-    if (walkGeneration === generation && arrived) {
-      onArrive?.();
-    }
-  } finally {
-    walkLocked = false;
-
-    if (pendingMove) {
-      const { destination: pendingDest, onArrive: pendingOnArrive } = pendingMove;
-      pendingMove = null;
-      const nextGen = ++walkGeneration;
-      void runMove(pendingDest, nextGen, handlers, pendingOnArrive);
-    }
+  if (!walkLoopRunning) {
+    void walkLoop(handlers);
   }
 }
 
@@ -95,13 +111,20 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
   resolveHover: (scene, worldPoint) => resolveInteriorHover(scene, worldPoint),
   resolveInteraction: (scene, worldPoint) => resolveInteriorInteractionTarget(scene, worldPoint),
   applyInteraction: (target, handlers, scene) => {
-    if (walkLocked && target.kind !== "tile") {
-      return;
-    }
-
-    const from: GridPoint = scene.courier.point;
     const passableSet = buildPassableSet(scene);
     const npcBlocked = buildNpcBlockedSet(scene);
+
+    // Reset stale walk state when the loop is idle but visualPos doesn't match the
+    // authoritative player position — this means the player entered (or re-entered)
+    // the map at a new spawn point and the old visualPos is no longer valid.
+    if (!walkLoopRunning && visualPos &&
+        (visualPos.x !== scene.courier.point.x || visualPos.y !== scene.courier.point.y)) {
+      visualPos = null;
+      stepQueue = [];
+      pendingOnArrive = null;
+    }
+
+    const from: GridPoint = visualPos ?? scene.courier.point;
 
     if (target.kind === "tile") {
       const path = findPath(from, target.point, passableSet, npcBlocked);
@@ -110,8 +133,13 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
         return;
       }
 
-      const myGeneration = ++walkGeneration;
-      void runMove(target.point, myGeneration, handlers);
+      stepQueue = path;
+      pendingOnArrive = null;
+
+      if (!walkLoopRunning) {
+        void walkLoop(handlers);
+      }
+
       return;
     }
 
@@ -146,16 +174,10 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
         return;
       }
 
-      const path = findPath(from, adjacentTile, passableSet, npcBlocked);
-
-      if (!path) {
-        return;
-      }
-
-      const myGeneration = ++walkGeneration;
-      void runMove(adjacentTile, myGeneration, handlers, () => {
+      startWalk(adjacentTile, scene, handlers, () => {
         handlers.onNpcClick(target.npcId);
       });
+
       return;
     }
 
@@ -177,16 +199,10 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
         return;
       }
 
-      const path = findPath(from, adjacentTile, passableSet, npcBlocked);
-
-      if (!path) {
-        return;
-      }
-
-      const myGeneration = ++walkGeneration;
-      void runMove(adjacentTile, myGeneration, handlers, () => {
+      startWalk(adjacentTile, scene, handlers, () => {
         handlers.onLootClick(target.lootId);
       });
+
       return;
     }
 
@@ -208,16 +224,10 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
         return;
       }
 
-      const path = findPath(from, adjacentTile, passableSet, npcBlocked);
-
-      if (!path) {
-        return;
-      }
-
-      const myGeneration = ++walkGeneration;
-      void runMove(adjacentTile, myGeneration, handlers, () => {
+      startWalk(adjacentTile, scene, handlers, () => {
         handlers.onInteractableClick(target.interactableId);
       });
+
       return;
     }
 

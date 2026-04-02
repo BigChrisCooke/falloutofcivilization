@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-02
+[FEATURE] Karma-reactive NPC dialogue — most faction NPCs warm up to positive karma; raiders and powder gangers mock good characters and show respect/fear toward bad karma
+[FEATURE] Theft witness system — if you steal an item while faction members are in the same room, they notice and call it out in later dialogue
+[FEATURE] Arena improvements — randomized opponent count (2–3) and weapon loadouts each fight; "Revive opponents" button resets the arena without leaving the map
+
+## [0.10.0] - 2026-04-02
+[FEATURE] Class-based character creation — Doc Mitchell offers 6 preset archetypes (Lucky Charmer, Brawler, Technician, Dr. Feelgood, Rogue, Commando), each with tuned SPECIAL stats and auto-tagged skills; a custom "choose my own path" option remains available
+[FEATURE] Dead NPC body looting — killed enemies stay visible on the map rotated 90°; clicking the body opens a loot panel with flavor text based on INT and First Aid skill; grants the enemy's weapon and 5 rounds of ammo to inventory
+[FEATURE] Corpse overlap resolution — when multiple NPCs die on the same tile, the second corpse BFS-searches outward and lands on the nearest free passable tile
+[IMPROVEMENT] Skill system simplified: Doctor merged into First Aid, Small Guns + Big Guns merged into Guns, Steal merged into Sneak
+[IMPROVEMENT] `hasItem` dialogue conditional roots — NPC greeting nodes can switch based on whether the player is carrying a specific item (Mina reacts to the dog turd)
+[IMPROVEMENT] Feeding Scavenge the dog now grants +2 Karma
+[IMPROVEMENT] Doc Mitchell's opening line changed to "Do you remember who you are?" with all 6 class options shown directly on the first greeting node
+
+## [0.9.1] - 2026-04-02
+[FIX] Interior movement no longer teleports — player now walks step-by-step to clicked tiles; stale walk state is reset on map entry so clicks always work from the correct position
+[IMPROVEMENT] Walk and travel animation loops moved into the adapter layer; React components pass lightweight callbacks instead of managing async movement state
+
 ## [0.9.0] - 2026-04-01
 [FEATURE] Turn-based combat system — player and hostile NPCs take turns attacking and moving on interior maps; combat triggered automatically on entering a location with hostile NPCs
 [FEATURE] Weapon equip and attack endpoints — players can equip weapons from their catalog and attack target NPCs, with hit chance derived from weapon skill + SPECIAL stats and damage reduced by NPC armor class

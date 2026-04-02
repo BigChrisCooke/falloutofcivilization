@@ -28,11 +28,9 @@ import {
   type GameState,
   type GameStatePatch,
   type GoalCompletionResult,
-  type InteriorReplayStep,
   type OverworldReplayStep,
   type SaveGame
 } from "../lib/api.js";
-import { delay, STEP_DELAY_MS } from "../lib/map/hex_pathfinding.js";
 import { applyCompanionStep, applyGameStatePatch, applyInteriorReplayStep, applyOverworldReplayStep } from "../lib/game_state_patch.js";
 
 type AuthMode = "login" | "register";
@@ -58,7 +56,6 @@ export function AppRoot() {
   const prevLevelRef = useRef<number | null>(null);
   const [pendingGoalCompletion, setPendingGoalCompletion] = useState<GoalCompletionResult | null>(null);
   const [pendingConclusion, setPendingConclusion] = useState<ConclusionInitiation | null>(null);
-  const movementLockedRef = useRef(false);
 
   const commitGameState = useCallback((resolveNextState: (previousState: GameState | null) => GameState | null) => {
     setGameState((prev) => {
@@ -91,37 +88,51 @@ export function AppRoot() {
     commitGameState((previousState) => (previousState ? applyGameStatePatch(previousState, patch) : previousState));
   }, [commitGameState]);
 
-  const replayOverworldRoute = useCallback(async (steps: OverworldReplayStep[]) => {
-    for (let index = 0; index < steps.length; index += 1) {
-      const step = steps[index];
+  async function handleTravelRequest(x: number, y: number) {
+    const response = await travel(x, y);
+    return { steps: response.replay.steps, finalPatch: response.replay.finalPatch };
+  }
 
-      if (!step) {
-        continue;
+  function handleTravelStep(step: OverworldReplayStep) {
+    commitGameState((prev) => prev ? applyOverworldReplayStep(prev, step) : prev);
+  }
+
+  function handleTravelComplete(finalPatch: Parameters<typeof patchGameState>[0]) {
+    patchGameState(finalPatch);
+  }
+
+  function handleInteriorStep(x: number, y: number) {
+    commitGameState((prev) => prev ? applyInteriorReplayStep(prev, { position: { x, y } }) : prev);
+  }
+
+  function handleInteriorMoveSettled(x: number, y: number) {
+    void moveInterior(x, y).then((response) => {
+      patchGameState(response.replay.finalPatch);
+      if (response.replay.companionStep) {
+        commitGameState((prev) => prev ? applyCompanionStep(prev, response.replay.companionStep!) : prev);
       }
-
-      commitGameState((previousState) => (previousState ? applyOverworldReplayStep(previousState, step) : previousState));
-
-      if (index < steps.length - 1) {
-        await delay(STEP_DELAY_MS);
+      if (response.replay.goalCompleted) {
+        const gc = response.replay.goalCompleted;
+        if (gc.loyaltyDelta && gc.loyaltyDelta !== 0) {
+          const goalCompanionId = response.replay.companionStep?.companionId;
+          commitGameState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              companions: prev.companions.map((c) =>
+                c.companionId === goalCompanionId
+                  ? { ...c, loyalty: c.loyalty + (gc.loyaltyDelta ?? 0) }
+                  : c
+              )
+            };
+          });
+        }
+        if (gc.dialogueTree) {
+          setPendingGoalCompletion(gc);
+        }
       }
-    }
-  }, [commitGameState]);
-
-  const replayInteriorRoute = useCallback(async (steps: InteriorReplayStep[]) => {
-    for (let index = 0; index < steps.length; index += 1) {
-      const step = steps[index];
-
-      if (!step) {
-        continue;
-      }
-
-      commitGameState((previousState) => (previousState ? applyInteriorReplayStep(previousState, step) : previousState));
-
-      if (index < steps.length - 1) {
-        await delay(STEP_DELAY_MS);
-      }
-    }
-  }, [commitGameState]);
+    }).catch(() => { /* position already correct visually */ });
+  }
 
   async function refreshSession() {
     setLoading(true);
@@ -265,10 +276,6 @@ export function AppRoot() {
   }
 
   async function handleEnterLocation(locationId: string) {
-    if (movementLockedRef.current) {
-      return;
-    }
-
     setError(null);
 
     try {
@@ -282,80 +289,7 @@ export function AppRoot() {
     }
   }
 
-  async function handleTravel(x: number, y: number): Promise<boolean> {
-    if (movementLockedRef.current) {
-      return false;
-    }
-
-    setError(null);
-    movementLockedRef.current = true;
-
-    try {
-      const response = await travel(x, y);
-      await replayOverworldRoute(response.replay.steps);
-      patchGameState(response.replay.finalPatch);
-      return response.replay.finalPatch.worldState.player_x === x && response.replay.finalPatch.worldState.player_y === y;
-    } catch (travelError) {
-      setError(travelError instanceof Error ? travelError.message : "Failed to travel.");
-      return false;
-    } finally {
-      movementLockedRef.current = false;
-    }
-  }
-
-  async function handleInteriorMove(x: number, y: number): Promise<boolean> {
-    if (movementLockedRef.current) {
-      return false;
-    }
-
-    setError(null);
-    movementLockedRef.current = true;
-
-    try {
-      const response = await moveInterior(x, y);
-      await replayInteriorRoute(response.replay.steps);
-      patchGameState(response.replay.finalPatch);
-      if (response.replay.companionStep) {
-        commitGameState((prev) => prev ? applyCompanionStep(prev, response.replay.companionStep!) : prev);
-      }
-
-      // Auto-trigger goal completion dialogue
-      if (response.replay.goalCompleted) {
-        const gc = response.replay.goalCompleted;
-        // Update companion loyalty in local state if changed
-        if (gc.loyaltyDelta && gc.loyaltyDelta !== 0) {
-          const goalCompanionId = response.replay.companionStep?.companionId;
-          commitGameState((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              companions: prev.companions.map((c) =>
-                c.companionId === goalCompanionId
-                  ? { ...c, loyalty: c.loyalty + (gc.loyaltyDelta ?? 0) }
-                  : c
-              )
-            };
-          });
-        }
-        if (gc.dialogueTree) {
-          setPendingGoalCompletion(gc);
-        }
-      }
-
-      return response.replay.finalPatch.worldState.player_x === x && response.replay.finalPatch.worldState.player_y === y;
-    } catch (moveError) {
-      setError(moveError instanceof Error ? moveError.message : "Failed to move inside the current area.");
-      return false;
-    } finally {
-      movementLockedRef.current = false;
-    }
-  }
-
   async function handleInteriorExit(exitId: string) {
-    if (movementLockedRef.current) {
-      return;
-    }
-
     setError(null);
 
     try {
@@ -537,7 +471,8 @@ export function AppRoot() {
               <InteriorMapPanel
                 state={gameState}
                 variant="location"
-                onMove={(x, y) => handleInteriorMove(x, y)}
+                onStep={(x, y) => handleInteriorStep(x, y)}
+                onMoveSettled={(x, y) => handleInteriorMoveSettled(x, y)}
                 onExit={(exitId) => void handleInteriorExit(exitId)}
                 onStateRefresh={(newState) => updateGameState(newState)}
                 onQuestGranted={handleQuestGranted}
@@ -562,7 +497,8 @@ export function AppRoot() {
             <InteriorMapPanel
               state={gameState}
               variant="vault"
-              onMove={(x, y) => handleInteriorMove(x, y)}
+              onStep={(x, y) => handleInteriorStep(x, y)}
+              onMoveSettled={(x, y) => handleInteriorMoveSettled(x, y)}
               onExit={(exitId) => void handleInteriorExit(exitId)}
               onStateRefresh={(newState) => updateGameState(newState)}
               onQuestGranted={handleQuestGranted}
@@ -578,7 +514,9 @@ export function AppRoot() {
                 selectedQuestId={selectedQuestId}
                 highlightedLocationId={highlightedLocationId}
                 onHighlightLocation={setHighlightedLocationId}
-                onTravel={(x, y) => handleTravel(x, y)}
+                onTravelRequest={(x, y) => handleTravelRequest(x, y)}
+                onTravelStep={(step) => handleTravelStep(step)}
+                onTravelComplete={(patch) => handleTravelComplete(patch)}
                 onEnterLocation={(locationId) => void handleEnterLocation(locationId)}
               />
               {showOverworldSkills && gameState.playerCharacter.skills && (
