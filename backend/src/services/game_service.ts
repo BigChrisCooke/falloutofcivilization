@@ -515,6 +515,39 @@ export class GameService {
             }
           }
         }
+
+        // Check for quest resolution dialogue: conclusion quest completed, not yet shown
+        if (!conclusionInitiation && companion.conclusion_accepted === 1 && !companion.quest_resolution_shown) {
+          const questState = await this.gameStateRepo.getQuestState(saveId);
+          const completedQuests = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+          const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+          const conclusionQuestId = "dex_harland_reckoning";
+          if (completedQuests.includes(conclusionQuestId) && companionDef) {
+            const dialogueTreeId = "quest_resolution";
+            const tree = companionDef.storyDialogues[dialogueTreeId];
+            if (tree) {
+              await this.companionRepo.markQuestResolutionShown(saveId, companion.companion_id);
+              conclusionInitiation = {
+                companionId: companion.companion_id,
+                companionName: companionDef.name ?? companion.companion_id,
+                dialogueTreeId,
+                dialogueTree: {
+                  rootNodeId: tree.rootNodeId,
+                  nodes: tree.nodes.map((n) => ({
+                    id: n.id,
+                    text: n.text,
+                    options: n.options.map((o) => ({
+                      id: o.id,
+                      label: o.label,
+                      response: o.response,
+                      next: o.next
+                    }))
+                  }))
+                }
+              };
+            }
+          }
+        }
       }
 
       await this.checkCompanionStoryProgression(saveId);
