@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-02
+[FEATURE] Karma-reactive NPC dialogue — most faction NPCs warm up to positive karma; raiders and powder gangers mock good characters and show respect/fear toward bad karma
+[FEATURE] Theft witness system — if you steal an item while faction members are in the same room, they notice and call it out in later dialogue
+[FEATURE] Arena improvements — randomized opponent count (2–3) and weapon loadouts each fight; "Revive opponents" button resets the arena without leaving the map
+
 ## [0.10.0] - 2026-04-02
 [FEATURE] Class-based character creation — Doc Mitchell offers 6 preset archetypes (Lucky Charmer, Brawler, Technician, Dr. Feelgood, Rogue, Commando), each with tuned SPECIAL stats and auto-tagged skills; a custom "choose my own path" option remains available
 [FEATURE] Dead NPC body looting — killed enemies stay visible on the map rotated 90°; clicking the body opens a loot panel with flavor text based on INT and First Aid skill; grants the enemy's weapon and 5 rounds of ammo to inventory
