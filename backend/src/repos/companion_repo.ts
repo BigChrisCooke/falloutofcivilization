@@ -47,10 +47,10 @@ export class CompanionRepo {
     );
   }
 
-  public async setPosition(saveId: string, companionId: string, x: number, y: number): Promise<void> {
+  public async setPosition(saveId: string, companionId: string, x: number, y: number, mapId?: string): Promise<void> {
     await getDb().run(
-      "UPDATE companion_instances SET companion_x = ?, companion_y = ? WHERE save_id = ? AND companion_id = ? AND departed = 0",
-      [x, y, saveId, companionId]
+      "UPDATE companion_instances SET companion_x = ?, companion_y = ?, companion_map_id = ? WHERE save_id = ? AND companion_id = ? AND departed = 0",
+      [x, y, mapId ?? null, saveId, companionId]
     );
   }
 

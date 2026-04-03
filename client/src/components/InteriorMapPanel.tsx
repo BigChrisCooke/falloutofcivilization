@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { GameState, GoalCompletionResult, ConclusionInitiation } from "../lib/api.js";
-import { collectItem, getCompanionStoryDialogue, respondToConclusion } from "../lib/api.js";
+import { collectItem, collectMapLoot, getCompanionStoryDialogue, lootBody, resetDialogue, respondToConclusion, savePlayerSpecial, setTaggedSkills } from "../lib/api.js";
 import { interiorRuntimeAdapter } from "../lib/map/interior_adapter.js";
 import { buildInteriorSceneModel } from "../lib/map/interior_scene_model.js";
 import { useRetainedMapRuntime } from "../lib/map/map_runtime.js";
@@ -10,6 +10,16 @@ import { DialoguePanel } from "./DialoguePanel.js";
 import { PlayerPanel } from "./PlayerPanel.js";
 import { SkillAllocationPanel } from "./SkillAllocationPanel.js";
 import { TaggedSkillsPanel } from "./TaggedSkillsPanel.js";
+
+const CLASS_PRESETS: Record<string, { special: { str: number; per: number; end: number; cha: number; int: number; agl: number; lck: number }; taggedSkills: string[] }> = {
+  // Key stats in spec order: 1st=8, 2nd=7, 3rd=6. Remaining fill to 30.
+  class_lucky_charmer: { special: { str: 3, per: 3, end: 3, cha: 7, int: 3, agl: 3, lck: 8 }, taggedSkills: ["speech", "barter", "gambling"] },
+  class_brawler:       { special: { str: 8, per: 2, end: 7, cha: 2, int: 2, agl: 6, lck: 3 }, taggedSkills: ["unarmed", "throwing", "melee_weapons"] },
+  class_technician:    { special: { str: 2, per: 6, end: 2, cha: 2, int: 8, agl: 7, lck: 3 }, taggedSkills: ["science", "repair", "energy_weapons"] },
+  class_dr_feelgood:   { special: { str: 3, per: 3, end: 3, cha: 7, int: 8, agl: 3, lck: 3 }, taggedSkills: ["first_aid", "science", "speech"] },
+  class_rogue:         { special: { str: 3, per: 7, end: 3, cha: 3, int: 3, agl: 8, lck: 3 }, taggedSkills: ["sneak", "lockpick", "traps"] },
+  class_commando:      { special: { str: 6, per: 2, end: 7, cha: 2, int: 2, agl: 8, lck: 3 }, taggedSkills: ["guns", "outdoorsman", "melee_weapons"] }
+};
 
 interface InteriorMapPanelProps {
   state: GameState;
@@ -31,16 +41,20 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
 
   const [activeNpcId, setActiveNpcId] = useState<string | null>(null);
   const [activeNpcResponseId, setActiveNpcResponseId] = useState<string | null>(null);
+  const [activeDeadNpc, setActiveDeadNpc] = useState<{ id: string; name: string; weapon: string | null; looted: boolean } | null>(null);
+  const [deadNpcResponse, setDeadNpcResponse] = useState<string | null>(null);
+  const [activeLiveCombatNpc, setActiveLiveCombatNpc] = useState<{ id: string; name: string; hp: number; maxHp: number; ac: number; weapon: string | null } | null>(null);
   const [activeLootId, setActiveLootId] = useState<string | null>(null);
   const [activeInteractableId, setActiveInteractableId] = useState<string | null>(null);
   const [interactableResponse, setInteractableResponse] = useState<string | null>(null);
   const [examinedInteractables, setExaminedInteractables] = useState<Set<string>>(new Set());
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
+  const [pendingClassSpecial, setPendingClassSpecial] = useState<{ str: number; per: number; end: number; cha: number; int: number; agl: number; lck: number } | null>(null);
+  const [pendingTaggedSkills, setPendingTaggedSkills] = useState<string[] | null>(null);
   const [showPlayerPanel, setShowPlayerPanel] = useState(false);
   const [questToast, setQuestToast] = useState<string | null>(null);
   const [showTaggedSkills, setShowTaggedSkills] = useState(false);
   const [showSkillAllocation, setShowSkillAllocation] = useState(false);
-  const [oldTimerChoices, setOldTimerChoices] = useState<string[]>([]);
   const [companionDialogue, setCompanionDialogue] = useState<{
     companionName: string;
     stageTitle: string;
@@ -54,6 +68,19 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
     nodes: Array<{ id: string; text: string; options: Array<{ id: string; label: string; response?: string; next?: string }> }>;
     currentNodeId: string;
   } | null>(null);
+
+  function getBodyFlavorText(npcName: string, intStat: number, firstAidSkill: number): string {
+    if (intStat <= 3) {
+      return `${npcName} is real still. Just... lying there. Sleeping, maybe.`;
+    }
+    if (firstAidSkill >= 50) {
+      return `*You crouch down. ${npcName} took at least two rounds — tight grouping, close range. Death was fast.*`;
+    }
+    if (intStat >= 7) {
+      return `${npcName} is down. Clean shot, center-mass. They're not getting up.`;
+    }
+    return `${npcName} is dead. Plain and simple.`;
+  }
 
   const collectedLoot = useMemo(() => new Set(state.collectedItemIds), [state.collectedItemIds]);
   const collectedActions = useMemo(() => new Set(state.collectedActionIds), [state.collectedActionIds]);
@@ -80,7 +107,7 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
   // Auto-trigger goal completion dialogue when a goal is completed
   useEffect(() => {
     if (pendingGoalCompletion?.dialogueTree) {
-      const companion = state.companions[0];
+      const companion = state.companions.find((c) => c.companionId === pendingGoalCompletion.companionId) ?? state.companions[0];
       const tree = pendingGoalCompletion.dialogueTree;
       setActiveNpcId(null);
       setActiveLootId(null);
@@ -130,6 +157,15 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
     }
   }
 
+  function openCharCreationWithPreset(classOptionId: string) {
+    const preset = CLASS_PRESETS[classOptionId];
+    if (!preset) return;
+    setActiveNpcId(null);
+    setPendingClassSpecial(preset.special);
+    setPendingTaggedSkills(preset.taggedSkills);
+    setShowCharacterCreation(true);
+  }
+
   function handleCompanionClick(companionId: string) {
     const companion = state.companions.find((c) => c.companionId === companionId);
     if (!companion) return;
@@ -160,6 +196,31 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
     onMoveSettled,
     onExit,
     onNpcClick: (npcId) => {
+      const combatNpc = state.combatState?.npcs.find((n) => n.id === npcId);
+      if (combatNpc?.dead) {
+        setActiveDeadNpc({ id: npcId, name: combatNpc.name, weapon: combatNpc.weapon, looted: combatNpc.looted });
+        setDeadNpcResponse(null);
+        setActiveLiveCombatNpc(null);
+        setActiveNpcId(null);
+        setActiveNpcResponseId(null);
+        setActiveLootId(null);
+        setActiveInteractableId(null);
+        setShowPlayerPanel(false);
+        setCompanionDialogue(null);
+        return;
+      }
+      if (combatNpc && !combatNpc.dead) {
+        setActiveLiveCombatNpc({ id: combatNpc.id, name: combatNpc.name, hp: combatNpc.hp, maxHp: combatNpc.maxHp, ac: combatNpc.ac, weapon: combatNpc.weapon });
+        setActiveDeadNpc(null);
+        setActiveNpcId(null);
+        setActiveNpcResponseId(null);
+        setActiveLootId(null);
+        setActiveInteractableId(null);
+        setShowPlayerPanel(false);
+        setCompanionDialogue(null);
+        return;
+      }
+      setActiveLiveCombatNpc(null);
       setActiveNpcId(npcId);
       setActiveNpcResponseId(null);
       setActiveLootId(null);
@@ -168,7 +229,8 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
       setCompanionDialogue(null);
     },
     onLootClick: (lootId) => {
-      if (!collectedLoot.has(lootId)) {
+      const isMapLoot = state.mapLoot.some((l) => l.id === lootId);
+      if (isMapLoot || !collectedLoot.has(lootId)) {
         setActiveLootId(lootId);
         setActiveNpcId(null);
         setActiveInteractableId(null);
@@ -201,7 +263,8 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
   }
 
   const activeNpc = activeNpcId ? map.npcs.find((n) => n.id === activeNpcId) : null;
-  const activeLootDef = activeLootId ? map.loot.find((l) => l.id === activeLootId) : null;
+  const activeMapLootItem = activeLootId ? state.mapLoot.find((l) => l.id === activeLootId) : null;
+  const activeLootDef = activeLootId && !activeMapLootItem ? map.loot.find((l) => l.id === activeLootId) : null;
   const activeInteractable = activeInteractableId ? map.interactables.find((i) => i.id === activeInteractableId) : null;
   const isOldTimerActive = activeNpcId === "old_timer";
   const needsCharCreation = state.playerCharacter.special === null;
@@ -227,20 +290,36 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
         {/* Character Creation Overlay */}
         {showCharacterCreation && (
           <CharacterCreationPanel
-            initialChoices={oldTimerChoices}
+            initialSpecial={pendingClassSpecial ?? undefined}
             onComplete={(newState, questCompleted) => {
               setShowCharacterCreation(false);
               onStateRefresh(newState);
               if (questCompleted) {
                 setQuestToast(`Quest complete: ${questCompleted}`);
                 setTimeout(() => setQuestToast(null), 4000);
-                // Show tagged skills selection after a short delay
-                if (newState.playerCharacter.skills?.needsTagSelection) {
-                  setTimeout(() => setShowTaggedSkills(true), 1500);
-                }
+                onQuestGranted?.(questCompleted);
+              }
+              // Class preset: auto-tag skills, no manual tag selection needed
+              if (pendingTaggedSkills) {
+                const skills = pendingTaggedSkills;
+                setPendingTaggedSkills(null);
+                setPendingClassSpecial(null);
+                void setTaggedSkills(skills).then(({ state: finalState }) => {
+                  onStateRefresh(finalState);
+                }).catch(() => { /* silently fail */ });
+              } else {
+                // Custom path: always show tagged skills selector
+                setPendingClassSpecial(null);
+                setTimeout(() => setShowTaggedSkills(true), 500);
               }
             }}
-            onCancel={() => setShowCharacterCreation(false)}
+            onCancel={() => {
+              setShowCharacterCreation(false);
+              setPendingClassSpecial(null);
+              setPendingTaggedSkills(null);
+              // Reset Doc Mitchell's dialogue so next click starts fresh
+              void resetDialogue("old_timer").catch(() => { /* silently fail */ });
+            }}
           />
         )}
 
@@ -258,8 +337,13 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
               setShowCharacterCreation(true);
             } : undefined}
             onOptionSelected={isOldTimerActive ? (optionId) => {
-              if (optionId.startsWith("q1_") || optionId.startsWith("q2_") || optionId.startsWith("q3_")) {
-                setOldTimerChoices((prev) => [...prev.filter((c) => c.substring(0, 2) !== optionId.substring(0, 2)), optionId]);
+              if (optionId.startsWith("class_")) {
+                openCharCreationWithPreset(optionId);
+              } else if (optionId === "open_creation") {
+                setActiveNpcId(null);
+                setPendingClassSpecial(null);
+                setPendingTaggedSkills(null);
+                setShowCharacterCreation(true);
               }
             } : undefined}
             onCompanionReaction={(reaction) => {
@@ -276,6 +360,135 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
             }}
             onQuestGranted={onQuestGranted}
           />
+        )}
+
+        {/* Dead NPC Body Panel */}
+        {activeDeadNpc && (() => {
+          const intStat = state.playerCharacter.special?.int ?? 5;
+          const firstAidSkill = state.playerCharacter.skills?.values.first_aid ?? 0;
+          const weaponDef = activeDeadNpc.weapon ? state.weaponCatalog.find((w) => w.id === activeDeadNpc.weapon) : null;
+          return (
+            <div className="interaction-panel interactable-panel">
+              <div className="interaction-panel-header">
+                <span className="eyebrow">{activeDeadNpc.name}</span>
+                <button
+                  className="ghost-button interaction-close"
+                  type="button"
+                  onClick={() => { setActiveDeadNpc(null); setDeadNpcResponse(null); }}
+                >
+                  ×
+                </button>
+              </div>
+              {deadNpcResponse ? (
+                <p className="interactable-response">{deadNpcResponse}</p>
+              ) : (
+                <p className="interactable-response">{getBodyFlavorText(activeDeadNpc.name, intStat, firstAidSkill)}</p>
+              )}
+              <div className="interaction-options">
+                {!activeDeadNpc.looted && (
+                  <button
+                    className="ghost-button interaction-option"
+                    type="button"
+                    onClick={() => {
+                      void lootBody(activeDeadNpc.id).then(({ weaponLabel, itemLabels, state: newState }) => {
+                        onStateRefresh(newState);
+                        setActiveDeadNpc((prev) => prev ? { ...prev, looted: true } : prev);
+                        const taken = [
+                          ...(weaponLabel ? [`the ${weaponLabel} and a handful of rounds`] : []),
+                          ...itemLabels
+                        ];
+                        setDeadNpcResponse(taken.length > 0
+                          ? `You take ${taken.join(", ")} off the body.`
+                          : "Nothing worth taking."
+                        );
+                      }).catch(() => {
+                        setDeadNpcResponse("Couldn't loot the body.");
+                      });
+                    }}
+                  >
+                    Loot body{weaponDef ? ` — ${weaponDef.name}` : ""}
+                  </button>
+                )}
+                {activeDeadNpc.looted && !deadNpcResponse && (
+                  <button className="ghost-button interaction-option" type="button" disabled>
+                    Already looted
+                  </button>
+                )}
+                <button
+                  className="ghost-button interaction-option"
+                  type="button"
+                  onClick={() => { setActiveDeadNpc(null); setDeadNpcResponse(null); }}
+                >
+                  Leave
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Living combat NPC info panel */}
+        {activeLiveCombatNpc && (
+          <div className="interaction-panel interactable-panel">
+            <div className="interaction-panel-header">
+              <span className="eyebrow">{activeLiveCombatNpc.name}</span>
+              <button
+                className="ghost-button interaction-close"
+                type="button"
+                onClick={() => setActiveLiveCombatNpc(null)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="interactable-response">
+              {activeLiveCombatNpc.weapon
+                ? (() => {
+                  const w = state.weaponCatalog.find((w) => w.id === activeLiveCombatNpc.weapon);
+                  return w ? `Armed with ${w.name}.` : "Armed.";
+                })()
+                : "Unarmed."}
+              {" "}HP: {activeLiveCombatNpc.hp}/{activeLiveCombatNpc.maxHp}. AC: {activeLiveCombatNpc.ac}.
+            </p>
+            <div className="interaction-options">
+              <button
+                className="ghost-button interaction-option"
+                type="button"
+                onClick={() => setActiveLiveCombatNpc(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Dropped Map Loot Panel (thrown weapons etc.) */}
+        {activeMapLootItem && (
+          <div className="interaction-panel loot-panel">
+            <div className="interaction-panel-header">
+              <span className="eyebrow is-loot">{activeMapLootItem.label}</span>
+              <button
+                className="ghost-button interaction-close"
+                type="button"
+                onClick={() => setActiveLootId(null)}
+              >
+                ×
+              </button>
+            </div>
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() => {
+                void (async () => {
+                  try {
+                    const { state: newState } = await collectMapLoot(activeMapLootItem.id);
+                    onStateRefresh(newState);
+                  } catch { /* ignore */ }
+                })();
+                setActiveLootId(null);
+              }}
+            >
+              Pick up
+            </button>
+          </div>
         )}
 
         {/* Loot Panel */}
@@ -361,12 +574,17 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
         )}
 
         {/* Companion Speech Bubble Indicator */}
-        {state.companions[0]?.hasNewStory && !companionDialogue && !activeNpcId && !showCharacterCreation && (
-          <div className="companion-speech-indicator" onClick={() => handleCompanionClick(state.companions[0]!.companionId)}>
-            <span className="companion-speech-name">{state.companions[0]!.name}</span>
-            <span className="companion-speech-dots">...</span>
-          </div>
-        )}
+        {(() => {
+          const companionWithStory = !companionDialogue && !activeNpcId && !showCharacterCreation
+            ? state.companions.find((c) => c.hasNewStory)
+            : null;
+          return companionWithStory ? (
+            <div className="companion-speech-indicator" onClick={() => handleCompanionClick(companionWithStory.companionId)}>
+              <span className="companion-speech-name">{companionWithStory.name}</span>
+              <span className="companion-speech-dots">...</span>
+            </div>
+          ) : null;
+        })()}
 
         {/* Companion Interactive Dialogue */}
         {companionDialogue && (() => {

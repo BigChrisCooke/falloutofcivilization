@@ -51,6 +51,7 @@ npcs:
     name: "Gristle"
     disposition: hostile
     factionId: raiders
+    weapon: hunting_rifle
     x: 3
     y: 1
     dialogue:
@@ -58,9 +59,31 @@ npcs:
       conditionalRoots:
         - questCompleted: ranger_bounty
           nodeId: post_quest_greeting
+        - karmaMin: 25
+          nodeId: mock_karma_greeting
+        - karmaMax: -25
+          nodeId: fear_karma_greeting
         - hasTalked: true
           nodeId: return_greeting
       nodes:
+        - id: mock_karma_greeting
+          text: "*Gristle squints at you with open contempt.* You got that look about you. The do-gooder look. Seen it before — usually on folks right before the wasteland beats it out of them. What do you want?"
+          options:
+            - id: mk_here_to_talk
+              label: "Just passing through."
+              response: "*He scoffs.* Sure you are. Everyone's 'just passing through.' Move on before my patience runs dry."
+            - id: mk_prove_it
+              label: "I can be useful."
+              response: "*He looks you up and down.* Useful. Huh. Maybe. Don't prove me wrong."
+        - id: fear_karma_greeting
+          text: "*Gristle goes still as you approach. His hand drifts toward his weapon, but he catches himself. He's done the math.* ...You're the one people have been talking about. Alright. What do you want?"
+          options:
+            - id: fk_just_talk
+              label: "I'm not here for trouble."
+              response: "*The tension drops a notch. Just a notch.* Good. Let's keep it that way."
+            - id: fk_reputation
+              label: "Whatever you've heard — it's probably true."
+              response: "*A beat of silence. Then, almost reluctantly:* ...I respect that. Say your piece."
         - id: post_quest_greeting
           text: "*Gristle barely glances up.* It's done. My crew's scattered, the rangers got what they wanted, and I'm still here cleaning up the mess. There's nothing left to talk about."
           options:
@@ -303,14 +326,37 @@ npcs:
     name: "Raider Guard"
     disposition: hostile
     factionId: raiders
+    weapon: pipe_rifle
     x: 5
     y: 2
     dialogue:
       rootNodeId: greeting
       conditionalRoots:
+        - karmaMin: 25
+          nodeId: mock_karma_greeting
+        - karmaMax: -25
+          nodeId: fear_karma_greeting
         - hasTalked: true
           nodeId: return_greeting
       nodes:
+        - id: mock_karma_greeting
+          text: "*The guard takes one look at you and snorts.* Oh, fantastic. A good guy. Just what this place needed. You planning to lecture us on our life choices, or is this a social call?"
+          options:
+            - id: mk_here_for_gristle
+              label: "I'm here to see Gristle."
+              next: see_boss
+            - id: mk_leave
+              label: "Forget it."
+              response: "Yeah. Probably for the best."
+        - id: fear_karma_greeting
+          text: "*The guard straightens up. Their hand moves to the rifle, stops. They look you over carefully, the way people look at things that might bite.* ...You're here to see the boss?"
+          options:
+            - id: fk_yes_gristle
+              label: "That's right."
+              next: see_boss
+            - id: fk_just_looking
+              label: "Relax. I'm just passing through."
+              next: passing_through
         - id: return_greeting
           text: "*The guard's eyes narrow as recognition flickers across their face.* You again. I remember you. Boss still hasn't said nothing about repeat visitors, so don't get comfortable."
           options:

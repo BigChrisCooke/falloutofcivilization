@@ -46,11 +46,11 @@ export function resolveInteriorHover(
   }
 
   // Check companion token hover
-  if (scene.companion) {
-    const compDx = worldPoint.x - scene.companion.anchor.x;
-    const compDy = worldPoint.y - scene.companion.anchor.y;
+  for (const companion of scene.companions) {
+    const compDx = worldPoint.x - companion.anchor.x;
+    const compDy = worldPoint.y - companion.anchor.y;
     if (compDx * compDx + compDy * compDy < 20 * 20) {
-      return { tileKey: null, markerId: `companion-${scene.companion.companionId}` };
+      return { tileKey: null, markerId: `companion-${companion.companionId}` };
     }
   }
 
@@ -111,11 +111,11 @@ export function resolveInteriorInteractionTarget(
   }
 
   // Check companion token click
-  if (scene.companion) {
-    const compDx = worldPoint.x - scene.companion.anchor.x;
-    const compDy = worldPoint.y - scene.companion.anchor.y;
+  for (const companion of scene.companions) {
+    const compDx = worldPoint.x - companion.anchor.x;
+    const compDy = worldPoint.y - companion.anchor.y;
     if (compDx * compDx + compDy * compDy < 20 * 20) {
-      return { kind: "companion", companionId: scene.companion.companionId };
+      return { kind: "companion", companionId: companion.companionId };
     }
   }
 

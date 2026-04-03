@@ -349,6 +349,22 @@ export class DialogueService {
           }
         }
 
+        if (option.recordAction) {
+          const qs = await this.gameStateRepo.getQuestState(saveId);
+          if (qs) {
+            const collected = safeJsonParse<string[]>(qs.collected_actions_json, []);
+            if (!collected.includes(option.recordAction)) {
+              collected.push(option.recordAction);
+              await this.gameStateRepo.updateQuestState({
+                ...qs,
+                collected_actions_json: JSON.stringify(collected),
+                updated_at: Date.now()
+              });
+              result.stateUpdated = true;
+            }
+          }
+        }
+
         await this.markOptionSelected(saveId, npcId, dialogue, optionId);
       }
 
@@ -446,6 +462,7 @@ export class DialogueService {
       const questState = await this.gameStateRepo.getQuestState(saveId);
       const completed = safeJsonParse<string[]>(questState?.completed_quests_json, []);
       const failed = safeJsonParse<string[]>(questState?.failed_quests_json, []);
+      const collectedActions = safeJsonParse<string[]>(questState?.collected_actions_json, []);
       const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
       const karma = playerCharacter?.karma ?? 0;
       const factionStanding = await this.gameStateRepo.getFactionStanding(saveId);
@@ -455,21 +472,46 @@ export class DialogueService {
       const hasSpokenBefore = npcDialogueState !== undefined
         && typeof npcDialogueState !== "string"
         && npcDialogueState.selected.length > 0;
+      let theftWitnesses: string[] | null = null;
 
       for (const condition of dialogue.conditionalRoots) {
-        if (condition.questCompleted && completed.includes(condition.questCompleted)) {
-          return condition.nodeId;
+        // All specified conditions on an entry must match (AND logic).
+        // An unspecified condition is ignored (treated as passing).
+        let passes = true;
+
+        if (condition.questCompleted) {
+          if (!completed.includes(condition.questCompleted)) passes = false;
         }
-        if (condition.questFailed && failed.includes(condition.questFailed)) {
-          return condition.nodeId;
+        if (passes && condition.questFailed) {
+          if (!failed.includes(condition.questFailed)) passes = false;
         }
-        if (condition.karmaMin !== undefined && karma >= condition.karmaMin) {
-          return condition.nodeId;
+        if (passes && condition.karmaMin !== undefined) {
+          if (karma < condition.karmaMin) passes = false;
         }
-        if (condition.factionMin && (standings[condition.factionMin.factionId] ?? 0) >= condition.factionMin.min) {
-          return condition.nodeId;
+        if (passes && condition.karmaMax !== undefined) {
+          if (karma > condition.karmaMax) passes = false;
         }
-        if (condition.hasTalked && hasSpokenBefore) {
+        if (passes && condition.factionMin) {
+          if ((standings[condition.factionMin.factionId] ?? 0) < condition.factionMin.min) passes = false;
+        }
+        if (passes && condition.hasTalked) {
+          if (!hasSpokenBefore) passes = false;
+        }
+        if (passes && condition.hasItem) {
+          const item = await this.inventoryRepo.findItem(saveId, condition.hasItem);
+          if (!item) passes = false;
+        }
+        if (passes && condition.hasActions && condition.hasActions.length > 0) {
+          if (!condition.hasActions.every((a) => collectedActions.includes(a))) passes = false;
+        }
+        if (passes && condition.theftWitnessed) {
+          if (theftWitnesses === null) {
+            theftWitnesses = await this.gameStateRepo.getTheftWitnesses(saveId);
+          }
+          if (!theftWitnesses.includes(npcId)) passes = false;
+        }
+
+        if (passes) {
           return condition.nodeId;
         }
       }
@@ -481,7 +523,16 @@ export class DialogueService {
   private async getNpcState(saveId: string, npcId: string, dialogue: DialogueTree): Promise<DialogueNpcState> {
     const stateMap = await this.getDialogueStateMap(saveId);
     const rootNodeId = await this.getEffectiveRootNodeId(saveId, npcId, dialogue);
-    return resolveNpcState(stateMap[npcId], rootNodeId);
+    const state = resolveNpcState(stateMap[npcId], rootNodeId);
+    // If the effective root has changed (e.g. a conditional root now applies),
+    // reset to that root so the new greeting is shown.
+    const defaultRoot = dialogue.rootNodeId;
+    const isAtDefaultRoot = state.nodeId === defaultRoot;
+    const rootChanged = rootNodeId !== defaultRoot;
+    if (isAtDefaultRoot && rootChanged) {
+      return { nodeId: rootNodeId, selected: state.selected };
+    }
+    return state;
   }
 
   private async setCurrentNodeId(saveId: string, npcId: string, dialogue: DialogueTree, nodeId: string): Promise<void> {

@@ -11,15 +11,16 @@ export class CombatRepo {
 
   public async upsert(row: CombatStateRow): Promise<void> {
     await getDb().run(
-      `INSERT INTO combat_state (save_id, map_id, turn_number, active_turn, npcs_json, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO combat_state (save_id, map_id, turn_number, active_turn, npcs_json, allies_json, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (save_id) DO UPDATE SET
          map_id = excluded.map_id,
          turn_number = excluded.turn_number,
          active_turn = excluded.active_turn,
          npcs_json = excluded.npcs_json,
+         allies_json = excluded.allies_json,
          updated_at = excluded.updated_at`,
-      [row.save_id, row.map_id, row.turn_number, row.active_turn, row.npcs_json, row.updated_at]
+      [row.save_id, row.map_id, row.turn_number, row.active_turn, row.npcs_json, row.allies_json, row.updated_at]
     );
   }
 

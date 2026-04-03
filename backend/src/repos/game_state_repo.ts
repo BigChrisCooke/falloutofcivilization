@@ -1,4 +1,9 @@
 import { getDb, withTransaction } from "../db/connection.js";
+
+function safeJsonParseArray(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try { return JSON.parse(json) as string[]; } catch { return []; }
+}
 import type {
   FactionStandingRow,
   MapDiscoveryRow,
@@ -81,7 +86,7 @@ export class GameStateRepo {
 
   public async updateWorldState(worldState: WorldStateRow): Promise<void> {
     await getDb().run(
-      "UPDATE world_state SET current_screen = ?, current_region_id = ?, current_location_id = ?, current_map_id = ?, current_panel = ?, player_x = ?, player_y = ?, updated_at = ? WHERE save_id = ?",
+      "UPDATE world_state SET current_screen = ?, current_region_id = ?, current_location_id = ?, current_map_id = ?, current_panel = ?, player_x = ?, player_y = ?, theft_witnesses_json = ?, updated_at = ? WHERE save_id = ?",
       [
         worldState.current_screen,
         worldState.current_region_id,
@@ -90,10 +95,29 @@ export class GameStateRepo {
         worldState.current_panel,
         worldState.player_x,
         worldState.player_y,
+        worldState.theft_witnesses_json ?? "[]",
         worldState.updated_at,
         worldState.save_id
       ]
     );
+  }
+
+  public async addTheftWitness(saveId: string, npcId: string): Promise<void> {
+    const worldState = await this.getWorldState(saveId);
+    if (!worldState) return;
+    const witnesses = safeJsonParseArray(worldState.theft_witnesses_json);
+    if (!witnesses.includes(npcId)) {
+      witnesses.push(npcId);
+      await getDb().run(
+        "UPDATE world_state SET theft_witnesses_json = ? WHERE save_id = ?",
+        [JSON.stringify(witnesses), saveId]
+      );
+    }
+  }
+
+  public async getTheftWitnesses(saveId: string): Promise<string[]> {
+    const worldState = await this.getWorldState(saveId);
+    return safeJsonParseArray(worldState?.theft_witnesses_json);
   }
 
   public async updateMapDiscovery(mapDiscovery: MapDiscoveryRow): Promise<void> {

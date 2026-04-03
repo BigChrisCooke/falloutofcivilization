@@ -85,33 +85,48 @@ npcs:
     y: 8
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasTalked: true
+          nodeId: post_creation_greeting
       nodes:
+        - id: post_creation_greeting
+          text: "You're looking better. How's the head holding up?"
+          options:
+            - id: fine_thanks
+              label: "Fine. Thanks again for patching me up."
+              response: "Don't mention it. That's what I'm here for. Go talk to Mina if you haven't yet — she runs this place."
+            - id: ask_happened
+              label: "What happened to me again?"
+              next: what_happened
+            - id: ask_where_again
+              label: "Remind me — where are we?"
+              next: where_am_i
         - id: greeting
-          text: "Whoa there — easy now. You hit your head real hard out there. Can you hear me alright?"
+          text: "Whoa there — easy now. You hit your head real hard out there. Do you remember who you are?"
           options:
-            - id: q1_muscle
-              label: "Yeah I'm fine. I was more of a fighter before..."
-              next: fighter_response
-            - id: q1_brains
-              label: "My head's spinning. I'm more of a thinker normally..."
-              next: thinker_response
-            - id: q2_quick
-              label: "I'm quick on my feet — usually dodge what I can't fight."
-              next: agile_response
-            - id: q2_tough
-              label: "I take hits. Always have. Built like a brahmin, they say."
-              next: tough_response
-            - id: q3_charmer
-              label: "I can talk my way out of most situations."
-              next: charmer_response
-            - id: q3_loner
-              label: "I prefer to work alone. Keep my own counsel."
-              next: loner_response
+            - id: class_lucky_charmer
+              label: "Lucky Charmer — smooth talker, card shark, silver-tongued blagger."
+              next: class_charmer_response
+            - id: class_brawler
+              label: "Brawler — I solve most problems with my fists."
+              next: class_brawler_response
+            - id: class_technician
+              label: "Technician — a man of science, for fixing or destroying."
+              next: class_tech_response
+            - id: class_dr_feelgood
+              label: "Dr. Feelgood — a medic with good bedside manner."
+              next: class_doc_response
+            - id: class_rogue
+              label: "Shadowy Rogue — sneak around, take what I want, then disappear."
+              next: class_rogue_response
+            - id: class_commando
+              label: "Commando — soldier, shooter, survivor."
+              next: class_commando_response
             - id: open_creation
-              label: "So... who am I, exactly?"
-              next: identity_response
-        - id: fighter_response
-          text: "Figured. You've got the look of someone who's taken a few hits and kept swinging. I'll keep that in mind."
+              label: "I choose my own path."
+              response: "That's the spirit."
+        - id: class_charmer_response
+          text: "Silver tongue and a lucky streak. You'll charm your way through most of this wasteland — and when charm fails, you've got luck as backup."
           options:
             - id: ask_more
               label: "What happened to me?"
@@ -119,8 +134,8 @@ npcs:
             - id: ask_where
               label: "Where am I?"
               next: where_am_i
-        - id: thinker_response
-          text: "Smart. Thinkers last longer out in the waste than brawlers, usually. Assuming they keep their nose out of trouble."
+        - id: class_brawler_response
+          text: "Hands like hammers. The wasteland's full of things that need hitting — you'll fit right in. Just try not to lead with your face."
           options:
             - id: ask_more
               label: "What happened to me?"
@@ -128,8 +143,8 @@ npcs:
             - id: ask_where
               label: "Where am I?"
               next: where_am_i
-        - id: agile_response
-          text: "Agile type. Good. Fast hands and quick feet have saved more wasteland lives than any gun."
+        - id: class_tech_response
+          text: "A tinkerer. Good. Half the pre-war tech out there still works if you know how to coax it. The other half will explode in your face, but that's what science is for."
           options:
             - id: ask_more
               label: "What happened to me?"
@@ -137,8 +152,8 @@ npcs:
             - id: ask_where
               label: "Where am I?"
               next: where_am_i
-        - id: tough_response
-          text: "Ha! Durable stock then. The wasteland needs more of that."
+        - id: class_doc_response
+          text: "A medic with people skills. Rarer than clean water out here. You'll have folks lining up — some for healing, most just to talk to someone who listens."
           options:
             - id: ask_more
               label: "What happened to me?"
@@ -146,8 +161,8 @@ npcs:
             - id: ask_where
               label: "Where am I?"
               next: where_am_i
-        - id: charmer_response
-          text: "The silver tongue. Rare as clean water out here. You'll find plenty of use for that skill."
+        - id: class_rogue_response
+          text: "Light fingers and lighter footsteps. Half the problems in this wasteland are better handled quietly. You've got the right idea."
           options:
             - id: ask_more
               label: "What happened to me?"
@@ -155,8 +170,8 @@ npcs:
             - id: ask_where
               label: "Where am I?"
               next: where_am_i
-        - id: loner_response
-          text: "A lone wolf. Harder road, but there's something to be said for not depending on anyone."
+        - id: class_commando_response
+          text: "Military bearing. Disciplined. The kind of person who checks their exits before they sit down. This wasteland needs more of that."
           options:
             - id: ask_more
               label: "What happened to me?"
@@ -212,7 +227,114 @@ npcs:
     interactRange: 3
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        # Both happened — already mentioned turd, now mention theft
+        - hasItem: dog_turd
+          theftWitnessed: true
+          hasActions: [mina_mentioned_turd]
+          nodeId: caught_stealing_greeting
+        # Both happened — already mentioned theft, now mention turd
+        - hasItem: dog_turd
+          theftWitnessed: true
+          hasActions: [mina_mentioned_theft]
+          nodeId: greeting_turd
+        # Only one happened
+        - theftWitnessed: true
+          nodeId: caught_stealing_greeting
+        # Turd already mentioned — use normal return greeting
+        - hasItem: dog_turd
+          hasActions: [mina_mentioned_turd]
+          nodeId: return_greeting
+        # First visit with turd — Mina acknowledges it
+        - hasItem: dog_turd
+          nodeId: greeting_turd
+        - hasTalked: true
+          nodeId: return_greeting
+        - karmaMin: 25
+          nodeId: high_karma_greeting
+        - karmaMax: -25
+          nodeId: bad_karma_greeting
       nodes:
+        - id: caught_stealing_greeting
+          text: "*Mina sets down the glass she's cleaning, slow and deliberate, and fixes you with a look that could strip paint.* I saw what you did. I don't know what you thought this place was, but it's not that. You take something that isn't yours under my roof, you don't get to come back in here like nothing happened. We clear?"
+          options:
+            - id: cs_apologise
+              label: "You're right. I shouldn't have done that."
+              recordAction: mina_mentioned_theft
+              response: "*She holds your gaze for a long moment, then picks the glass back up.* No, you shouldn't have. Don't let it happen again."
+            - id: cs_deny
+              label: "I don't know what you're talking about."
+              recordAction: mina_mentioned_theft
+              response: "*Her expression doesn't change.* Right. Of course you don't. Drink's double price from now on. Don't argue with me."
+            - id: ask_rumors
+              label: "I hear you. What's the word around here?"
+              recordAction: mina_mentioned_theft
+              next: rumors
+        - id: return_greeting
+          text: "Hey. What do you need?"
+          options:
+            - id: ask_rumors
+              label: "Heard any rumors?"
+              next: rumors
+            - id: ask_world
+              label: "What happened to the world?"
+              next: world_info
+            - id: ask_mechanics
+              label: "How do I get around?"
+              next: mechanics_info
+            - id: ask_objectives
+              label: "What should I be doing?"
+              next: objectives_info
+        - id: high_karma_greeting
+          text: "Well, look at you. Word travels fast out here — people say you've been doing right by folks. That's not nothing. Welcome to the Dusty Spur."
+          options:
+            - id: ask_rumors
+              label: "Heard any rumors?"
+              next: rumors
+            - id: ask_world
+              label: "What happened to the world?"
+              next: world_info
+            - id: ask_objectives
+              label: "What should I be doing?"
+              next: objectives_info
+        - id: bad_karma_greeting
+          text: "*Mina eyes you with open suspicion, arms crossed.* I've heard things about you. Don't know what you want in here, but keep your hands where I can see them and your business to yourself. We clear?"
+          options:
+            - id: ask_rumors
+              label: "Heard any rumors?"
+              next: rumors
+            - id: bk_clear
+              label: "Crystal clear."
+              response: "Good. Drink's three caps. Don't make trouble."
+        - id: greeting_turd
+          text: "Well now, a new face in the Dusty Spur. Name's Mina. I run this place — or what's left of it. *She glances at your hands.* And thanks for cleaning up after Scavenge. Wash your hands before you touch anything in my bar, though."
+          options:
+            - id: thank_mina_turd
+              label: "Doc Mitchell said I should thank you — for patching me up."
+              recordAction: mina_mentioned_turd
+              grantItems:
+                - { itemId: stimpak, label: "Stimpak" }
+              next: mina_thanks
+            - id: ask_rumors
+              label: "Heard any rumors?"
+              recordAction: mina_mentioned_turd
+              next: rumors
+            - id: ask_world
+              label: "What happened to the world?"
+              recordAction: mina_mentioned_turd
+              next: world_info
+            - id: ask_mechanics
+              label: "How do I get around?"
+              recordAction: mina_mentioned_turd
+              next: mechanics_info
+            - id: ask_objectives
+              label: "What should I be doing?"
+              recordAction: mina_mentioned_turd
+              next: objectives_info
+            - id: ask_faction
+              label: "What's the Dusty Spur Tavern faction?"
+              recordAction: mina_mentioned_turd
+              next: faction_info
         - id: greeting
           text: "Well now, a new face in the Dusty Spur. Name's Mina. I run this place — or what's left of it."
           options:
@@ -414,6 +536,7 @@ npcs:
     name: "Decanus Varro"
     disposition: hostile
     factionId: caesar_legion
+    weapon: pipe_rifle
     x: 4
     y: 3
     dialogue:
@@ -628,11 +751,32 @@ npcs:
     name: "Boxcars"
     disposition: hostile
     factionId: powder_gangers
+    weapon: pipe_rifle
     x: 7
     y: 3
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - karmaMin: 25
+          nodeId: mock_karma_greeting
+        - karmaMax: -25
+          nodeId: fear_karma_greeting
       nodes:
+        - id: mock_karma_greeting
+          text: "*Boxcars looks you over and lets out a short laugh.* Oh, one of those types. All righteous and clean-handed. You know what we call people like you out here? Targets. Don't look so smug."
+          options:
+            - id: mk_back_off
+              label: "Keep laughing. See how that works out."
+              response: "*He stops laughing, but the smirk stays.* Yeah, alright. Point taken."
+            - id: mk_ignore
+              label: "I'm not here for you."
+              response: "Good. Then stop standing near me."
+        - id: fear_karma_greeting
+          text: "*Boxcars looks up, clocks something in your expression, and sits a little straighter. Not scared exactly — more like someone who's learned to recognise a certain kind of dangerous.* You just passing through? ...Right. Sure you are."
+          options:
+            - id: fk_just_looking
+              label: "Don't worry about it."
+              response: "*He nods slowly, not breaking eye contact.* Yeah. Yeah, alright. No trouble here."
         - id: greeting
           text: "Don't look at me. I'm just drinking."
           options:
@@ -776,19 +920,34 @@ npcs:
           options: []
 
   # ── Scavenge (dog) ─────────────────────────────────────────
-  - id: dog
+  - id: scavenge
     name: "Scavenge"
     disposition: friendly
     x: 5
     y: 6
     dialogue:
       rootNodeId: greeting
+      conditionalRoots:
+        - hasActions: [fed_scavenge, pet_scavenge_1, pet_scavenge_2]
+          nodeId: companion_ready
       nodes:
+        - id: companion_ready
+          text: "*Scavenge sits up straight and looks at you with those big, serious eyes — tail wagging slow and deliberate, like he's making a decision. He's been watching you. He's made up his mind.*"
+          options:
+            - id: recruit_scavenge
+              label: "Come on, boy. You're with me now."
+              companionRecruit: scavenge
+              response: "*Scavenge springs to his feet and barks once — sharp and certain. He trots to your side and sits, looking up at you. He's not going anywhere without you now.*"
+            - id: not_yet
+              label: "Not today, boy. Stay here."
+              response: "*Scavenge's ears droop for a moment. Then he licks your hand and lies back down — patient, as only dogs can be.*"
+              returnToRoot: true
         - id: greeting
           text: "*The dog wags its tail and sniffs your hand.*"
           options:
             - id: pet_dog
               label: "Pet the dog."
+              recordAction: pet_scavenge_1
               next: pet_response
             - id: examine_dog
               label: "Examine the dog."
@@ -809,7 +968,9 @@ npcs:
           options:
             - id: more_pets
               label: "Keep petting."
+              recordAction: pet_scavenge_2
               response: "*Scavenge rolls onto his back. Maximum wasteland happiness achieved.*"
+              returnToRoot: true
         - id: examine_response
           text: "A scraggly-eared mutt, lean but bright-eyed. Collar reads 'Scavenge'. Someone loved this dog once. Maybe still does."
           options: []
@@ -820,6 +981,8 @@ npcs:
               label: "Share some food with Scavenge."
               inventoryTagGate: { tag: food }
               consumeItem: true
+              karmaDelta: 2
+              recordAction: fed_scavenge
               next: feed_happy
             - id: no_food
               label: "Sorry boy, I don't have anything."
@@ -830,6 +993,7 @@ npcs:
             - id: feed_happy_pet
               label: "Good boy."
               response: "*Scavenge barks once — sharp and happy — then leans against your leg. The wasteland just got a little warmer.*"
+              returnToRoot: true
         - id: feed_response
           text: "*Scavenge sniffs hopefully... you don't have any food. He looks at you with quiet dignity and lies back down.*"
           options: []

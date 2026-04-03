@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-04-03
+[FIX] Scavenge NPC ghost — dog tile marker now correctly suppressed after recruiting (NPC id `dog` → `scavenge` to match companion def)
+[FIX] Multiple companions now render simultaneously — scene model, input, and render layer all loop over all companions instead of hard-coding companions[0]
+[FIX] Companion stale coordinates — stored position is now tagged with `companion_map_id`; coordinates from a different map are ignored and companion is placed adjacent to the player instead
+[FIX] All companions placed on map entry — both map-entry paths now loop all companions and place each at a separate adjacent tile
+[FIX] Doc Mitchell no longer shows character-creation intro after creation is complete
+[FIX] Mina dialogue ordering — `hasTalked` no longer shadows the dog-turd greeting; thank-you option added so players who pick up the turd first don't miss the stimpak
+[FIX] Phantom arena NPCs — non-selected raiders (those not part of the active fight) no longer appear as markers on the map
+[FIX] Combat stuck after ally kill — if allies finish the last enemy, victory is declared immediately rather than running a ghost NPC turn
+[FIX] Arena combat restarts correctly after victory — re-entering the arena (or pressing "Revive opponents") now always starts a fresh fight
+[FIX] Companions no longer stack on the same tile during combat — each ally's movement excludes tiles occupied by other allies
+[IMPROVEMENT] Weapon range enforced for melee, unarmed, and throwing — attacking beyond range returns a clear error and consumes no ammo
+[IMPROVEMENT] Clicking a living enemy during combat shows their name, HP, AC, and equipped weapon
+[IMPROVEMENT] Raider Brawler carries 2x Stimpak and 1x Jet; looting any body now grants all authored items in addition to their weapon
+
+## [0.12.0] - 2026-04-03
+[FEATURE] Scavenge dog companion — feed him and pet him twice inside the Dusty Tavern to unlock the "Come with me, boy" recruit option; actions are tracked via the new `recordAction` dialogue field
+[FEATURE] Thrown weapons consumed on use — throwing weapons (e.g. cue ball) leave your inventory on attack (hit or miss) and appear as a pickable floor item at the target tile
+[FEATURE] `map_loot` system — runtime-dropped items persist per save via a new DB table; collected via `POST /map-loot/:id/collect` which stacks or adds the item to inventory
+[FEATURE] `recordAction` / `hasActions` dialogue system — options can record named actions to a save's action list; `conditionalRoots` entries can gate on all listed actions being present (AND semantics)
+[IMPROVEMENT] `conditionalRoots` AND logic — all fields on a conditional root entry must match before it activates (previously any single match would fire)
+[IMPROVEMENT] Mina dual-greeting — if you steal AND have the dog turd, Mina mentions each grievance on successive visits rather than only one
+[IMPROVEMENT] New tile art — mountain, vault, cave, dirt, grass, sand, stone, swamp, mars, factory, military, medieval, modern, western, scifi, and location-specific .webp tiles added
+
 ## [0.11.0] - 2026-04-02
 [FEATURE] Karma-reactive NPC dialogue — most faction NPCs warm up to positive karma; raiders and powder gangers mock good characters and show respect/fear toward bad karma
 [FEATURE] Theft witness system — if you steal an item while faction members are in the same room, they notice and call it out in later dialogue

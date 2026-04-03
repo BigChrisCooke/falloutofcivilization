@@ -14,7 +14,7 @@
 # Small Guns — Pistols
 - id: 9mm_pistol
   name: 9mm Pistol
-  category: small_guns
+  category: guns
   damage: 18
   damageType: ballistic
   weight: 2.5
@@ -27,7 +27,7 @@
 
 - id: 10mm_pistol
   name: 10mm Pistol
-  category: small_guns
+  category: guns
   damage: 22
   damageType: ballistic
   weight: 3.5
@@ -40,7 +40,7 @@
 
 - id: 357_magnum
   name: .357 Magnum Revolver
-  category: small_guns
+  category: guns
   damage: 36
   damageType: ballistic
   weight: 4.0
@@ -81,7 +81,7 @@
 # Small Guns — Rifles
 - id: pipe_rifle
   name: Pipe Rifle
-  category: small_guns
+  category: guns
   damage: 20
   damageType: ballistic
   weight: 5.5
@@ -94,7 +94,7 @@
 
 - id: hunting_rifle
   name: Hunting Rifle
-  category: small_guns
+  category: guns
   damage: 52
   damageType: ballistic
   weight: 7.5
@@ -107,7 +107,7 @@
 
 - id: service_rifle
   name: Service Rifle
-  category: small_guns
+  category: guns
   damage: 38
   damageType: ballistic
   weight: 6.0
@@ -148,7 +148,7 @@
 # Small Guns — Shotguns
 - id: sawed_off_shotgun
   name: Sawed-Off Shotgun
-  category: small_guns
+  category: guns
   damage: 45
   damageType: ballistic
   weight: 4.5
@@ -161,7 +161,7 @@
 
 - id: combat_shotgun
   name: Combat Shotgun
-  category: small_guns
+  category: guns
   damage: 55
   damageType: ballistic
   weight: 7.0
@@ -236,7 +236,7 @@
 # Unique Weapons
 - id: lucky_357
   name: '"Lucky"'
-  category: small_guns
+  category: guns
   damage: 42
   damageType: ballistic
   weight: 4.0
@@ -249,7 +249,7 @@
 
 - id: this_machine
   name: '"This Machine"'
-  category: small_guns
+  category: guns
   damage: 58
   damageType: ballistic
   weight: 8.5

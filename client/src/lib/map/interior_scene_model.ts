@@ -32,7 +32,10 @@ function createMarkerNode(
   zOffset: number,
   isActionable: boolean,
   ownedBy?: string,
-  interactRange?: number
+  interactRange?: number,
+  dead?: boolean,
+  weapon?: string | null,
+  looted?: boolean
 ): InteriorMarkerNode {
   return {
     id,
@@ -44,7 +47,10 @@ function createMarkerNode(
     isActionable,
     zIndex: getTileZIndex(point) + zOffset,
     ownedBy,
-    interactRange
+    interactRange,
+    dead,
+    weapon,
+    looted
   };
 }
 
@@ -103,25 +109,29 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
     ? placements.loot.filter((p) => !collectedLootIds.has(p.id))
     : placements.loot;
 
+  // Runtime-dropped items (e.g. thrown weapons) — always visible until collected
+  const droppedLoot = state.mapLoot ?? [];
+
   // Suppress recruited companion NPCs from the props layer
   const activeCompanionIds = new Set(state.companions.map((c) => c.companionId));
   // Override NPC positions from combat state when combat is active
   const combatNpcPositions = state.combatState
-    ? new Map(state.combatState.npcs.map((n) => [n.id, { x: n.x, y: n.y, dead: n.dead }]))
+    ? new Map(state.combatState.npcs.map((n) => [n.id, { x: n.x, y: n.y, dead: n.dead, weapon: n.weapon, looted: n.looted }]))
+    : null;
+
+  // When combat is active, only show NPCs that are part of the active fight
+  const combatNpcIds = combatNpcPositions
+    ? new Set(Array.from(combatNpcPositions.keys()))
     : null;
 
   const visibleNpcs = placements.npcs
     .filter((npc) => !activeCompanionIds.has(npc.id))
-    .filter((npc) => {
-      if (!combatNpcPositions) return true;
-      const combatNpc = combatNpcPositions.get(npc.id);
-      return !combatNpc?.dead;
-    })
+    .filter((npc) => !combatNpcIds || combatNpcIds.has(npc.id))
     .map((npc) => {
-      if (!combatNpcPositions) return npc;
+      if (!combatNpcPositions) return { ...npc, dead: false as boolean, weapon: null as string | null, looted: false };
       const combatNpc = combatNpcPositions.get(npc.id);
-      if (combatNpc) return { ...npc, point: { x: combatNpc.x, y: combatNpc.y } };
-      return npc;
+      if (combatNpc) return { ...npc, point: { x: combatNpc.x, y: combatNpc.y }, dead: combatNpc.dead, weapon: combatNpc.weapon, looted: combatNpc.looted };
+      return { ...npc, dead: false as boolean, weapon: null as string | null, looted: false };
     });
 
   const markers: InteriorMarkerNode[] = [
@@ -133,24 +143,40 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       const lootDef = activeLoot.find((l) => l.id === item.id);
       return createMarkerNode(item.id, "loot", item.point, item.id, 32, true, lootDef?.ownedBy);
     }),
-    ...visibleNpcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, true, undefined, npc.interactRange))
+    ...droppedLoot.map((item) =>
+      createMarkerNode(item.id, "loot", { x: item.x, y: item.y }, item.label, 32, true)
+    ),
+    ...visibleNpcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, !npc.dead || !npc.looted, undefined, npc.interactRange, npc.dead, npc.weapon, npc.looted))
   ].sort((left, right) => left.zIndex - right.zIndex);
 
-  // Compute companion actor position if a companion is active
-  let companion: CompanionActorNode | null = null;
-  const activeCompanion = state.companions[0];
+  // Build ally position map for combat — overrides stored companion coordinates
+  const allyPositions = state.combatState
+    ? new Map(state.combatState.allies.map((a) => [a.companionId, { x: a.x, y: a.y, dead: a.dead }]))
+    : null;
 
-  if (activeCompanion?.tokenColor) {
+  // Compute companion actor positions for all active companions
+  const companionNodes: CompanionActorNode[] = [];
+  const occupiedByCompanions = new Set<string>();
+
+  for (const activeCompanion of state.companions) {
+    if (!activeCompanion.tokenColor) continue;
+
     let companionPoint: { x: number; y: number } | null = null;
 
-    // Use stored position from state if available
-    if (activeCompanion.x !== null && activeCompanion.y !== null) {
+    // During combat, use ally position (and skip dead allies)
+    if (allyPositions?.has(activeCompanion.companionId)) {
+      const allyPos = allyPositions.get(activeCompanion.companionId)!;
+      if (allyPos.dead) continue;
+      companionPoint = { x: allyPos.x, y: allyPos.y };
+    } else if (activeCompanion.x !== null && activeCompanion.y !== null) {
+      // Use stored position from state if available
       companionPoint = { x: activeCompanion.x, y: activeCompanion.y };
     } else {
       // Fall back to adjacent-to-player when position is not yet set
       const occupiedKeys = new Set([
         currentTileKey,
-        ...markers.map((m) => toTileKey(m.point))
+        ...markers.map((m) => toTileKey(m.point)),
+        ...occupiedByCompanions
       ]);
       const passableKeys = new Set(
         tiles.filter((t) => t.isPassable).map((t) => t.key)
@@ -170,14 +196,15 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
     }
 
     if (companionPoint) {
-      companion = {
+      occupiedByCompanions.add(toTileKey(companionPoint));
+      companionNodes.push({
         id: `companion-${activeCompanion.companionId}`,
         companionId: activeCompanion.companionId,
         tokenColor: activeCompanion.tokenColor,
         point: companionPoint,
         anchor: getInteriorCourierAnchor(companionPoint),
         zIndex: getTileZIndex(companionPoint) + 85
-      };
+      });
     }
   }
 
@@ -197,6 +224,6 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       anchor: getInteriorCourierAnchor(currentPoint),
       zIndex: getTileZIndex(currentPoint) + 90
     },
-    companion
+    companions: companionNodes
   };
 }

@@ -232,7 +232,7 @@ describe("buildPassableSet", () => {
 
 describe("buildInitialNpcs", () => {
   it("maps all fields correctly from content definitions", () => {
-    const npcs = buildInitialNpcs([{ id: "raider_a", name: "Raider", hp: 30, ac: 2, x: 8, y: 2 }]);
+    const npcs = buildInitialNpcs([{ id: "raider_a", name: "Raider", hp: 30, ac: 2, x: 8, y: 2, weapon: "pipe_rifle" }]);
     expect(npcs[0]).toEqual({
       id: "raider_a",
       name: "Raider",
@@ -241,7 +241,9 @@ describe("buildInitialNpcs", () => {
       ac: 2,
       x: 8,
       y: 2,
-      dead: false
+      dead: false,
+      weapon: "pipe_rifle",
+      looted: false
     });
   });
 

@@ -62,6 +62,22 @@ export interface CombatNpc {
   x: number;
   y: number;
   dead: boolean;
+  weapon: string | null;
+  looted: boolean;
+}
+
+export interface CombatAlly {
+  companionId: string;
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  ac: number;
+  x: number;
+  y: number;
+  dead: boolean;
+  weapon: string | null;
+  damage: number;
 }
 
 export interface CombatState {
@@ -70,6 +86,7 @@ export interface CombatState {
   turnNumber: number;
   activeTurn: string;
   npcs: CombatNpc[];
+  allies: CombatAlly[];
 }
 
 export interface DialogueNode {
@@ -251,6 +268,7 @@ export interface GameState {
   locations: LocationSummary[];
   weaponCatalog: WeaponDefinition[];
   combatState: CombatState | null;
+  mapLoot: Array<{ id: string; itemId: string; label: string; x: number; y: number }>;
 }
 
 export interface OverworldReplayStep {
@@ -516,6 +534,10 @@ export function collectItem(
   });
 }
 
+export function collectMapLoot(lootId: string): Promise<{ state: GameState }> {
+  return request(`/api/game/map-loot/${lootId}/collect`, { method: "POST" });
+}
+
 export function saveCurrentGame(saveId: string): Promise<{ save: SaveGame; message: string }> {
   return request(`/api/saves/${saveId}/save`, {
     method: "POST"
@@ -562,4 +584,12 @@ export function attackTarget(targetNpcId: string): Promise<{ result: { hit: bool
     method: "POST",
     body: JSON.stringify({ targetNpcId })
   });
+}
+
+export function lootBody(npcId: string): Promise<{ weaponId: string | null; weaponLabel: string | null; itemLabels: string[]; state: GameState }> {
+  return request(`/api/game/combat/loot/${encodeURIComponent(npcId)}`, { method: "POST" });
+}
+
+export function resetArena(): Promise<{ state: GameState }> {
+  return request("/api/game/combat/reset", { method: "POST" });
 }

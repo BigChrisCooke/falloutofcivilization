@@ -86,6 +86,19 @@ export class InventoryService {
             updated_at: now
           });
         }
+
+        // Record which NPCs in the current interior witnessed this theft
+        const worldState = await this.gameStateRepo.getWorldState(saveId);
+        if (worldState?.current_map_id) {
+          const content = getGameContent();
+          const interiorMap = content.interiorMaps.find((m) => m.id === worldState.current_map_id);
+          if (interiorMap) {
+            const witnesses = interiorMap.npcs.filter((n) => n.factionId === ownedBy && n.disposition !== "hostile");
+            for (const witness of witnesses) {
+              await this.gameStateRepo.addTheftWitness(saveId, witness.id);
+            }
+          }
+        }
       }
 
       const companionReaction = ownedBy

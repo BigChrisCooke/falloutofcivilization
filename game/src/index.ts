@@ -66,6 +66,8 @@ export {
   computePlayerHitChance,
   resolveNpcAttack,
   resolvePlayerAttack,
+  runAllyAiStep,
+  type CombatAlly,
   type CombatNpc,
   type RollFn
 } from "./rules/combat.js";
