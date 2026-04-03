@@ -225,6 +225,13 @@ export const interiorMapSchema = z.object({
       hp: z.number().int().positive().optional(),
       ac: z.number().int().nonnegative().default(0),
       weapon: z.string().min(1).optional(),
+      items: z.array(z.object({
+        id: z.string().min(1),
+        label: z.string().min(1),
+        quantity: z.number().int().min(1).default(1),
+        description: z.string().optional(),
+        tags: z.array(z.string()).optional()
+      })).optional(),
       dialogue: dialogueTreeSchema.optional()
     })
   ).default([]),
@@ -298,6 +305,13 @@ export const companionReactionLineSchema = z.object({
   text: z.string().min(1)
 });
 
+export const companionCombatSchema = z.object({
+  hp: z.number().int().positive(),
+  ac: z.number().int().nonnegative(),
+  damage: z.number().int().positive(),
+  weapon: z.string().min(1).optional()
+});
+
 export const companionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -308,6 +322,7 @@ export const companionSchema = z.object({
   storyStages: z.array(companionStoryStageSchema).min(1),
   storyDialogues: z.record(z.string(), dialogueTreeSchema).default({}),
   goals: z.array(companionGoalSchema).default([]),
+  combat: companionCombatSchema.optional(),
   reactions: z.object({
     positive: z.array(companionReactionLineSchema).min(1),
     negative: z.array(companionReactionLineSchema).min(1),

@@ -119,8 +119,14 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
     ? new Map(state.combatState.npcs.map((n) => [n.id, { x: n.x, y: n.y, dead: n.dead, weapon: n.weapon, looted: n.looted }]))
     : null;
 
+  // When combat is active, only show NPCs that are part of the active fight
+  const combatNpcIds = combatNpcPositions
+    ? new Set(Array.from(combatNpcPositions.keys()))
+    : null;
+
   const visibleNpcs = placements.npcs
     .filter((npc) => !activeCompanionIds.has(npc.id))
+    .filter((npc) => !combatNpcIds || combatNpcIds.has(npc.id))
     .map((npc) => {
       if (!combatNpcPositions) return { ...npc, dead: false as boolean, weapon: null as string | null, looted: false };
       const combatNpc = combatNpcPositions.get(npc.id);
@@ -143,6 +149,11 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
     ...visibleNpcs.map((npc) => createMarkerNode(npc.id, "npc", npc.point, npc.id, 35, !npc.dead || !npc.looted, undefined, npc.interactRange, npc.dead, npc.weapon, npc.looted))
   ].sort((left, right) => left.zIndex - right.zIndex);
 
+  // Build ally position map for combat — overrides stored companion coordinates
+  const allyPositions = state.combatState
+    ? new Map(state.combatState.allies.map((a) => [a.companionId, { x: a.x, y: a.y, dead: a.dead }]))
+    : null;
+
   // Compute companion actor positions for all active companions
   const companionNodes: CompanionActorNode[] = [];
   const occupiedByCompanions = new Set<string>();
@@ -152,8 +163,13 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
 
     let companionPoint: { x: number; y: number } | null = null;
 
-    // Use stored position from state if available
-    if (activeCompanion.x !== null && activeCompanion.y !== null) {
+    // During combat, use ally position (and skip dead allies)
+    if (allyPositions?.has(activeCompanion.companionId)) {
+      const allyPos = allyPositions.get(activeCompanion.companionId)!;
+      if (allyPos.dead) continue;
+      companionPoint = { x: allyPos.x, y: allyPos.y };
+    } else if (activeCompanion.x !== null && activeCompanion.y !== null) {
+      // Use stored position from state if available
       companionPoint = { x: activeCompanion.x, y: activeCompanion.y };
     } else {
       // Fall back to adjacent-to-player when position is not yet set

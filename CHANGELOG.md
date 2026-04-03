@@ -1,12 +1,21 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.12.2] - 2026-04-03
 [FIX] Scavenge NPC ghost — dog tile marker now correctly suppressed after recruiting (NPC id `dog` → `scavenge` to match companion def)
 [FIX] Multiple companions now render simultaneously — scene model, input, and render layer all loop over all companions instead of hard-coding companions[0]
-[FIX] Companion stale coordinates — stored position is now tagged with `companion_map_id`; coordinates from a different map are ignored and the companion is placed adjacent to the player instead
-[FIX] All companions placed on map entry — both map-entry paths now loop all companions and place each at a separate adjacent tile (was companions[0] only)
-[FIX] Doc Mitchell no longer shows character-creation intro after character creation is complete — `hasTalked` conditional root routes returning players to a brief post-creation greeting
-[FIX] Mina dialogue ordering — `hasTalked` no longer shadows the dog-turd greeting; turd is acknowledged on first visit, normal return greeting used on subsequent visits; thank-you option added to turd greeting so players who pick it up first don't miss the stimpak
+[FIX] Companion stale coordinates — stored position is now tagged with `companion_map_id`; coordinates from a different map are ignored and companion is placed adjacent to the player instead
+[FIX] All companions placed on map entry — both map-entry paths now loop all companions and place each at a separate adjacent tile
+[FIX] Doc Mitchell no longer shows character-creation intro after creation is complete
+[FIX] Mina dialogue ordering — `hasTalked` no longer shadows the dog-turd greeting; thank-you option added so players who pick up the turd first don't miss the stimpak
+[FIX] Phantom arena NPCs — non-selected raiders (those not part of the active fight) no longer appear as markers on the map
+[FIX] Combat stuck after ally kill — if allies finish the last enemy, victory is declared immediately rather than running a ghost NPC turn
+[FIX] Arena combat restarts correctly after victory — re-entering the arena (or pressing "Revive opponents") now always starts a fresh fight
+[FIX] Companions no longer stack on the same tile during combat — each ally's movement excludes tiles occupied by other allies
+[IMPROVEMENT] Weapon range enforced for melee, unarmed, and throwing — attacking beyond range returns a clear error and consumes no ammo
+[IMPROVEMENT] Clicking a living enemy during combat shows their name, HP, AC, and equipped weapon
+[IMPROVEMENT] Raider Brawler carries 2x Stimpak and 1x Jet; looting any body now grants all authored items in addition to their weapon
 
 ## [0.12.0] - 2026-04-03
 [FEATURE] Scavenge dog companion — feed him and pet him twice inside the Dusty Tavern to unlock the "Come with me, boy" recruit option; actions are tracked via the new `recordAction` dialogue field

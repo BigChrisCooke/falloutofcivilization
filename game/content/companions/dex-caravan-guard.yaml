@@ -384,6 +384,12 @@ goals:
       loyaltyDelta: 5
       storyNote: "Dex found an eyewitness who saw Harland meeting with raiders the night before the ambush — the final piece of evidence linking him to the attack."
 
+combat:
+  hp: 45
+  ac: 2
+  damage: 15
+  weapon: hunting_rifle
+
 reactions:
   positive:
     - id: pos_1

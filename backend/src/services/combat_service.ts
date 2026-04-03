@@ -8,10 +8,13 @@ import {
   hexNeighbors,
   resolveNpcAttack,
   resolvePlayerAttack,
+  runAllyAiStep,
   toTileKey,
+  type CombatAlly,
   type CombatNpc,
   type RollFn
 } from "../../../game/src/index.js";
+import { CompanionRepo } from "../repos/companion_repo.js";
 import { withTransaction } from "../db/connection.js";
 import { CombatRepo } from "../repos/combat_repo.js";
 import { GameStateRepo } from "../repos/game_state_repo.js";
@@ -88,6 +91,18 @@ function resolveCorpseOverlap(npc: CombatNpc, allNpcs: CombatNpc[], passableSet:
 const NPC_BASE_DAMAGE = 8;
 const PLAYER_AC = 0;
 
+function findAdjacentPassableHexExcluding(
+  center: { x: number; y: number },
+  passableSet: Set<string>,
+  excludeKeys: Set<string>
+): { x: number; y: number } | null {
+  const neighbors = hexNeighbors(center).filter((n) => {
+    const key = toTileKey(n);
+    return passableSet.has(key) && !excludeKeys.has(key);
+  }).sort((a, b) => b.y - a.y || a.x - b.x);
+  return neighbors[0] ?? null;
+}
+
 // ─── CombatService ────────────────────────────────────────────────────────────
 
 export class CombatService {
@@ -96,6 +111,7 @@ export class CombatService {
   private readonly combatRepo = new CombatRepo();
   private readonly gameStateRepo = new GameStateRepo();
   private readonly mapLootRepo = new MapLootRepo();
+  private readonly companionRepo = new CompanionRepo();
 
   constructor(private readonly rollFn: RollFn = Math.random) {}
 
@@ -120,7 +136,14 @@ export class CombatService {
     }
 
     const existing = await this.combatRepo.get(saveId);
-    if (existing) return;
+    // If a stale victory record remains (e.g. player exited and re-entered), clear it and start fresh
+    if (existing) {
+      if (existing.active_turn === "victory") {
+        await this.combatRepo.delete(saveId);
+      } else {
+        return;
+      }
+    }
 
     const pc = await this.saveRepo.findPlayerCharacter(saveId);
     if (!pc) return;
@@ -137,12 +160,43 @@ export class CombatService {
 
     const npcs: CombatNpc[] = buildInitialNpcs(hostileNpcs);
 
+    // Build ally list from recruited companions that have combat stats (arena only for now)
+    const allies: CombatAlly[] = [];
+    if (worldState.current_map_id === "dry_lake_bed_arena") {
+      const content = getGameContent();
+      const spawnPoint = getInteriorSpawnPoint(interiorMap);
+      const passableSet = buildPassableSet(interiorMap);
+      const companionRows = await this.companionRepo.getAll(saveId);
+      const occupied = new Set<string>([toTileKey(spawnPoint)]);
+      for (const row of companionRows) {
+        const def = content.companions.find((c) => c.id === row.companion_id);
+        if (!def?.combat) continue;
+        // Place ally adjacent to spawn, separate tiles
+        const allyPos = findAdjacentPassableHexExcluding(spawnPoint, passableSet, occupied) ?? spawnPoint;
+        occupied.add(toTileKey(allyPos));
+        allies.push({
+          companionId: row.companion_id,
+          id: `ally-${row.companion_id}`,
+          name: def.name,
+          hp: def.combat.hp,
+          maxHp: def.combat.hp,
+          ac: def.combat.ac,
+          damage: def.combat.damage,
+          weapon: def.combat.weapon ?? null,
+          x: allyPos.x,
+          y: allyPos.y,
+          dead: false
+        });
+      }
+    }
+
     await this.combatRepo.upsert({
       save_id: saveId,
       map_id: worldState.current_map_id,
       turn_number: 1,
       active_turn: "player",
       npcs_json: JSON.stringify(npcs),
+      allies_json: JSON.stringify(allies),
       updated_at: Date.now()
     });
 
@@ -169,6 +223,7 @@ export class CombatService {
       if (combatRow.active_turn !== "player") throw new Error("It is not the player's turn.");
 
       const npcs = safeJsonParse<CombatNpc[]>(combatRow.npcs_json, []);
+      const allies = safeJsonParse<CombatAlly[]>(combatRow.allies_json, []);
       const target = npcs.find((n) => n.id === targetNpcId && !n.dead);
       if (!target) throw new Error("Target not found or already dead.");
 
@@ -200,6 +255,15 @@ export class CombatService {
       const worldState = await this.gameStateRepo.getWorldState(saveId);
       const playerPos = { x: worldState?.player_x ?? 0, y: worldState?.player_y ?? 0 };
       const distanceToTarget = hexDistance(playerPos, { x: target.x, y: target.y });
+
+      // Enforce range for melee, unarmed, and throwing (guns/energy weapons have no arena restriction)
+      if (
+        (weapon.category === "melee_weapons" || weapon.category === "unarmed" || weapon.category === "throwing") &&
+        distanceToTarget > weapon.range
+      ) {
+        throw new Error(`Too far away. Move closer to use the ${weapon.name}.`);
+      }
+
       const per = special.per ?? 5;
       const lck = special.lck ?? 5;
       const specialStatName = weapon.specialStat ?? (weapon.category === "melee_weapons" || weapon.category === "throwing" ? "str" : "agl");
@@ -250,7 +314,9 @@ export class CombatService {
 
       const livingNpcs = npcs.filter((n) => !n.dead);
 
-      if (livingNpcs.length === 0) {
+      const livingNpcsAfterPlayer = npcs.filter((n) => !n.dead);
+
+      if (livingNpcsAfterPlayer.length === 0) {
         // Victory — award XP and flag it
         await this.combatRepo.delete(saveId);
         await this.saveRepo.awardXp(saveId, npcs.reduce((sum, n) => sum + n.maxHp, 0));
@@ -260,15 +326,71 @@ export class CombatService {
           turn_number: combatRow.turn_number,
           active_turn: "victory",
           npcs_json: JSON.stringify(npcs),
+          allies_json: JSON.stringify(allies),
           updated_at: Date.now()
         });
       } else {
-        const npcTurnResult = await this.runNpcTurn(saveId, npcs, combatRow.map_id, combatRow.turn_number);
-        message += npcTurnResult.messages.length > 0 ? " " + npcTurnResult.messages.join(" ") : "";
+        // Run ally turns before enemies get to move
+        const allyMessages = this.runAllyTurns(allies, npcs, combatRow.map_id);
+        if (allyMessages.length > 0) {
+          message += " " + allyMessages.join(" ");
+        }
+
+        // Check if allies finished off the remaining NPCs
+        const livingNpcsAfterAllies = npcs.filter((n) => !n.dead);
+        if (livingNpcsAfterAllies.length === 0) {
+          await this.combatRepo.delete(saveId);
+          await this.saveRepo.awardXp(saveId, npcs.reduce((sum, n) => sum + n.maxHp, 0));
+          await this.combatRepo.upsert({
+            save_id: saveId,
+            map_id: combatRow.map_id,
+            turn_number: combatRow.turn_number,
+            active_turn: "victory",
+            npcs_json: JSON.stringify(npcs),
+            allies_json: JSON.stringify(allies),
+            updated_at: Date.now()
+          });
+        } else {
+          const npcTurnResult = await this.runNpcTurn(saveId, npcs, allies, combatRow.map_id, combatRow.turn_number);
+          message += npcTurnResult.messages.length > 0 ? " " + npcTurnResult.messages.join(" ") : "";
+        }
       }
 
       return { hit, damage, message };
     });
+  }
+
+  // ─── runAllyTurns ──────────────────────────────────────────────────────────
+
+  private runAllyTurns(
+    allies: CombatAlly[],
+    npcs: CombatNpc[],
+    mapId: string
+  ): string[] {
+    const content = getGameContent();
+    const interiorMapDef = content.interiorMaps.find((m) => m.id === mapId);
+    const passableSet = interiorMapDef ? buildPassableSet(interiorMapDef) : new Set<string>();
+    const messages: string[] = [];
+
+    // Track ally-occupied tiles so they don't stack on the same tile
+    const allyOccupied = new Set<string>(
+      allies.filter((a) => !a.dead).map((a) => toTileKey({ x: a.x, y: a.y }))
+    );
+
+    for (const ally of allies) {
+      if (ally.dead) continue;
+      // Free this ally's current tile so it can step away
+      allyOccupied.delete(toTileKey({ x: ally.x, y: ally.y }));
+      // Build effective passable set that excludes tiles occupied by other allies
+      const effectivePassable = new Set([...passableSet].filter((k) => !allyOccupied.has(k)));
+      const result = runAllyAiStep(ally, npcs, effectivePassable, this.rollFn);
+      ally.x = result.ally.x;
+      ally.y = result.ally.y;
+      allyOccupied.add(toTileKey({ x: ally.x, y: ally.y }));
+      if (result.message) messages.push(result.message);
+    }
+
+    return messages;
   }
 
   // ─── runNpcTurn ────────────────────────────────────────────────────────────
@@ -276,6 +398,7 @@ export class CombatService {
   private async runNpcTurn(
     saveId: string,
     npcs: CombatNpc[],
+    allies: CombatAlly[],
     mapId: string,
     turnNumber: number
   ): Promise<{ messages: string[] }> {
@@ -345,12 +468,16 @@ export class CombatService {
         });
       }
 
+      // Reset allies to full HP at spawn positions on defeat
+      const resetAllies: CombatAlly[] = allies.map((a) => ({ ...a, hp: a.maxHp, dead: false }));
+
       await this.combatRepo.upsert({
         save_id: saveId,
         map_id: mapId,
         turn_number: 1,
         active_turn: "player",
         npcs_json: JSON.stringify(resetNpcs),
+        allies_json: JSON.stringify(resetAllies),
         updated_at: Date.now()
       });
 
@@ -363,6 +490,7 @@ export class CombatService {
         turn_number: turnNumber + 1,
         active_turn: "player",
         npcs_json: JSON.stringify(npcs),
+        allies_json: JSON.stringify(allies),
         updated_at: Date.now()
       });
     }
@@ -372,7 +500,7 @@ export class CombatService {
 
   // ─── lootBody ─────────────────────────────────────────────────────────────
 
-  public async lootBody(saveId: string, npcId: string): Promise<{ weaponId: string | null; weaponLabel: string | null }> {
+  public async lootBody(saveId: string, npcId: string): Promise<{ weaponId: string | null; weaponLabel: string | null; itemLabels: string[] }> {
     return withTransaction(async () => {
       const combatRow = await this.combatRepo.get(saveId);
       if (!combatRow) throw new Error("No active combat.");
@@ -380,13 +508,15 @@ export class CombatService {
       const npcs = safeJsonParse<CombatNpc[]>(combatRow.npcs_json, []);
       const npc = npcs.find((n) => n.id === npcId && n.dead);
       if (!npc) throw new Error("NPC not found or not dead.");
-      if (npc.looted) return { weaponId: null, weaponLabel: null };
+      if (npc.looted) return { weaponId: null, weaponLabel: null, itemLabels: [] };
 
       npc.looted = true;
       let weaponLabel: string | null = null;
+      const itemLabels: string[] = [];
+
+      const content = getGameContent();
 
       if (npc.weapon) {
-        const content = getGameContent();
         const weaponDef = content.weapons.find((w) => w.id === npc.weapon);
         if (weaponDef) {
           weaponLabel = weaponDef.name;
@@ -421,13 +551,37 @@ export class CombatService {
         }
       }
 
+      // Grant any authored items on this NPC
+      const interiorMapDef = content.interiorMaps.find((m) => m.id === combatRow.map_id);
+      const npcDef = interiorMapDef?.npcs.find((n) => n.id === npcId);
+      if (npcDef?.items) {
+        for (const item of npcDef.items) {
+          const existing = await this.inventoryRepo.findItem(saveId, item.id);
+          if (existing) {
+            await this.inventoryRepo.updateQuantity(saveId, item.id, existing.quantity + item.quantity);
+          } else {
+            await this.inventoryRepo.addItem({
+              save_id: saveId,
+              item_id: item.id,
+              label: item.label,
+              owned_by: null,
+              quantity: item.quantity,
+              description: item.description ?? null,
+              tags: JSON.stringify(item.tags ?? []),
+              collected_at: Date.now()
+            });
+          }
+          itemLabels.push(item.quantity > 1 ? `${item.quantity}x ${item.label}` : item.label);
+        }
+      }
+
       await this.combatRepo.upsert({
         ...combatRow,
         npcs_json: JSON.stringify(npcs),
         updated_at: Date.now()
       });
 
-      return { weaponId: npc.weapon, weaponLabel };
+      return { weaponId: npc.weapon, weaponLabel, itemLabels };
     });
   }
 

@@ -1,7 +1,8 @@
 import { isPassableTile } from "../tiles.js";
-import { toTileKey } from "./hex.js";
+import { hexDistance, toTileKey } from "./hex.js";
 import type { HexPoint } from "./hex.js";
 import type { InteriorMapDefinition } from "../schemas/content.js";
+import { bestStepToward } from "./pathfinding.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,6 +184,78 @@ export function buildInitialNpcs(
     weapon: n.weapon ?? null,
     looted: false
   }));
+}
+
+// ─── Ally (companion in combat) ───────────────────────────────────────────────
+
+/**
+ * Runtime state of a single companion ally during combat.
+ * Mirrors CombatNpc but tagged by companionId.
+ */
+export interface CombatAlly {
+  companionId: string;
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  ac: number;
+  x: number;
+  y: number;
+  dead: boolean;
+  weapon: string | null;
+  damage: number;
+}
+
+/**
+ * Run one AI step for a single ally: move toward the nearest living enemy,
+ * attack if adjacent. Returns the updated ally and a log message.
+ */
+export function runAllyAiStep(
+  ally: CombatAlly,
+  enemies: CombatNpc[],
+  passableSet: Set<string>,
+  rollFn: RollFn
+): { ally: CombatAlly; message: string } {
+  const living = enemies.filter((e) => !e.dead);
+  if (living.length === 0) {
+    return { ally, message: "" };
+  }
+
+  // Find nearest living enemy
+  let nearestEnemy = living[0]!;
+  let nearestDist = hexDistance({ x: ally.x, y: ally.y }, { x: nearestEnemy.x, y: nearestEnemy.y });
+  for (const enemy of living) {
+    const d = hexDistance({ x: ally.x, y: ally.y }, { x: enemy.x, y: enemy.y });
+    if (d < nearestDist) {
+      nearestDist = d;
+      nearestEnemy = enemy;
+    }
+  }
+
+  const updatedAlly = { ...ally };
+
+  if (nearestDist <= 1) {
+    // Attack
+    const hitChance = Math.max(5, Math.min(75, 40 - nearestDist * 8));
+    const hit = rollFn() * 100 < hitChance;
+    const damage = hit ? Math.max(1, ally.damage - nearestEnemy.ac) : 0;
+    if (hit) {
+      nearestEnemy.hp = Math.max(0, nearestEnemy.hp - damage);
+      if (nearestEnemy.hp <= 0) nearestEnemy.dead = true;
+      const message = `${ally.name} hits ${nearestEnemy.name} for ${damage} damage!`;
+      return { ally: updatedAlly, message };
+    } else {
+      return { ally: updatedAlly, message: `${ally.name} misses ${nearestEnemy.name}!` };
+    }
+  } else {
+    // Move toward nearest enemy
+    const step = bestStepToward({ x: ally.x, y: ally.y }, { x: nearestEnemy.x, y: nearestEnemy.y }, passableSet);
+    if (step) {
+      updatedAlly.x = step.x;
+      updatedAlly.y = step.y;
+    }
+    return { ally: updatedAlly, message: "" };
+  }
 }
 
 // ─── Re-export HexPoint for consumers of this module ─────────────────────────

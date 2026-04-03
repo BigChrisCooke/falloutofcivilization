@@ -48,6 +48,11 @@ async function setupArenaSession(app: ReturnType<typeof createApp>) {
   // Enter the location — this loads the arena and triggers enterCombat
   await agent.post("/api/game/location/enter").send({ locationId: "dry_lake_bed" });
 
+  // Move player from spawn (10,17) northward to (10,9) so all NPCs are within gun range
+  for (let y = 16; y >= 9; y--) {
+    await agent.post("/api/game/interior/move").send({ x: 10, y });
+  }
+
   return agent;
 }
 
@@ -100,8 +105,9 @@ describe("CombatService — enterCombat", () => {
 
     const stateRes = await agent.get("/api/game/state");
     const npcs = stateRes.body.state.combatState.npcs;
-    // Should still have exactly the authored NPC count, not doubled
-    expect(npcs.length).toBe(2);
+    // Should have 2–3 NPCs (random arena selection), not doubled
+    expect(npcs.length).toBeGreaterThanOrEqual(2);
+    expect(npcs.length).toBeLessThanOrEqual(3);
   });
 
   it("does not create combat state in a location with no hostile NPCs", async () => {
@@ -184,7 +190,7 @@ describe("CombatService — attackTarget (hit, roll=0)", () => {
   it("sets active_turn to victory and reports it when all NPCs are dead", async () => {
     const app = createTestApp(0);
     const agent = await setupArenaSession(app);
-    await agent.post("/api/game/combat/equip").send({ weaponId: "super_sledge" }); // high damage
+    await agent.post("/api/game/combat/equip").send({ weaponId: "this_machine" }); // high-damage rifle, no range restriction
 
     const state0 = await agent.get("/api/game/state");
     const npcs: Array<{ id: string; hp: number }> = state0.body.state.combatState.npcs;
@@ -212,7 +218,7 @@ describe("CombatService — attackTarget (hit, roll=0)", () => {
   it("awards XP equal to the sum of NPC maxHp on victory", async () => {
     const app = createTestApp(0);
     const agent = await setupArenaSession(app);
-    await agent.post("/api/game/combat/equip").send({ weaponId: "super_sledge" });
+    await agent.post("/api/game/combat/equip").send({ weaponId: "this_machine" }); // high-damage rifle
 
     const beforeXp = (await agent.get("/api/game/state")).body.state.playerCharacter.xp;
     const npcs: Array<{ id: string; maxHp: number }> = (await agent.get("/api/game/state")).body.state.combatState.npcs;

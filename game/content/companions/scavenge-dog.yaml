@@ -24,6 +24,10 @@ storyDialogues:
             label: "How you holding up, boy?"
             response: "*Scavenge tilts his head, considers the question with great seriousness, then licks your hand. Probably fine.*"
 goals: []
+combat:
+  hp: 30
+  ac: 3
+  damage: 18
 reactions:
   positive:
     - id: pos_1

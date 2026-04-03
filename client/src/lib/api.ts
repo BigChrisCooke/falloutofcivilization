@@ -66,12 +66,27 @@ export interface CombatNpc {
   looted: boolean;
 }
 
+export interface CombatAlly {
+  companionId: string;
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  ac: number;
+  x: number;
+  y: number;
+  dead: boolean;
+  weapon: string | null;
+  damage: number;
+}
+
 export interface CombatState {
   active: true;
   mapId: string;
   turnNumber: number;
   activeTurn: string;
   npcs: CombatNpc[];
+  allies: CombatAlly[];
 }
 
 export interface DialogueNode {
@@ -571,7 +586,7 @@ export function attackTarget(targetNpcId: string): Promise<{ result: { hit: bool
   });
 }
 
-export function lootBody(npcId: string): Promise<{ weaponId: string | null; weaponLabel: string | null; state: GameState }> {
+export function lootBody(npcId: string): Promise<{ weaponId: string | null; weaponLabel: string | null; itemLabels: string[]; state: GameState }> {
   return request(`/api/game/combat/loot/${encodeURIComponent(npcId)}`, { method: "POST" });
 }
 

@@ -83,6 +83,17 @@ npcs:
     ac: 1
     x: 15
     y: 4
+    items:
+      - id: stimpak
+        label: Stimpak
+        quantity: 2
+        description: "A syringe loaded with a healing compound. Stops bleeding, knits tissue, keeps you fighting."
+        tags: [consumable, medical]
+      - id: jet
+        label: Jet
+        quantity: 1
+        description: "A methamphetamine-based inhalant. Increases action speed temporarily. Highly addictive."
+        tags: [consumable, drug]
 interactables: []
 loot: []
 questHooks: []

@@ -1,5 +1,5 @@
 import { computeAllSkillValues, getSkillPointCost, SKILL_DEFINITIONS, SKILL_IDS, computeSkillValue } from "../../../game/src/skills.js";
-import { bestStepToward, buildExplorationRoute, buildPassableSet, findPath, hexDistance, hexNeighbors, toTileKey, type CombatNpc, type CompanionDefinition, type CompanionGoal, type HexPoint, type InteriorMapDefinition } from "../../../game/src/index.js";
+import { bestStepToward, buildExplorationRoute, buildPassableSet, findPath, hexDistance, hexNeighbors, toTileKey, type CombatAlly, type CombatNpc, type CompanionDefinition, type CompanionGoal, type HexPoint, type InteriorMapDefinition } from "../../../game/src/index.js";
 import { withTransaction } from "../db/connection.js";
 import { CompanionRepo } from "../repos/companion_repo.js";
 import { CombatRepo } from "../repos/combat_repo.js";
@@ -167,7 +167,8 @@ export class GameService {
             mapId: combatStateRow.map_id,
             turnNumber: combatStateRow.turn_number,
             activeTurn: combatStateRow.active_turn,
-            npcs: safeJsonParse<CombatNpc[]>(combatStateRow.npcs_json, [])
+            npcs: safeJsonParse<CombatNpc[]>(combatStateRow.npcs_json, []),
+            allies: safeJsonParse<CombatAlly[]>(combatStateRow.allies_json, [])
           }
         : null,
       mapLoot: mapLootRows.map((row) => ({

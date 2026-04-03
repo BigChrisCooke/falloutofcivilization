@@ -46,6 +46,7 @@ export interface CombatStateRow {
   turn_number: number;
   active_turn: string;
   npcs_json: string;
+  allies_json: string;
   updated_at: number;
 }
 

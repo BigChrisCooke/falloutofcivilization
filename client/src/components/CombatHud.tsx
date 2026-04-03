@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { CombatNpc, CombatState, GameState, WeaponDefinition } from "../lib/api.js";
+import type { CombatAlly, CombatNpc, CombatState, GameState, WeaponDefinition } from "../lib/api.js";
 
 interface CombatHudProps {
   combatState: CombatState;
@@ -84,6 +84,14 @@ export function CombatHud({
           current={playerCharacter.hp}
           max={playerCharacter.maxHp}
         />
+        {combatState.allies.filter((a: CombatAlly) => !a.dead).map((ally: CombatAlly) => (
+          <HpBar
+            key={ally.id}
+            label={`${ally.name} ${ally.weapon ? `[${ally.weapon}]` : "[Unarmed]"}`}
+            current={ally.hp}
+            max={ally.maxHp}
+          />
+        ))}
         {combatState.npcs.map((npc: CombatNpc) => (
           <HpBar
             key={npc.id}

@@ -43,6 +43,7 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
   const [activeNpcResponseId, setActiveNpcResponseId] = useState<string | null>(null);
   const [activeDeadNpc, setActiveDeadNpc] = useState<{ id: string; name: string; weapon: string | null; looted: boolean } | null>(null);
   const [deadNpcResponse, setDeadNpcResponse] = useState<string | null>(null);
+  const [activeLiveCombatNpc, setActiveLiveCombatNpc] = useState<{ id: string; name: string; hp: number; maxHp: number; ac: number; weapon: string | null } | null>(null);
   const [activeLootId, setActiveLootId] = useState<string | null>(null);
   const [activeInteractableId, setActiveInteractableId] = useState<string | null>(null);
   const [interactableResponse, setInteractableResponse] = useState<string | null>(null);
@@ -199,6 +200,7 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
       if (combatNpc?.dead) {
         setActiveDeadNpc({ id: npcId, name: combatNpc.name, weapon: combatNpc.weapon, looted: combatNpc.looted });
         setDeadNpcResponse(null);
+        setActiveLiveCombatNpc(null);
         setActiveNpcId(null);
         setActiveNpcResponseId(null);
         setActiveLootId(null);
@@ -207,6 +209,18 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
         setCompanionDialogue(null);
         return;
       }
+      if (combatNpc && !combatNpc.dead) {
+        setActiveLiveCombatNpc({ id: combatNpc.id, name: combatNpc.name, hp: combatNpc.hp, maxHp: combatNpc.maxHp, ac: combatNpc.ac, weapon: combatNpc.weapon });
+        setActiveDeadNpc(null);
+        setActiveNpcId(null);
+        setActiveNpcResponseId(null);
+        setActiveLootId(null);
+        setActiveInteractableId(null);
+        setShowPlayerPanel(false);
+        setCompanionDialogue(null);
+        return;
+      }
+      setActiveLiveCombatNpc(null);
       setActiveNpcId(npcId);
       setActiveNpcResponseId(null);
       setActiveLootId(null);
@@ -371,16 +385,20 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
                 <p className="interactable-response">{getBodyFlavorText(activeDeadNpc.name, intStat, firstAidSkill)}</p>
               )}
               <div className="interaction-options">
-                {!activeDeadNpc.looted && weaponDef && (
+                {!activeDeadNpc.looted && (
                   <button
                     className="ghost-button interaction-option"
                     type="button"
                     onClick={() => {
-                      void lootBody(activeDeadNpc.id).then(({ weaponLabel, state: newState }) => {
+                      void lootBody(activeDeadNpc.id).then(({ weaponLabel, itemLabels, state: newState }) => {
                         onStateRefresh(newState);
                         setActiveDeadNpc((prev) => prev ? { ...prev, looted: true } : prev);
-                        setDeadNpcResponse(weaponLabel
-                          ? `You take the ${weaponLabel} and a handful of rounds off the body.`
+                        const taken = [
+                          ...(weaponLabel ? [`the ${weaponLabel} and a handful of rounds`] : []),
+                          ...itemLabels
+                        ];
+                        setDeadNpcResponse(taken.length > 0
+                          ? `You take ${taken.join(", ")} off the body.`
                           : "Nothing worth taking."
                         );
                       }).catch(() => {
@@ -388,12 +406,12 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
                       });
                     }}
                   >
-                    Loot body — {weaponDef.name}
+                    Loot body{weaponDef ? ` — ${weaponDef.name}` : ""}
                   </button>
                 )}
-                {(activeDeadNpc.looted || !weaponDef) && !deadNpcResponse && (
+                {activeDeadNpc.looted && !deadNpcResponse && (
                   <button className="ghost-button interaction-option" type="button" disabled>
-                    {activeDeadNpc.looted ? "Already looted" : "Nothing on the body"}
+                    Already looted
                   </button>
                 )}
                 <button
@@ -407,6 +425,40 @@ export function InteriorMapPanel({ state, variant, onStep, onMoveSettled, onExit
             </div>
           );
         })()}
+
+        {/* Living combat NPC info panel */}
+        {activeLiveCombatNpc && (
+          <div className="interaction-panel interactable-panel">
+            <div className="interaction-panel-header">
+              <span className="eyebrow">{activeLiveCombatNpc.name}</span>
+              <button
+                className="ghost-button interaction-close"
+                type="button"
+                onClick={() => setActiveLiveCombatNpc(null)}
+              >
+                ×
+              </button>
+            </div>
+            <p className="interactable-response">
+              {activeLiveCombatNpc.weapon
+                ? (() => {
+                  const w = state.weaponCatalog.find((w) => w.id === activeLiveCombatNpc.weapon);
+                  return w ? `Armed with ${w.name}.` : "Armed.";
+                })()
+                : "Unarmed."}
+              {" "}HP: {activeLiveCombatNpc.hp}/{activeLiveCombatNpc.maxHp}. AC: {activeLiveCombatNpc.ac}.
+            </p>
+            <div className="interaction-options">
+              <button
+                className="ghost-button interaction-option"
+                type="button"
+                onClick={() => setActiveLiveCombatNpc(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Dropped Map Loot Panel (thrown weapons etc.) */}
         {activeMapLootItem && (
