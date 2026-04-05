@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-04-06
+[IMPROVEMENT] All terrain and location tile images converted to WebP — sand, scrub, road, rock, mesa, ridge, water, dry lake bed, and all location types now serve .webp for faster loading
+[IMPROVEMENT] New sand tile set (26 variants) replaces old sand tiles; new mountain, swamp, dry lake bed, stone billboard, and vault tiles added
+[IMPROVEMENT] Tile selection hash improved — adjacent tiles now spread across the full texture pool using a spatial integer hash, eliminating visible clustering of identical tiles
+[IMPROVEMENT] Texture preloading parallelised — location and terrain tiles now load concurrently via Promise.all instead of sequentially
+[IMPROVEMENT] /reboot skill added — hard restarts the dev server by killing all node processes, clearing Vite cache, and verifying ports before restarting
+
 ## [0.12.2] - 2026-04-03
 [FIX] Scavenge NPC ghost — dog tile marker now correctly suppressed after recruiting (NPC id `dog` → `scavenge` to match companion def)
 [FIX] Multiple companions now render simultaneously — scene model, input, and render layer all loop over all companions instead of hard-coding companions[0]

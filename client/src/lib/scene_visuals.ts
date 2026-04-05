@@ -292,66 +292,70 @@ export function createQuestMarker(): Container {
 }
 
 export const LOCATION_TILE_IMAGES: Record<string, string> = {
-  camp: "/tiles/modern_campsite.png",
-  facility: "/tiles/western_watertower.png",
-  faction_hq: "/tiles/western_sheriff.png",
-  market: "/tiles/western_station.png",
-  shop: "/tiles/western_general.png",
-  tavern: "/tiles/western_saloon.png",
-  abandoned_gas_station: "/tiles/modern_petrol.png",
-  radio_tower: "/tiles/military_rockets.png",
-  church: "/tiles/medieval_church.png",
-  cave: "/tiles/cave.png",
-  mining_camp: "/tiles/medieval_blacksmith.png",
-  solar_spire: "/tiles/scifi_energy.png",
-  wreck: "/tiles/scifi_port.png",
-  rest_stop: "/tiles/modern_trailerpark.png",
-  prewar_hospital: "/tiles/modern_oldBuilding.png",
-  ruined_suburb: "/tiles/modern_villageLarge.png",
-  bunker: "/tiles/brotherhood_vault.png",
-  vault: "/tiles/Vault.png",
-  scrapyard: "/tiles/rustys_scrapyard.png",
-  military: "/tiles/military_entrance.png",
-  dry_lake_bed: "/tiles/dry_lake_bed.png"
+  camp: "/tiles/modern_campsite.webp",
+  facility: "/tiles/western_watertower.webp",
+  faction_hq: "/tiles/western_sheriff.webp",
+  market: "/tiles/western_station.webp",
+  shop: "/tiles/western_general.webp",
+  tavern: "/tiles/western_saloon.webp",
+  abandoned_gas_station: "/tiles/modern_petrol.webp",
+  radio_tower: "/tiles/military_rockets.webp",
+  church: "/tiles/medieval_church.webp",
+  cave: "/tiles/cave.webp",
+  mining_camp: "/tiles/medieval_blacksmith.webp",
+  solar_spire: "/tiles/scifi_energy.webp",
+  wreck: "/tiles/scifi_port.webp",
+  rest_stop: "/tiles/modern_trailerpark.webp",
+  prewar_hospital: "/tiles/modern_oldBuilding.webp",
+  ruined_suburb: "/tiles/modern_villageLarge.webp",
+  bunker: "/tiles/brotherhood_vault.webp",
+  vault: "/tiles/vault_new.webp",
+  scrapyard: "/tiles/rustys_scrapyard.webp",
+  military: "/tiles/military_entrance.webp",
+  dry_lake_bed: "/tiles/dry_lake_bed_new_1.webp"
 };
 
 export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
   sand: [
-    "/tiles/sand_07.png", "/tiles/sand_12.png", "/tiles/sand_13.png",
-    "/tiles/sand_14.png", "/tiles/sand_15.png", "/tiles/sand_16.png",
-    "/tiles/sand_17.png", "/tiles/sand_18.png", "/tiles/sand_19.png"
+    "/tiles/sand_new_02.webp", "/tiles/sand_new_03.webp",
+    "/tiles/sand_new_04.webp", "/tiles/sand_new_05.webp", "/tiles/sand_new_06.webp",
+    "/tiles/sand_new_07.webp", "/tiles/sand_new_08.webp", "/tiles/sand_new_09.webp",
+    "/tiles/sand_new_10.webp", "/tiles/sand_new_11.webp", "/tiles/sand_new_12.webp",
+    "/tiles/sand_new_13.webp", "/tiles/sand_new_14.webp",
+    "/tiles/sand_new_16a.webp", "/tiles/sand_new_16b.webp", "/tiles/sand_new_17.webp",
+    "/tiles/sand_new_18.webp", "/tiles/sand_new_19.webp", "/tiles/sand_new_20.webp",
+    "/tiles/sand_new_21b.webp", "/tiles/sand_new_21c.webp", "/tiles/sand_new_21d.webp",
+    "/tiles/sand_new_21e.webp", "/tiles/sand_new_21f.webp"
   ],
   scrub: [
-    "/tiles/grass_05.png", "/tiles/grass_10.png", "/tiles/grass_11.png",
-    "/tiles/grass_12.png", "/tiles/grass_13.png", "/tiles/grass_14.png",
-    "/tiles/grass_15.png", "/tiles/grass_16.png", "/tiles/grass_17.png"
+    "/tiles/grass_05.webp", "/tiles/grass_10.webp", "/tiles/grass_11.webp",
+    "/tiles/grass_12.webp", "/tiles/grass_13.webp", "/tiles/grass_14.webp",
+    "/tiles/grass_15.webp", "/tiles/grass_16.webp", "/tiles/grass_17.webp"
   ],
   road: [
-    "/tiles/stone_07.png", "/tiles/stone_12.png", "/tiles/stone_13.png",
-    "/tiles/stone_14.png", "/tiles/stone_billboard.png", "/tiles/stone_billboard_2.png",
-    "/tiles/Mountain_6.png", "/tiles/dirt_19.png", "/tiles/dirt_20.png"
+    "/tiles/stone_07.webp", "/tiles/stone_12.webp", "/tiles/stone_13.webp",
+    "/tiles/stone_14.webp", "/tiles/stone_billboard_new_1.webp", "/tiles/stone_billboard_new_2.webp",
+    "/tiles/mountain_new_4.webp", "/tiles/dirt_13.webp", "/tiles/dirt_17.webp"
   ],
   rock: [
-    "/tiles/mars_07.png", "/tiles/mars_16.png", "/tiles/mars_17.png",
-    "/tiles/mars_18.png", "/tiles/mars_19.png"
+    "/tiles/mars_07.webp", "/tiles/mars_16.webp", "/tiles/mars_17.webp",
+    "/tiles/mars_18.webp", "/tiles/mars_19.webp"
   ],
   mesa: [
-    "/tiles/dirt_06.png", "/tiles/dirt_11.png", "/tiles/dirt_12.png",
-    "/tiles/dirt_13.png", "/tiles/dirt_14.png", "/tiles/dirt_15.png",
-    "/tiles/dirt_16.png", "/tiles/dirt_17.png", "/tiles/dirt_18.png",
-    "/tiles/dirt_19.png", "/tiles/dirt_20.png", "/tiles/dirt_22.png"
+    "/tiles/dirt_06.webp", "/tiles/dirt_11.webp", "/tiles/dirt_12.webp",
+    "/tiles/dirt_13.webp", "/tiles/dirt_14.webp", "/tiles/dirt_15.webp",
+    "/tiles/dirt_16.webp", "/tiles/dirt_17.webp", "/tiles/dirt_18.webp"
   ],
   ridge: [
-    "/tiles/Mountain_1.png", "/tiles/Mountain_2.png", "/tiles/Mountain_3.png",
-    "/tiles/Mountain_4.png", "/tiles/Mountain_6.png", "/tiles/Mountain_Pass_1.png"
+    "/tiles/mountain_new.webp", "/tiles/mountain_new_2.webp", "/tiles/mountain_new_4.webp"
   ],
   water: [
-    "/tiles/swamp_1.png", "/tiles/swamp2.png", "/tiles/swamp3.png",
-    "/tiles/swamp4.png", "/tiles/swamp5.png"
+    "/tiles/swamp_new_1.webp", "/tiles/swamp_new_2.webp", "/tiles/swamp_new_3.webp",
+    "/tiles/swamp_new_4.webp", "/tiles/swamp_new_5.webp"
   ],
   dry_lake_bed: [
-    "/tiles/dry_lake_bed.png", "/tiles/dry_lake_bed_2.png", "/tiles/dry_river_bed.png",
-    "/tiles/dirt_19.png", "/tiles/dirt_20.png"
+    "/tiles/dry_lake_bed_new_1.webp", "/tiles/dry_lake_bed_new_2.webp",
+    "/tiles/dry_river_bed.webp", "/tiles/dirt_14.webp"
   ]
 };
 
@@ -360,37 +364,45 @@ const loadedTerrainTextures = new Map<string, Texture[]>();
 let tileTexturesLoaded = false;
 
 function hashTileKey(key: string): number {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = ((hash << 5) - hash + key.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
+  const comma = key.indexOf(",");
+  const x = parseInt(key.slice(0, comma), 10);
+  const y = parseInt(key.slice(comma + 1), 10);
+  // Mix x and y with large primes so adjacent tiles spread across very different indices
+  let h = Math.imul(x, 1664525) ^ Math.imul(y, 1013904223);
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x45d9f3b);
+  h ^= h >>> 16;
+  return Math.abs(h);
 }
 
 export async function preloadLocationTileImages(): Promise<void> {
-  const locationEntries = Object.entries(LOCATION_TILE_IMAGES);
-  for (const [type, path] of locationEntries) {
-    try {
-      const texture = await Assets.load<Texture>(path);
-      loadedTileTextures.set(type, texture);
-    } catch {
-      console.warn(`[tiles] failed to load location tile: ${path}`);
-    }
-  }
-
-  const terrainEntries = Object.entries(TERRAIN_TILE_IMAGES);
-  for (const [terrain, paths] of terrainEntries) {
-    const textures: Texture[] = [];
-    for (const path of paths) {
+  await Promise.all(
+    Object.entries(LOCATION_TILE_IMAGES).map(async ([type, path]) => {
       try {
         const texture = await Assets.load<Texture>(path);
-        textures.push(texture);
+        loadedTileTextures.set(type, texture);
       } catch {
-        console.warn(`[tiles] failed to load terrain tile: ${path}`);
+        console.warn(`[tiles] failed to load location tile: ${path}`);
       }
-    }
-    if (textures.length > 0) loadedTerrainTextures.set(terrain, textures);
-  }
+    })
+  );
+
+  await Promise.all(
+    Object.entries(TERRAIN_TILE_IMAGES).map(async ([terrain, paths]) => {
+      const results = await Promise.all(
+        paths.map(async (path) => {
+          try {
+            return await Assets.load<Texture>(path);
+          } catch {
+            console.warn(`[tiles] failed to load terrain tile: ${path}`);
+            return null;
+          }
+        })
+      );
+      const textures = results.filter((t): t is Texture => t !== null);
+      if (textures.length > 0) loadedTerrainTextures.set(terrain, textures);
+    })
+  );
 
   tileTexturesLoaded = true;
 }
