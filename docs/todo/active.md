@@ -3,11 +3,20 @@
 # Sometimes can be fleshed out and waiting for you to copy and paste to AI
 To add a new battle type later: create arena_combat_service.ts, import the same pure functions from game/src/rules/combat.ts, follow the rollFn constructor pattern, add arena_combat_service.test.ts. No base class changes needed.
 
+
+
+Here's the plan for the order of image work
+C:\Users\Mr. Big Boss Chris\.claude\plans\cheerful-stargazing-quail.md
+
 need a loading screen to "pre-fetch" all the images
 
 "i have a lot of images for the game, first check if the web server is setup to handle multiple requests and if there is a bottleneck serving the images, second plan a loading screen so images can be prefetched with a progress bar"
 
 2.) just cos it's turned based, don't need to wait and do nothing. Sea of Stars gives you the ability to click at the right time for a well-timed boost to damage.
+learn from warhammer 40k mechanicus for turn based combat, with dialogue at the bottom of the screen, the ability to run and recharge Action Points, and use them to sprint or fire more powerful weapons.
+
+have interactable arena mechanics (flammable and exploding things)
+
 
 Make Scavenge in the Dusty Tavern, give you the dialogue option of joining you as your Companion if you feed him and pet him twice.
 

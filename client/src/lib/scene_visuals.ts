@@ -335,7 +335,11 @@ export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
   road: [
     "/tiles/stone_07.webp", "/tiles/stone_12.webp", "/tiles/stone_13.webp",
     "/tiles/stone_14.webp", "/tiles/stone_billboard_new_1.webp", "/tiles/stone_billboard_new_2.webp",
-    "/tiles/mountain_new_4.webp", "/tiles/dirt_13.webp", "/tiles/dirt_17.webp"
+    "/tiles/stone_billboard_new_3.webp", "/tiles/stone_billboard_new_4.webp",
+    "/tiles/mountain_new_4.webp", "/tiles/dirt_13.webp", "/tiles/dirt_17.webp",
+    "/tiles/road_3.webp", "/tiles/road_4.webp", "/tiles/road_5.webp",
+    "/tiles/road_6.webp", "/tiles/road_7.webp", "/tiles/road_8.webp",
+    "/tiles/road_9.webp", "/tiles/road_10.webp"
   ],
   rock: [
     "/tiles/mars_07.webp", "/tiles/mars_16.webp", "/tiles/mars_17.webp",
