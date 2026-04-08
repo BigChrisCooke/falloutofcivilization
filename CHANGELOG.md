@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-04-08
 [FEATURE] Interior map tiles now render as generated WebP images — floor, metal, and rug use procedurally generated textures; rock and dry lake bed reuse overworld tile images
 [FEATURE] Hex tile generator tool (`tools/tiles/`) — batch-generate terrain and indoor tile variants in-browser with a review/reject workflow; `deploy-to-game.js` copies images and prints updated TypeScript blocks for scene_visuals.ts
 
