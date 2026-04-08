@@ -1,7 +1,7 @@
-import { Container, Graphics, Text } from "pixi.js";
+import { Container, Graphics, Sprite, Text } from "pixi.js";
 
 import { INTERIOR_ISO_METRICS } from "../iso.js";
-import { createCompanionToken, createCourierToken, createSceneMarker, drawHexSurface, INTERIOR_SURFACE_VISUALS } from "../scene_visuals.js";
+import { createCompanionToken, createCourierToken, createInteriorTileSprite, createSceneMarker, drawHexSurface, hasInteriorTileImage, INTERIOR_SURFACE_VISUALS } from "../scene_visuals.js";
 
 import { flattenPolygon } from "./hex_geometry.js";
 import type { InteriorMarkerNode, InteriorSceneModel, InteriorTileNode } from "./types.js";
@@ -14,7 +14,7 @@ export interface InteriorLayerContainers {
 }
 
 export interface InteriorRetainedNodes {
-  terrainByKey: Map<string, Graphics>;
+  terrainByKey: Map<string, Graphics | Sprite>;
   feedbackByKey: Map<string, Graphics>;
   markerById: Map<string, Container>;
   glow: Graphics | null;
@@ -66,7 +66,6 @@ export function createInteriorRetainedNodes(): InteriorRetainedNodes {
 
 function syncTerrainNode(graphic: Graphics, tile: InteriorTileNode): void {
   const tileVisual = INTERIOR_SURFACE_VISUALS[tile.terrain] ?? INTERIOR_SURFACE_VISUALS.floor;
-
   drawHexSurface(graphic, INTERIOR_ISO_METRICS, tileVisual, true);
   graphic.position.set(tile.projected.x, tile.projected.y);
   graphic.zIndex = tile.zIndex;
@@ -92,29 +91,50 @@ function syncTerrainLayer(
   }
 
   for (const tile of scene.tiles) {
-    let graphic = retainedNodes.terrainByKey.get(tile.key);
-
-    if (!graphic) {
-      graphic = new Graphics();
-      retainedNodes.terrainByKey.set(tile.key, graphic);
-      layers.terrain.addChild(graphic);
-      syncTerrainNode(graphic, tile);
-      continue;
-    }
-
+    const useImage = hasInteriorTileImage(tile.terrain);
+    let existing = retainedNodes.terrainByKey.get(tile.key);
     const previousTile = previousTiles.get(tile.key);
 
-    if (
-      !previousTile ||
-      previousTile.terrain !== tile.terrain ||
-      previousTile.projected.x !== tile.projected.x ||
-      previousTile.projected.y !== tile.projected.y
-    ) {
-      syncTerrainNode(graphic, tile);
+    // If the node type changed (sprite ↔ graphics), destroy and recreate
+    const wasSprite = existing instanceof Sprite;
+    if (existing && wasSprite !== useImage) {
+      layers.terrain.removeChild(existing);
+      existing.destroy();
+      retainedNodes.terrainByKey.delete(tile.key);
+      existing = undefined;
     }
 
-    graphic.position.set(tile.projected.x, tile.projected.y);
-    graphic.zIndex = tile.zIndex;
+    if (useImage) {
+      if (!existing) {
+        const sprite = createInteriorTileSprite(tile.terrain, tile.key, INTERIOR_ISO_METRICS);
+        sprite.position.set(tile.projected.x, tile.projected.y);
+        sprite.zIndex = tile.zIndex;
+        retainedNodes.terrainByKey.set(tile.key, sprite);
+        layers.terrain.addChild(sprite);
+      } else {
+        existing.position.set(tile.projected.x, tile.projected.y);
+        existing.zIndex = tile.zIndex;
+      }
+    } else {
+      if (!existing) {
+        const graphic = new Graphics();
+        retainedNodes.terrainByKey.set(tile.key, graphic);
+        layers.terrain.addChild(graphic);
+        syncTerrainNode(graphic, tile);
+      } else if (
+        existing instanceof Graphics && (
+          !previousTile ||
+          previousTile.terrain !== tile.terrain ||
+          previousTile.projected.x !== tile.projected.x ||
+          previousTile.projected.y !== tile.projected.y
+        )
+      ) {
+        syncTerrainNode(existing, tile);
+      } else {
+        existing.position.set(tile.projected.x, tile.projected.y);
+        existing.zIndex = tile.zIndex;
+      }
+    }
   }
 
   if (!retainedNodes.glow) {

@@ -317,54 +317,92 @@ export const LOCATION_TILE_IMAGES: Record<string, string> = {
 
 export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
   sand: [
-    "/tiles/sand_new_02.webp", "/tiles/sand_new_03.webp",
-    "/tiles/sand_new_04.webp", "/tiles/sand_new_05.webp", "/tiles/sand_new_06.webp",
-    "/tiles/sand_new_07.webp", "/tiles/sand_new_08.webp", "/tiles/sand_new_09.webp",
-    "/tiles/sand_new_10.webp", "/tiles/sand_new_11.webp", "/tiles/sand_new_12.webp",
-    "/tiles/sand_new_13.webp", "/tiles/sand_new_14.webp",
-    "/tiles/sand_new_16a.webp", "/tiles/sand_new_16b.webp", "/tiles/sand_new_17.webp",
-    "/tiles/sand_new_18.webp", "/tiles/sand_new_19.webp", "/tiles/sand_new_20.webp",
-    "/tiles/sand_new_21b.webp", "/tiles/sand_new_21c.webp", "/tiles/sand_new_21d.webp",
-    "/tiles/sand_new_21e.webp", "/tiles/sand_new_21f.webp"
+    "/tiles/gen/gen_sand_01.webp", "/tiles/gen/gen_sand_02.webp",
+    "/tiles/gen/gen_sand_03.webp", "/tiles/gen/gen_sand_04.webp",
+    "/tiles/gen/gen_sand_05.webp", "/tiles/gen/gen_sand_06.webp",
+    "/tiles/gen/gen_sand_07.webp", "/tiles/gen/gen_sand_08.webp",
+    "/tiles/gen/gen_sand_09.webp", "/tiles/gen/gen_sand_10.webp",
+    "/tiles/gen/gen_sand_11.webp", "/tiles/gen/gen_sand_12.webp"
   ],
   scrub: [
-    "/tiles/grass_05.webp", "/tiles/grass_10.webp", "/tiles/grass_11.webp",
-    "/tiles/grass_12.webp", "/tiles/grass_13.webp", "/tiles/grass_14.webp",
-    "/tiles/grass_15.webp", "/tiles/grass_16.webp", "/tiles/grass_17.webp"
+    "/tiles/gen/gen_scrub_01.webp", "/tiles/gen/gen_scrub_02.webp",
+    "/tiles/gen/gen_scrub_03.webp", "/tiles/gen/gen_scrub_04.webp",
+    "/tiles/gen/gen_scrub_05.webp", "/tiles/gen/gen_scrub_06.webp",
+    "/tiles/gen/gen_scrub_07.webp", "/tiles/gen/gen_scrub_08.webp",
+    "/tiles/gen/gen_scrub_09.webp", "/tiles/gen/gen_scrub_10.webp",
+    "/tiles/gen/gen_scrub_11.webp", "/tiles/gen/gen_scrub_12.webp"
   ],
   road: [
-    "/tiles/stone_07.webp", "/tiles/stone_12.webp", "/tiles/stone_13.webp",
-    "/tiles/stone_14.webp", "/tiles/stone_billboard_new_1.webp", "/tiles/stone_billboard_new_2.webp",
-    "/tiles/stone_billboard_new_3.webp", "/tiles/stone_billboard_new_4.webp",
-    "/tiles/mountain_new_4.webp", "/tiles/dirt_13.webp", "/tiles/dirt_17.webp",
-    "/tiles/road_3.webp", "/tiles/road_4.webp", "/tiles/road_5.webp",
-    "/tiles/road_6.webp", "/tiles/road_7.webp", "/tiles/road_8.webp",
-    "/tiles/road_9.webp", "/tiles/road_10.webp"
+    "/tiles/gen/gen_road_01.webp", "/tiles/gen/gen_road_02.webp",
+    "/tiles/gen/gen_road_03.webp", "/tiles/gen/gen_road_04.webp",
+    "/tiles/gen/gen_road_05.webp", "/tiles/gen/gen_road_06.webp",
+    "/tiles/gen/gen_road_07.webp", "/tiles/gen/gen_road_08.webp",
+    "/tiles/gen/gen_road_09.webp", "/tiles/gen/gen_road_10.webp",
+    "/tiles/gen/gen_road_11.webp", "/tiles/gen/gen_road_12.webp"
   ],
   rock: [
-    "/tiles/mars_07.webp", "/tiles/mars_16.webp", "/tiles/mars_17.webp",
-    "/tiles/mars_18.webp", "/tiles/mars_19.webp"
+    "/tiles/gen/gen_rock_01.webp", "/tiles/gen/gen_rock_02.webp",
+    "/tiles/gen/gen_rock_03.webp", "/tiles/gen/gen_rock_04.webp",
+    "/tiles/gen/gen_rock_05.webp", "/tiles/gen/gen_rock_06.webp",
+    "/tiles/gen/gen_rock_07.webp", "/tiles/gen/gen_rock_08.webp",
+    "/tiles/gen/gen_rock_09.webp", "/tiles/gen/gen_rock_10.webp",
+    "/tiles/gen/gen_rock_11.webp", "/tiles/gen/gen_rock_12.webp"
   ],
   mesa: [
-    "/tiles/dirt_06.webp", "/tiles/dirt_11.webp", "/tiles/dirt_12.webp",
-    "/tiles/dirt_13.webp", "/tiles/dirt_14.webp", "/tiles/dirt_15.webp",
-    "/tiles/dirt_16.webp", "/tiles/dirt_17.webp", "/tiles/dirt_18.webp"
+    "/tiles/gen/gen_mesa_01.webp", "/tiles/gen/gen_mesa_02.webp",
+    "/tiles/gen/gen_mesa_03.webp", "/tiles/gen/gen_mesa_04.webp",
+    "/tiles/gen/gen_mesa_05.webp", "/tiles/gen/gen_mesa_06.webp",
+    "/tiles/gen/gen_mesa_07.webp", "/tiles/gen/gen_mesa_08.webp",
+    "/tiles/gen/gen_mesa_09.webp", "/tiles/gen/gen_mesa_10.webp",
+    "/tiles/gen/gen_mesa_11.webp", "/tiles/gen/gen_mesa_12.webp"
   ],
   ridge: [
-    "/tiles/mountain_new.webp", "/tiles/mountain_new_2.webp", "/tiles/mountain_new_4.webp"
+    "/tiles/gen/gen_ridge_01.webp", "/tiles/gen/gen_ridge_02.webp",
+    "/tiles/gen/gen_ridge_03.webp", "/tiles/gen/gen_ridge_04.webp",
+    "/tiles/gen/gen_ridge_05.webp", "/tiles/gen/gen_ridge_06.webp",
+    "/tiles/gen/gen_ridge_07.webp", "/tiles/gen/gen_ridge_08.webp",
+    "/tiles/gen/gen_ridge_09.webp", "/tiles/gen/gen_ridge_10.webp",
+    "/tiles/gen/gen_ridge_11.webp", "/tiles/gen/gen_ridge_12.webp"
   ],
   water: [
-    "/tiles/swamp_new_1.webp", "/tiles/swamp_new_2.webp", "/tiles/swamp_new_3.webp",
-    "/tiles/swamp_new_4.webp", "/tiles/swamp_new_5.webp"
+    "/tiles/gen/gen_water_01.webp", "/tiles/gen/gen_water_02.webp",
+    "/tiles/gen/gen_water_03.webp", "/tiles/gen/gen_water_04.webp",
+    "/tiles/gen/gen_water_05.webp", "/tiles/gen/gen_water_06.webp",
+    "/tiles/gen/gen_water_07.webp", "/tiles/gen/gen_water_08.webp",
+    "/tiles/gen/gen_water_09.webp", "/tiles/gen/gen_water_10.webp",
+    "/tiles/gen/gen_water_11.webp", "/tiles/gen/gen_water_12.webp"
   ],
   dry_lake_bed: [
-    "/tiles/dry_lake_bed_new_1.webp", "/tiles/dry_lake_bed_new_2.webp",
-    "/tiles/dry_river_bed.webp", "/tiles/dirt_14.webp"
+    "/tiles/gen/gen_dry_01.webp", "/tiles/gen/gen_dry_02.webp",
+    "/tiles/gen/gen_dry_03.webp", "/tiles/gen/gen_dry_04.webp",
+    "/tiles/gen/gen_dry_05.webp", "/tiles/gen/gen_dry_06.webp",
+    "/tiles/gen/gen_dry_07.webp", "/tiles/gen/gen_dry_08.webp",
+    "/tiles/gen/gen_dry_09.webp", "/tiles/gen/gen_dry_10.webp",
+    "/tiles/gen/gen_dry_11.webp", "/tiles/gen/gen_dry_12.webp"
   ]
+};
+
+// Interior tile images — floor, metal, rug populated after generating and deploying indoor tiles.
+// Rock and dry_lake_bed share the overworld terrain images (no separate generation needed).
+export const INTERIOR_TILE_IMAGES: Record<string, string[]> = {
+  // These two reuse existing overworld terrain images:
+  rock: TERRAIN_TILE_IMAGES.rock ?? [],
+  dry_lake_bed: TERRAIN_TILE_IMAGES.dry_lake_bed ?? [],
+  // Generated indoor surface tiles:
+  floor: ["/tiles/gen/int_floor_01.webp", "/tiles/gen/int_floor_02.webp", "/tiles/gen/int_floor_03.webp", "/tiles/gen/int_floor_04.webp",
+    "/tiles/gen/int_floor_05.webp", "/tiles/gen/int_floor_06.webp", "/tiles/gen/int_floor_07.webp", "/tiles/gen/int_floor_08.webp",
+    "/tiles/gen/int_floor_09.webp", "/tiles/gen/int_floor_10.webp", "/tiles/gen/int_floor_11.webp", "/tiles/gen/int_floor_12.webp"],
+  metal: ["/tiles/gen/int_metal_01.webp", "/tiles/gen/int_metal_02.webp", "/tiles/gen/int_metal_03.webp", "/tiles/gen/int_metal_04.webp",
+    "/tiles/gen/int_metal_05.webp", "/tiles/gen/int_metal_06.webp", "/tiles/gen/int_metal_07.webp", "/tiles/gen/int_metal_08.webp",
+    "/tiles/gen/int_metal_09.webp", "/tiles/gen/int_metal_10.webp", "/tiles/gen/int_metal_11.webp", "/tiles/gen/int_metal_12.webp"],
+  rug: ["/tiles/gen/int_rug_01.webp", "/tiles/gen/int_rug_02.webp", "/tiles/gen/int_rug_03.webp", "/tiles/gen/int_rug_04.webp",
+    "/tiles/gen/int_rug_05.webp", "/tiles/gen/int_rug_06.webp", "/tiles/gen/int_rug_07.webp", "/tiles/gen/int_rug_08.webp",
+    "/tiles/gen/int_rug_09.webp", "/tiles/gen/int_rug_10.webp", "/tiles/gen/int_rug_11.webp", "/tiles/gen/int_rug_12.webp"],
 };
 
 const loadedTileTextures = new Map<string, Texture>();
 const loadedTerrainTextures = new Map<string, Texture[]>();
+const loadedInteriorTileTextures = new Map<string, Texture[]>();
 let tileTexturesLoaded = false;
 
 function hashTileKey(key: string): number {
@@ -408,6 +446,24 @@ export async function preloadLocationTileImages(): Promise<void> {
     })
   );
 
+  await Promise.all(
+    Object.entries(INTERIOR_TILE_IMAGES).map(async ([terrain, paths]) => {
+      if (paths.length === 0) return;
+      const results = await Promise.all(
+        paths.map(async (path) => {
+          try {
+            return await Assets.load<Texture>(path);
+          } catch {
+            console.warn(`[tiles] failed to load interior tile: ${path}`);
+            return null;
+          }
+        })
+      );
+      const textures = results.filter((t): t is Texture => t !== null);
+      if (textures.length > 0) loadedInteriorTileTextures.set(terrain, textures);
+    })
+  );
+
   tileTexturesLoaded = true;
 }
 
@@ -432,6 +488,22 @@ export function createLocationTileSprite(type: string, metrics: IsoMetrics): Spr
 
 export function createTerrainTileSprite(terrain: string, tileKey: string, metrics: IsoMetrics): Sprite {
   const textures = loadedTerrainTextures.get(terrain)!;
+  const index = hashTileKey(tileKey) % textures.length;
+  const sprite = new Sprite(textures[index]);
+
+  sprite.anchor.set(0.5, 0.5);
+  sprite.width = metrics.tileWidth;
+  sprite.height = metrics.tileHeight;
+
+  return sprite;
+}
+
+export function hasInteriorTileImage(terrain: string): boolean {
+  return tileTexturesLoaded && loadedInteriorTileTextures.has(terrain);
+}
+
+export function createInteriorTileSprite(terrain: string, tileKey: string, metrics: IsoMetrics): Sprite {
+  const textures = loadedInteriorTileTextures.get(terrain)!;
   const index = hashTileKey(tileKey) % textures.length;
   const sprite = new Sprite(textures[index]);
 

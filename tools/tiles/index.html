@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hex Tile Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1a1a1e;
+    --panel: #23232a;
+    --border: #35353f;
+    --accent: #5b8cff;
+    --accent2: #ff9f5b;
+    --text: #e0e0e8;
+    --muted: #888898;
+    --input-bg: #2c2c36;
+    --section-bg: #1e1e26;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.4 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.03em; color: var(--accent); }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── CONTROL PANEL ── */
+  #controls {
+    width: 300px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .section {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--section-bg);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .section-header:hover { color: var(--text); }
+  .section-header .arrow { transition: transform 0.15s; font-size: 10px; }
+  .section.open .arrow { transform: rotate(90deg); }
+
+  .section-body {
+    display: none;
+    padding: 10px 12px;
+    gap: 8px;
+    flex-direction: column;
+  }
+  .section.open .section-body { display: flex; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  label {
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 110px;
+    flex-shrink: 0;
+  }
+
+  input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    height: 4px;
+    cursor: pointer;
+  }
+
+  .val {
+    font-size: 11px;
+    color: var(--text);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  input[type=number], input[type=text], select {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 7px;
+    border-radius: 4px;
+    font-size: 12px;
+    flex: 1;
+  }
+  input[type=number]:focus, input[type=text]:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  input[type=color] {
+    width: 36px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px;
+    background: var(--input-bg);
+    cursor: pointer;
+  }
+
+  input[type=checkbox] {
+    accent-color: var(--accent);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+  }
+
+  .color-row { display: flex; gap: 6px; align-items: center; }
+  .color-row label { min-width: 80px; }
+
+  btn, button {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.primary:hover { opacity: 0.85; color: #fff; }
+  button.warn { background: var(--accent2); border-color: var(--accent2); color: #1a1a1e; font-weight: 600; }
+
+  .diminfo { font-size: 11px; color: var(--accent2); font-weight: 600; }
+
+  .sep { height: 1px; background: var(--border); margin: 2px 0; }
+
+  /* ── PREVIEW PANEL ── */
+  #preview-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #111116;
+    overflow: hidden;
+  }
+
+  #toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  #toolbar .group { display: flex; gap: 4px; }
+  #toolbar .divider { width: 1px; background: var(--border); height: 22px; margin: 0 4px; }
+
+  .toggle-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .toggle-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+
+  #canvas-wrap {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  #preview-canvas {
+    image-rendering: pixelated;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 32px #0008;
+  }
+
+  #status {
+    padding: 6px 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  /* ── BATCH MODAL ── */
+  #batch-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #batch-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  #batch-header h2 { font-size: 14px; font-weight: 600; color: var(--accent); margin-right: auto; }
+
+  #batch-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-content: flex-start;
+    justify-content: center;
+  }
+
+  .batch-item {
+    position: relative;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    transition: border-color 0.1s;
+    user-select: none;
+    background: #111116;
+  }
+  .batch-item:hover { border-color: var(--accent); }
+  .batch-item.selected { border-color: var(--accent2); }
+  .batch-item canvas { display: block; }
+
+  .batch-check {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 18px; height: 18px;
+    background: rgba(0,0,0,0.55);
+    border: 1.5px solid var(--muted);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: transparent;
+  }
+  .batch-item.selected .batch-check {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #1a1a1e;
+  }
+
+  .batch-seed {
+    position: absolute;
+    bottom: 2px; left: 0; right: 0;
+    text-align: center;
+    font-size: 9px;
+    color: rgba(255,255,255,0.45);
+    pointer-events: none;
+  }
+
+  #batch-footer {
+    padding: 6px 16px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--muted);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⬡ Hex Tile Generator</h1>
+  <div class="header-right">
+    <span class="diminfo" id="dim-display">128 × 111 px</span>
+    <button onclick="randomSeed()">🎲 New Seed</button>
+    <button onclick="openBatch()">⊞ Batch</button>
+    <button id="btn-autogen" onclick="autoGenAllTerrain()">⊞ Auto-Gen All</button>
+    <button class="primary" onclick="regenerate()">↺ Regenerate</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ── CONTROLS ── -->
+  <div id="controls">
+
+    <!-- TILE SIZE -->
+    <div class="section open" id="sec-size">
+      <div class="section-header" onclick="toggleSection('sec-size')">
+        Tile Size <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="row">
+          <label>Preset</label>
+          <select id="size-preset" onchange="onSizePreset()">
+            <option value="small">Small — 64 × 55</option>
+            <option value="medium" selected>Medium — 128 × 111</option>
+            <option value="large">Large — 256 × 222</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="row" id="custom-r-row" style="display:none">
+          <label>Circumradius r</label>
+          <input type="number" id="radius" value="64" min="16" max="256" onchange="onRadiusChange()">
+          <span class="val">px</span>
+        </div>
+        <div class="row">
+          <label>Dimensions</label>
+          <span class="diminfo" id="dim-label">128 × 111 px</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOISE -->
+    <div class="section open" id="sec-noise">
+      <div class="section-header" onclick="toggleSection('sec-noise')">
+        Noise <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="row">
+          <label>Type</label>
+          <select id="noise-type" onchange="scheduleRegen()">
+            <option value="simplex">Simplex</option>
+            <option value="perlin">Perlin</option>
+            <option value="worley">Worley</option>
+            <option value="combined">Simplex + Worley</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Scale</label>
+          <input type="range" id="noise-scale" min="1" max="300" value="80" oninput="updateVal(this,'scale-val'); scheduleRegen()">
+          <span class="val" id="scale-val">80</span>
+        </div>
+        <div class="row">
+          <label>Seed</label>
+          <input type="number" id="seed" value="42" min="0" max="99999" onchange="scheduleRegen()">
+        </div>
+        <div class="row">
+          <label>Tileable</label>
+          <input type="checkbox" id="tileable" checked onchange="scheduleRegen()">
+        </div>
+      </div>
+    </div>
+
+    <!-- FRACTAL -->
+    <div class="section open" id="sec-fractal">
+      <div class="section-header" onclick="toggleSection('sec-fractal')">
+        Fractal (fBm) <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="row">
+          <label>Octaves</label>
+          <input type="range" id="octaves" min="1" max="8" value="5" oninput="updateVal(this,'oct-val'); scheduleRegen()">
+          <span class="val" id="oct-val">5</span>
+        </div>
+        <div class="row">
+          <label>Persistence</label>
+          <input type="range" id="persistence" min="1" max="100" value="50" oninput="updateVal(this,'per-val',0.01); scheduleRegen()">
+          <span class="val" id="per-val">0.50</span>
+        </div>
+        <div class="row">
+          <label>Lacunarity</label>
+          <input type="range" id="lacunarity" min="100" max="400" value="200" oninput="updateVal(this,'lac-val',0.01); scheduleRegen()">
+          <span class="val" id="lac-val">2.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLOR PALETTE -->
+    <div class="section open" id="sec-color">
+      <div class="section-header" onclick="toggleSection('sec-color')">
+        Color Palette <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="color-row">
+          <label>Stop 1 (low)</label>
+          <input type="color" id="color1" value="#2d5a1b" onchange="scheduleRegen()">
+        </div>
+        <div class="color-row">
+          <label>Stop 2 (mid)</label>
+          <input type="color" id="color2" value="#4a8c2a" onchange="scheduleRegen()">
+        </div>
+        <div class="color-row">
+          <label>Stop 3 (high)</label>
+          <input type="color" id="color3" value="#7bc44a" onchange="scheduleRegen()">
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <label>Color Variation</label>
+          <input type="range" id="color-var" min="0" max="100" value="15" oninput="updateVal(this,'cvar-val'); scheduleRegen()">
+          <span class="val" id="cvar-val">15</span>
+        </div>
+        <div class="row">
+          <label>Saturation</label>
+          <input type="range" id="saturation" min="0" max="200" value="110" oninput="updateVal(this,'sat-val'); scheduleRegen()">
+          <span class="val" id="sat-val">110</span>
+        </div>
+        <div class="row">
+          <label>Brightness</label>
+          <input type="range" id="brightness" min="0" max="200" value="100" oninput="updateVal(this,'bri-val'); scheduleRegen()">
+          <span class="val" id="bri-val">100</span>
+        </div>
+        <div class="row">
+          <label>Contrast</label>
+          <input type="range" id="contrast" min="0" max="200" value="110" oninput="updateVal(this,'con-val'); scheduleRegen()">
+          <span class="val" id="con-val">110</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERRAIN LAYER -->
+    <div class="section open" id="sec-grass">
+      <div class="section-header" onclick="toggleSection('sec-grass')">
+        Terrain Layer <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="row">
+          <label>Type</label>
+          <select id="terrain-type" onchange="onTerrainTypeChange()">
+            <optgroup label="Outdoor">
+              <option value="grass">Grass</option>
+              <option value="sand">Sand</option>
+              <option value="dirt">Dirt</option>
+              <option value="rocks">Rocks</option>
+              <option value="mesa">Mesa</option>
+              <option value="mountains">Mountains</option>
+              <option value="boulders">Boulders</option>
+              <option value="broken_road">Broken Road</option>
+            </optgroup>
+            <optgroup label="Indoor">
+              <option value="wood">Wood</option>
+              <option value="metal">Metal</option>
+              <option value="carpet">Carpet</option>
+              <option value="tiles">Tiles</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="row">
+          <label>Auto Colors</label>
+          <input type="checkbox" id="terrain-auto-colors" checked>
+        </div>
+        <div class="sep"></div>
+        <div class="color-row">
+          <label>Overlay 1</label>
+          <input type="color" id="overlay-primary" value="#2d6b1a" onchange="scheduleRegen()">
+        </div>
+        <div class="color-row">
+          <label>Overlay 2</label>
+          <input type="color" id="overlay-secondary" value="#b8d45a" onchange="scheduleRegen()">
+        </div>
+        <div class="row">
+          <label>Density</label>
+          <input type="range" id="overlay-density" min="0" max="100" value="60" oninput="updateVal(this,'od-val'); scheduleRegen()">
+          <span class="val" id="od-val">60</span>
+        </div>
+        <div class="row">
+          <label>Size</label>
+          <input type="range" id="overlay-size" min="0" max="100" value="50" oninput="updateVal(this,'os-val'); scheduleRegen()">
+          <span class="val" id="os-val">50</span>
+        </div>
+        <div class="sep"></div>
+        <!-- Grass-specific params (hidden for non-grass types) -->
+        <div id="grass-params" style="display:flex;flex-direction:column;gap:8px">
+          <div class="row">
+            <label>Enable</label>
+            <input type="checkbox" id="grass-enable" checked onchange="scheduleRegen()">
+          </div>
+          <div class="row">
+            <label>Height Min</label>
+            <input type="range" id="grass-hmin" min="2" max="40" value="6" oninput="updateVal(this,'ghmin-val'); scheduleRegen()">
+            <span class="val" id="ghmin-val">6</span>
+          </div>
+          <div class="row">
+            <label>Height Max</label>
+            <input type="range" id="grass-hmax" min="4" max="60" value="16" oninput="updateVal(this,'ghmax-val'); scheduleRegen()">
+            <span class="val" id="ghmax-val">16</span>
+          </div>
+          <div class="row">
+            <label>Blade Width</label>
+            <input type="range" id="grass-width" min="1" max="40" value="12" oninput="updateVal(this,'gw-val',0.1); scheduleRegen()">
+            <span class="val" id="gw-val">1.2</span>
+          </div>
+          <div class="row">
+            <label>Curve</label>
+            <input type="range" id="grass-curve" min="0" max="100" value="35" oninput="updateVal(this,'gc-val',0.01); scheduleRegen()">
+            <span class="val" id="gc-val">0.35</span>
+          </div>
+          <div class="color-row">
+            <label>Primary</label>
+            <input type="color" id="grass-c1" value="#2d6b1a" onchange="scheduleRegen()">
+          </div>
+          <div class="color-row">
+            <label>Secondary</label>
+            <input type="color" id="grass-c2" value="#4a9c2a" onchange="scheduleRegen()">
+          </div>
+          <div class="color-row">
+            <label>Tip</label>
+            <input type="color" id="grass-tip" value="#b8d45a" onchange="scheduleRegen()">
+          </div>
+          <div class="row">
+            <label>Angle Variance</label>
+            <input type="range" id="grass-angle" min="0" max="45" value="20" oninput="updateVal(this,'ga-val'); scheduleRegen()">
+            <span class="val" id="ga-val">20</span>
+          </div>
+          <div class="row">
+            <label>Brownian</label>
+            <input type="range" id="grass-brownian" min="0" max="30" value="5" oninput="updateVal(this,'gb-val',0.01); scheduleRegen()">
+            <span class="val" id="gb-val">0.05</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EFFECTS -->
+    <div class="section" id="sec-fx">
+      <div class="section-header" onclick="toggleSection('sec-fx')">
+        Effects <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="row">
+          <label>Vignette</label>
+          <input type="range" id="vignette" min="0" max="100" value="20" oninput="updateVal(this,'vig-val'); scheduleRegen()">
+          <span class="val" id="vig-val">20</span>
+        </div>
+        <div class="row">
+          <label>Dither</label>
+          <input type="range" id="dither" min="0" max="100" value="8" oninput="updateVal(this,'dit-val'); scheduleRegen()">
+          <span class="val" id="dit-val">8</span>
+        </div>
+        <div class="row">
+          <label>Grain</label>
+          <input type="range" id="grain" min="0" max="80" value="10" oninput="updateVal(this,'grn-val'); scheduleRegen()">
+          <span class="val" id="grn-val">10</span>
+        </div>
+        <div class="row">
+          <label>Edge Shadow</label>
+          <input type="range" id="edge-shadow" min="0" max="100" value="30" oninput="updateVal(this,'es-val'); scheduleRegen()">
+          <span class="val" id="es-val">30</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESETS -->
+    <div class="section" id="sec-presets">
+      <div class="section-header" onclick="toggleSection('sec-presets')">
+        Presets <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="row">
+          <label>Name</label>
+          <input type="text" id="preset-name" placeholder="grass_01">
+        </div>
+        <div class="row">
+          <button onclick="savePreset()" class="primary">💾 Save Preset</button>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <select id="preset-list" style="flex:1">
+            <option value="">— select preset —</option>
+          </select>
+          <button onclick="loadPreset()">Load</button>
+        </div>
+        <div class="row">
+          <button onclick="refreshPresets()" style="font-size:11px">↺ Refresh list</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="section open" id="sec-export">
+      <div class="section-header" onclick="toggleSection('sec-export')">
+        Export <span class="arrow">▶</span>
+      </div>
+      <div class="section-body">
+        <div class="row">
+          <label>Filename</label>
+          <input type="text" id="export-name" value="tile_grass_01">
+        </div>
+        <div class="row">
+          <label>Mode</label>
+          <select id="export-mode" onchange="scheduleRegen()">
+            <option value="clipped">Hex-clipped (alpha)</option>
+            <option value="full">Full bounding box</option>
+          </select>
+        </div>
+        <div class="row" style="gap:6px; flex-wrap:wrap;">
+          <button class="primary" onclick="saveToServer()">💾 Save to output/</button>
+          <button class="warn" onclick="downloadWebP()">⬇ Download</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /controls -->
+
+  <!-- ── PREVIEW ── -->
+  <div id="preview-panel">
+    <div id="toolbar">
+      <div class="group">
+        <button class="toggle-btn active" id="btn-1x" onclick="setGrid(1)">1×</button>
+        <button class="toggle-btn" id="btn-3x" onclick="setGrid(3)">3×</button>
+        <button class="toggle-btn" id="btn-5x" onclick="setGrid(5)">5×</button>
+      </div>
+      <div class="divider"></div>
+      <div class="group">
+        <button class="toggle-btn" id="btn-edges" onclick="toggleOpt('edges')">Edges</button>
+        <button class="toggle-btn" id="btn-outline" onclick="toggleOpt('outline')">Outline</button>
+      </div>
+      <div class="divider"></div>
+      <span style="font-size:11px; color:var(--muted)">Preview scale: <span id="scale-info">1×</span></span>
+    </div>
+
+    <div id="canvas-wrap">
+      <canvas id="preview-canvas"></canvas>
+    </div>
+
+    <div id="status">Ready — adjust controls to generate a tile.</div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- BATCH MODAL -->
+<div id="batch-modal" style="display:none">
+  <div id="batch-header">
+    <h2>⊞ Batch Generate</h2>
+    <label style="font-size:11px;color:var(--muted)">Count</label>
+    <select id="batch-count" style="width:64px;flex:none">
+      <option value="6">6</option>
+      <option value="12" selected>12</option>
+      <option value="18">18</option>
+      <option value="24">24</option>
+    </select>
+    <button onclick="generateBatch()">↺ New Batch</button>
+    <button onclick="selectAllBatch()">☑ All</button>
+    <button onclick="selectNoneBatch()">☐ None</button>
+    <button class="primary" onclick="saveBatch()">💾 Save Selected</button>
+    <button class="warn" onclick="closeBatch()">✕ Close</button>
+  </div>
+  <div id="batch-grid"></div>
+  <div id="batch-footer">Generate a batch to begin.</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// HEX GEOMETRY — flat-top
+// ═══════════════════════════════════════════
+function hexDims(r) {
+  const W = r * 2;
+  const H = Math.round(r * Math.sqrt(3));
+  return { W, H, r };
+}
+
+// Flat-top hex vertices in bounding box coords
+function hexVertices(W, H) {
+  const W4 = W / 4, W34 = 3 * W / 4, H2 = H / 2;
+  return [
+    [W4,  0],
+    [W34, 0],
+    [W,   H2],
+    [W34, H],
+    [W4,  H],
+    [0,   H2],
+  ];
+}
+
+// ═══════════════════════════════════════════
+// SEEDED RNG
+// ═══════════════════════════════════════════
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// ═══════════════════════════════════════════
+// SIMPLEX NOISE (2D + 4D)
+// Based on Stefan Gustavson's implementation
+// ═══════════════════════════════════════════
+const _perm = new Uint8Array(512);
+const _grad3 = [[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+const _grad4 = [[0,1,1,1],[0,1,1,-1],[0,1,-1,1],[0,1,-1,-1],[0,-1,1,1],[0,-1,1,-1],[0,-1,-1,1],[0,-1,-1,-1],[1,0,1,1],[-1,0,1,1],[1,0,1,-1],[-1,0,1,-1],[1,0,-1,1],[-1,0,-1,1],[1,0,-1,-1],[-1,0,-1,-1],[1,1,0,1],[-1,1,0,1],[1,1,0,-1],[-1,1,0,-1],[1,-1,0,1],[-1,-1,0,1],[1,-1,0,-1],[-1,-1,0,-1],[1,1,1,0],[-1,1,1,0],[1,1,-1,0],[-1,1,-1,0],[1,-1,1,0],[-1,-1,1,0],[1,-1,-1,0],[-1,-1,-1,0]];
+
+let _rng = mulberry32(42);
+function seedNoise(s) {
+  _rng = mulberry32(s | 0);
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) {
+    const j = Math.floor(_rng() * (i + 1));
+    [p[i], p[j]] = [p[j], p[i]];
+  }
+  for (let i = 0; i < 512; i++) _perm[i] = p[i & 255];
+}
+seedNoise(42);
+
+function dot3(g, x, y, z) { return g[0]*x + g[1]*y + g[2]*z; }
+function dot4(g, x, y, z, w) { return g[0]*x + g[1]*y + g[2]*z + g[3]*w; }
+
+function simplex3(xin, yin, zin) {
+  const F3 = 1/3, G3 = 1/6;
+  const s = (xin+yin+zin)*F3;
+  const i = Math.floor(xin+s), j = Math.floor(yin+s), k = Math.floor(zin+s);
+  const t = (i+j+k)*G3;
+  const x0=xin-(i-t), y0=yin-(j-t), z0=zin-(k-t);
+  let i1,j1,k1,i2,j2,k2;
+  if(x0>=y0){if(y0>=z0){i1=1;j1=0;k1=0;i2=1;j2=1;k2=0}else if(x0>=z0){i1=1;j1=0;k1=0;i2=1;j2=0;k2=1}else{i1=0;j1=0;k1=1;i2=1;j2=0;k2=1}}else{if(y0<z0){i1=0;j1=0;k1=1;i2=0;j2=1;k2=1}else if(x0<z0){i1=0;j1=1;k1=0;i2=0;j2=1;k2=1}else{i1=0;j1=1;k1=0;i2=1;j2=1;k2=0}}
+  const x1=x0-i1+G3,y1=y0-j1+G3,z1=z0-k1+G3;
+  const x2=x0-i2+2*G3,y2=y0-j2+2*G3,z2=z0-k2+2*G3;
+  const x3=x0-1+3*G3,y3=y0-1+3*G3,z3=z0-1+3*G3;
+  const ii=i&255,jj=j&255,kk=k&255;
+  const gi0=_perm[ii+_perm[jj+_perm[kk]]]%12;
+  const gi1=_perm[ii+i1+_perm[jj+j1+_perm[kk+k1]]]%12;
+  const gi2=_perm[ii+i2+_perm[jj+j2+_perm[kk+k2]]]%12;
+  const gi3=_perm[ii+1+_perm[jj+1+_perm[kk+1]]]%12;
+  let t0=0.6-x0*x0-y0*y0-z0*z0; const n0=t0<0?0:(t0*=t0,t0*t0*dot3(_grad3[gi0],x0,y0,z0));
+  let t1=0.6-x1*x1-y1*y1-z1*z1; const n1=t1<0?0:(t1*=t1,t1*t1*dot3(_grad3[gi1],x1,y1,z1));
+  let t2=0.6-x2*x2-y2*y2-z2*z2; const n2=t2<0?0:(t2*=t2,t2*t2*dot3(_grad3[gi2],x2,y2,z2));
+  let t3=0.6-x3*x3-y3*y3-z3*z3; const n3=t3<0?0:(t3*=t3,t3*t3*dot3(_grad3[gi3],x3,y3,z3));
+  return 32*(n0+n1+n2+n3);
+}
+
+function simplex4(x,y,z,w){
+  const F4=(Math.sqrt(5)-1)/4,G4=(5-Math.sqrt(5))/20;
+  const s=(x+y+z+w)*F4;
+  const i=Math.floor(x+s),j=Math.floor(y+s),k=Math.floor(z+s),l=Math.floor(w+s);
+  const t=(i+j+k+l)*G4;
+  const x0=x-(i-t),y0=y-(j-t),z0=z-(k-t),w0=w-(l-t);
+  let c=[x0>y0?32:0,x0>z0?16:0,y0>z0?8:0,x0>w0?4:0,y0>w0?2:0,z0>w0?1:0].reduce((a,b)=>a+b,0);
+  const sc=[[0,0,0,0],[1,0,0,0],[1,1,0,0],[1,1,1,0]];
+  const ranks=[c>=24?3:c>=12?2:c>=4?1:0,c>=20&&c<24?3:(c>=10&&c<24)?2:(c>=2&&c<16)?1:0,c>=17&&c<20?3:(c>=9&&c<20)?2:(c>=1&&c<8)?1:0,c>=14&&c<17?3:(c>=6&&c<17)?2:(c>=3&&c<14)?1:0];
+  const i1=ranks[0]>=3?1:0,j1=ranks[1]>=3?1:0,k1=ranks[2]>=3?1:0,l1=ranks[3]>=3?1:0;
+  const i2=ranks[0]>=2?1:0,j2=ranks[1]>=2?1:0,k2=ranks[2]>=2?1:0,l2=ranks[3]>=2?1:0;
+  const i3=ranks[0]>=1?1:0,j3=ranks[1]>=1?1:0,k3=ranks[2]>=1?1:0,l3=ranks[3]>=1?1:0;
+  const x1=x0-i1+G4,y1=y0-j1+G4,z1=z0-k1+G4,w1=w0-l1+G4;
+  const x2=x0-i2+2*G4,y2=y0-j2+2*G4,z2=z0-k2+2*G4,w2=w0-l2+2*G4;
+  const x3=x0-i3+3*G4,y3=y0-j3+3*G4,z3=z0-k3+3*G4,w3=w0-l3+3*G4;
+  const x4=x0-1+4*G4,y4=y0-1+4*G4,z4=z0-1+4*G4,w4=w0-1+4*G4;
+  const ii=i&255,jj=j&255,kk=k&255,ll=l&255;
+  function gi(di,dj,dk,dl){return _perm[ii+di+_perm[jj+dj+_perm[kk+dk+_perm[ll+dl]]]]%32;}
+  const g0=gi(0,0,0,0),g1=gi(i1,j1,k1,l1),g2=gi(i2,j2,k2,l2),g3=gi(i3,j3,k3,l3),g4=gi(1,1,1,1);
+  function contrib(gx,xx,yy,zz,ww){let t=0.6-xx*xx-yy*yy-zz*zz-ww*ww;return t<0?0:(t*=t,t*t*dot4(_grad4[gx],xx,yy,zz,ww));}
+  return 27*(contrib(g0,x0,y0,z0,w0)+contrib(g1,x1,y1,z1,w1)+contrib(g2,x2,y2,z2,w2)+contrib(g3,x3,y3,z3,w3)+contrib(g4,x4,y4,z4,w4));
+}
+
+// Tileable noise via 4D torus mapping
+function tileableNoise(px, py, W, H) {
+  const s = px / W, t = py / H;
+  const nx = Math.cos(s * Math.PI * 2);
+  const ny = Math.sin(s * Math.PI * 2);
+  const nz = Math.cos(t * Math.PI * 2);
+  const nw = Math.sin(t * Math.PI * 2);
+  return simplex4(nx, ny, nz, nw);
+}
+
+function plainNoise(px, py) {
+  return simplex3(px, py, 0);
+}
+
+// Worley noise (cellular)
+function worleyNoise(px, py, freq, rng) {
+  const cx = px * freq, cy = py * freq;
+  const xi = Math.floor(cx), yi = Math.floor(cy);
+  let minD = Infinity;
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const cell = (xi+dx) * 1999 + (yi+dy) * 9999;
+      const r = mulberry32(Math.abs(cell) % 99999);
+      const fx = xi+dx+r(), fy = yi+dy+r();
+      const d = Math.hypot(cx-fx, cy-fy);
+      if (d < minD) minD = d;
+    }
+  }
+  return Math.min(minD, 1);
+}
+
+// fBm
+function fbm(px, py, W, H, cfg) {
+  const { scale, octaves, persistence, lacunarity, tileable, noiseType } = cfg;
+  let v = 0, amp = 1, freq = 1 / scale, total = 0;
+  for (let i = 0; i < octaves; i++) {
+    let n;
+    if (noiseType === 'worley') {
+      n = worleyNoise(px, py, freq * scale, _rng) * 2 - 1;
+    } else if (noiseType === 'combined') {
+      const s = tileable ? tileableNoise(px*freq, py*freq, W/scale, H/scale) : plainNoise(px*freq, py*freq);
+      const w = worleyNoise(px, py, freq * scale, _rng);
+      n = s * 0.6 + (w * 2 - 1) * 0.4;
+    } else {
+      n = tileable
+        ? tileableNoise(px * freq, py * freq, W / scale, H / scale)
+        : plainNoise(px * freq, py * freq);
+    }
+    v += n * amp;
+    total += amp;
+    amp *= persistence;
+    freq *= lacunarity;
+  }
+  return v / total;
+}
+
+// ═══════════════════════════════════════════
+// COLOR UTILS
+// ═══════════════════════════════════════════
+function hexToRgb(h) {
+  const n = parseInt(h.slice(1), 16);
+  return [(n>>16)&255, (n>>8)&255, n&255];
+}
+
+function lerpColor(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0]-a[0])*t),
+    Math.round(a[1] + (b[1]-a[1])*t),
+    Math.round(a[2] + (b[2]-a[2])*t),
+  ];
+}
+
+function triLerp(c1, c2, c3, t) {
+  if (t < 0.5) return lerpColor(c1, c2, t * 2);
+  return lerpColor(c2, c3, (t - 0.5) * 2);
+}
+
+function applySatBriCon(r, g, b, sat, bri, con) {
+  // Brightness
+  r = r * bri / 100; g = g * bri / 100; b = b * bri / 100;
+  // Saturation (via luminance)
+  const lum = 0.299*r + 0.587*g + 0.114*b;
+  r = lum + (r - lum) * sat / 100;
+  g = lum + (g - lum) * sat / 100;
+  b = lum + (b - lum) * sat / 100;
+  // Contrast
+  const f = con / 100;
+  r = 128 + (r - 128) * f;
+  g = 128 + (g - 128) * f;
+  b = 128 + (b - 128) * f;
+  return [Math.max(0,Math.min(255,r)), Math.max(0,Math.min(255,g)), Math.max(0,Math.min(255,b))];
+}
+
+// ═══════════════════════════════════════════
+// POINT-IN-HEX TEST (flat-top)
+// ═══════════════════════════════════════════
+function pointInHex(px, py, W, H) {
+  const cx = px - W/2, cy = py - H/2;
+  const r = W/2;
+  // For flat-top hex: check if inside using axial projection
+  const q = (2/3) * cx / r;
+  const s = (-1/3 * cx + Math.sqrt(3)/3 * cy) / r;
+  const t2 = -q - s;
+  return Math.abs(q) <= 1 && Math.abs(s) <= 1 && Math.abs(t2) <= 1;
+}
+
+// Distance from point to nearest hex edge (0=centre, 1=edge)
+function hexEdgeDist(px, py, W, H) {
+  const cx = (px - W/2) / (W/2);
+  const cy = (py - H/2) / (H/2);
+  // Simplified edge distance for flat-top
+  const d1 = Math.abs(cx);
+  const d2 = Math.abs(0.5*cx + 0.866*cy);
+  const d3 = Math.abs(0.5*cx - 0.866*cy);
+  return Math.max(d1, d2, d3);
+}
+
+// ═══════════════════════════════════════════
+// TILE GENERATION
+// ═══════════════════════════════════════════
+let _offscreen = null;
+
+function generateTile(cfg) {
+  const { W, H } = cfg;
+
+  if (!_offscreen || _offscreen.width !== W || _offscreen.height !== H) {
+    _offscreen = document.createElement('canvas');
+    _offscreen.width = W;
+    _offscreen.height = H;
+  }
+
+  const ctx = _offscreen.getContext('2d');
+  const img = ctx.createImageData(W, H);
+  const data = img.data;
+
+  seedNoise(cfg.seed);
+  const rng = mulberry32(cfg.seed ^ 0xdeadbeef);
+
+  const c1 = hexToRgb(cfg.color1);
+  const c2 = hexToRgb(cfg.color2);
+  const c3 = hexToRgb(cfg.color3);
+
+  // Pixel pass
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      const idx = (py * W + px) * 4;
+      const inHex = pointInHex(px, py, W, H);
+
+      if (!inHex && cfg.exportMode === 'clipped') {
+        data[idx+3] = 0;
+        continue;
+      }
+
+      // Base noise
+      let n = fbm(px, py, W, H, cfg);
+      n = (n + 1) / 2; // 0..1
+
+      // Color variation noise
+      let cv = 0;
+      if (cfg.colorVar > 0) {
+        cv = fbm(px + 1000, py + 1000, W, H, { ...cfg, scale: cfg.scale * 0.4, octaves: 2 });
+        cv = (cv + 1) / 2 * (cfg.colorVar / 100) * 0.15;
+      }
+
+      let [r, g, b] = triLerp(c1, c2, c3, Math.max(0, Math.min(1, n + cv)));
+      [r, g, b] = applySatBriCon(r, g, b, cfg.saturation, cfg.brightness, cfg.contrast);
+
+      // Hex edge shadow
+      if (cfg.edgeShadow > 0) {
+        const ed = hexEdgeDist(px, py, W, H);
+        const shadow = Math.max(0, (ed - 0.7) / 0.3) * (cfg.edgeShadow / 100) * 0.6;
+        r *= (1 - shadow); g *= (1 - shadow); b *= (1 - shadow);
+      }
+
+      // Vignette (from centre)
+      if (cfg.vignette > 0) {
+        const dx = (px - W/2) / (W/2);
+        const dy = (py - H/2) / (H/2);
+        const vd = Math.sqrt(dx*dx + dy*dy);
+        const vf = Math.max(0, vd - 0.5) * 2 * (cfg.vignette / 100);
+        r *= (1 - vf); g *= (1 - vf); b *= (1 - vf);
+      }
+
+      // Dither
+      if (cfg.dither > 0) {
+        const d = (rng() - 0.5) * (cfg.dither / 100) * 20;
+        r += d; g += d; b += d;
+      }
+
+      // Grain
+      if (cfg.grain > 0) {
+        const gr = (rng() - 0.5) * (cfg.grain / 100) * 30;
+        r += gr; g += gr; b += gr;
+      }
+
+      data[idx]   = Math.max(0, Math.min(255, r));
+      data[idx+1] = Math.max(0, Math.min(255, g));
+      data[idx+2] = Math.max(0, Math.min(255, b));
+      data[idx+3] = 255;
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+
+  // Terrain overlay
+  drawTerrainOverlay(ctx, cfg, rng, W, H);
+
+  // Hex clip mask (composite)
+  if (cfg.exportMode === 'clipped') {
+    const tmp = document.createElement('canvas');
+    tmp.width = W; tmp.height = H;
+    const tc = tmp.getContext('2d');
+    tc.drawImage(_offscreen, 0, 0);
+
+    // Clear corners by drawing hex shape with source-in
+    _offscreen.getContext('2d').clearRect(0, 0, W, H);
+    const fc = _offscreen.getContext('2d');
+    drawHexPath(fc, W, H);
+    fc.clip();
+    fc.drawImage(tmp, 0, 0);
+  }
+
+  return _offscreen;
+}
+
+function drawHexPath(ctx, W, H) {
+  const verts = hexVertices(W, H);
+  ctx.beginPath();
+  ctx.moveTo(verts[0][0], verts[0][1]);
+  for (let i = 1; i < verts.length; i++) ctx.lineTo(verts[i][0], verts[i][1]);
+  ctx.closePath();
+}
+
+function drawGrass(ctx, cfg, rng, W, H) {
+  const count = Math.floor((W * H) / 8 * (cfg.grassDensity / 100));
+  const gc1 = hexToRgb(cfg.grassC1);
+  const gc2 = hexToRgb(cfg.grassC2);
+  const gct = hexToRgb(cfg.grassTip);
+
+  for (let i = 0; i < count; i++) {
+    const bx = rng() * W;
+    const by = rng() * H;
+
+    if (!pointInHex(bx, by, W, H)) continue;
+
+    const h = cfg.grassHmin + rng() * (cfg.grassHmax - cfg.grassHmin);
+    const w = cfg.grassWidth;
+    const angle = (rng() - 0.5) * (cfg.grassAngle * 2) * Math.PI / 180;
+    const curve = (rng() - 0.5) * cfg.grassCurve * 0.5;
+    const bm = (rng() - 0.5) * cfg.grassBrownian * W;
+
+    const t = rng();
+    const [r, g, b] = t < 0.5 ? lerpColor(gc1, gc2, t * 2) : lerpColor(gc2, gct, (t - 0.5) * 2);
+
+    const tipX = bx + Math.sin(angle) * h + curve * h + bm;
+    const tipY = by - Math.cos(angle) * h;
+    const cpX = bx + Math.sin(angle) * h * 0.5 + curve * h * 0.3;
+    const cpY = by - Math.cos(angle) * h * 0.5;
+
+    // Tip fade: blend toward tip color
+    const grad = ctx.createLinearGradient(bx, by, tipX, tipY);
+    grad.addColorStop(0, `rgb(${r},${g},${b})`);
+    grad.addColorStop(1, `rgb(${gct[0]},${gct[1]},${gct[2]})`);
+
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.quadraticCurveTo(cpX, cpY, tipX, tipY);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = w;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+}
+
+// ═══════════════════════════════════════════
+// PREVIEW RENDERING
+// ═══════════════════════════════════════════
+let _gridSize = 1;
+let _showEdges = false;
+let _showOutline = false;
+
+function drawPreview(tile) {
+  const canvas = document.getElementById('preview-canvas');
+  const wrap = document.getElementById('canvas-wrap');
+  const W = tile.width, H = tile.height;
+
+  // Flat-top hex grid layout
+  const COL_STEP = W * 0.75;
+  const ROW_STEP = H;
+  const ODD_COL_OFFSET = H / 2;
+  const N = _gridSize;
+
+  // Compute grid pixel size
+  const gridW = COL_STEP * (N - 1) + W;
+  const gridH = ROW_STEP * (N - 1) + (N > 1 ? ODD_COL_OFFSET : 0) + H;
+
+  // Scale to fit panel
+  const maxW = wrap.clientWidth - 40;
+  const maxH = wrap.clientHeight - 40;
+  const scale = Math.min(1, maxW / gridW, maxH / gridH);
+  const dispW = Math.round(gridW * scale);
+  const dispH = Math.round(gridH * scale);
+
+  canvas.width = dispW;
+  canvas.height = dispH;
+
+  document.getElementById('scale-info').textContent =
+    scale >= 1 ? `${Math.round(scale)}×` : `${Math.round(scale * 100)}%`;
+
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, dispW, dispH);
+
+  const tw = Math.round(W * scale);
+  const th = Math.round(H * scale);
+  const centreCol = Math.floor(N / 2);
+  const centreRow = Math.floor(N / 2);
+
+  for (let col = 0; col < N; col++) {
+    for (let row = 0; row < N; row++) {
+      const sx = Math.round(col * COL_STEP * scale);
+      const sy = Math.round((row * ROW_STEP + (col % 2 === 1 ? ODD_COL_OFFSET : 0)) * scale);
+
+      ctx.drawImage(tile, sx, sy, tw, th);
+
+      if (_showEdges || (_showOutline && col === centreCol && row === centreRow)) {
+        const verts = hexVertices(tw, th);
+        ctx.beginPath();
+        ctx.moveTo(sx + verts[0][0], sy + verts[0][1]);
+        for (let v = 1; v < verts.length; v++) ctx.lineTo(sx + verts[v][0], sy + verts[v][1]);
+        ctx.closePath();
+        if (_showOutline && col === centreCol && row === centreRow) {
+          ctx.strokeStyle = 'rgba(255,220,60,0.9)';
+          ctx.lineWidth = 2;
+        } else {
+          ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+          ctx.lineWidth = 1;
+        }
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+// CONFIG READING
+// ═══════════════════════════════════════════
+function getConfig() {
+  const { W, H } = hexDims(getRadius());
+  return {
+    W, H,
+    seed: parseInt(document.getElementById('seed').value) || 42,
+    noiseType: document.getElementById('noise-type').value,
+    scale: parseInt(document.getElementById('noise-scale').value),
+    tileable: document.getElementById('tileable').checked,
+    octaves: parseInt(document.getElementById('octaves').value),
+    persistence: parseInt(document.getElementById('persistence').value) / 100,
+    lacunarity: parseInt(document.getElementById('lacunarity').value) / 100,
+    color1: document.getElementById('color1').value,
+    color2: document.getElementById('color2').value,
+    color3: document.getElementById('color3').value,
+    colorVar: parseInt(document.getElementById('color-var').value),
+    saturation: parseInt(document.getElementById('saturation').value),
+    brightness: parseInt(document.getElementById('brightness').value),
+    contrast: parseInt(document.getElementById('contrast').value),
+    terrainType: document.getElementById('terrain-type').value,
+    overlayPrimary: document.getElementById('overlay-primary').value,
+    overlaySecondary: document.getElementById('overlay-secondary').value,
+    overlayDensity: parseInt(document.getElementById('overlay-density').value),
+    overlaySize: parseInt(document.getElementById('overlay-size').value),
+    grassEnable: document.getElementById('grass-enable').checked,
+    grassDensity: parseInt(document.getElementById('overlay-density').value),
+    grassHmin: parseInt(document.getElementById('grass-hmin').value),
+    grassHmax: parseInt(document.getElementById('grass-hmax').value),
+    grassWidth: parseInt(document.getElementById('grass-width').value) / 10,
+    grassCurve: parseInt(document.getElementById('grass-curve').value) / 100,
+    grassC1: document.getElementById('grass-c1').value,
+    grassC2: document.getElementById('grass-c2').value,
+    grassTip: document.getElementById('grass-tip').value,
+    grassAngle: parseInt(document.getElementById('grass-angle').value),
+    grassBrownian: parseInt(document.getElementById('grass-brownian').value) / 100,
+    vignette: parseInt(document.getElementById('vignette').value),
+    dither: parseInt(document.getElementById('dither').value),
+    grain: parseInt(document.getElementById('grain').value),
+    edgeShadow: parseInt(document.getElementById('edge-shadow').value),
+    exportMode: document.getElementById('export-mode').value,
+  };
+}
+
+function setConfig(cfg) {
+  const r = cfg.W ? Math.round(cfg.W / 2) : 64;
+  document.getElementById('radius').value = r;
+  onRadiusChange();
+
+  const fields = {
+    'terrain-type': cfg.terrainType,
+    'overlay-primary': cfg.overlayPrimary,
+    'overlay-secondary': cfg.overlaySecondary,
+    'overlay-density': cfg.overlayDensity,
+    'overlay-size': cfg.overlaySize,
+    'seed': cfg.seed, 'noise-type': cfg.noiseType, 'noise-scale': cfg.scale,
+    'tileable': cfg.tileable, 'octaves': cfg.octaves,
+    'persistence': Math.round(cfg.persistence * 100),
+    'lacunarity': Math.round(cfg.lacunarity * 100),
+    'color1': cfg.color1, 'color2': cfg.color2, 'color3': cfg.color3,
+    'color-var': cfg.colorVar, 'saturation': cfg.saturation,
+    'brightness': cfg.brightness, 'contrast': cfg.contrast,
+    'grass-enable': cfg.grassEnable,
+    'grass-hmin': cfg.grassHmin, 'grass-hmax': cfg.grassHmax,
+    'grass-width': Math.round(cfg.grassWidth * 10),
+    'grass-curve': Math.round(cfg.grassCurve * 100),
+    'grass-c1': cfg.grassC1, 'grass-c2': cfg.grassC2, 'grass-tip': cfg.grassTip,
+    'grass-angle': cfg.grassAngle,
+    'grass-brownian': Math.round(cfg.grassBrownian * 100),
+    'vignette': cfg.vignette, 'dither': cfg.dither, 'grain': cfg.grain,
+    'edge-shadow': cfg.edgeShadow, 'export-mode': cfg.exportMode,
+  };
+
+  for (const [id, val] of Object.entries(fields)) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (el.type === 'checkbox') el.checked = !!val;
+    else el.value = val;
+  }
+
+  // Refresh displayed values
+  document.querySelectorAll('input[type=range]').forEach(el => {
+    const valEl = el.getAttribute('oninput')?.match(/'([^']+)'/)?.[1];
+    const mult = parseFloat(el.getAttribute('oninput')?.match(/,\s*([\d.]+)/)?.[1] || 1);
+    if (valEl) updateVal(el, valEl, mult === 1 ? undefined : mult);
+  });
+}
+
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function updateVal(el, valId, mult) {
+  const v = parseFloat(el.value) * (mult || 1);
+  document.getElementById(valId).textContent =
+    mult && mult < 1 ? v.toFixed(2) : Math.round(v);
+}
+
+function setGrid(n) {
+  _gridSize = n;
+  document.querySelectorAll('.toggle-btn[id^="btn-"]').forEach(b => {
+    if (b.id === 'btn-edges' || b.id === 'btn-outline') return;
+    b.classList.remove('active');
+  });
+  document.getElementById(`btn-${n}x`).classList.add('active');
+  redraw();
+}
+
+function toggleOpt(opt) {
+  const btn = document.getElementById(`btn-${opt}`);
+  if (opt === 'edges') _showEdges = !_showEdges;
+  if (opt === 'outline') _showOutline = !_showOutline;
+  btn.classList.toggle('active');
+  redraw();
+}
+
+function getRadius() {
+  const preset = document.getElementById('size-preset').value;
+  if (preset === 'small') return 32;
+  if (preset === 'medium') return 64;
+  if (preset === 'large') return 128;
+  return parseInt(document.getElementById('radius').value) || 64;
+}
+
+function onSizePreset() {
+  const custom = document.getElementById('size-preset').value === 'custom';
+  document.getElementById('custom-r-row').style.display = custom ? 'flex' : 'none';
+  onRadiusChange();
+}
+
+function onRadiusChange() {
+  const { W, H } = hexDims(getRadius());
+  const txt = `${W} × ${H} px`;
+  document.getElementById('dim-label').textContent = txt;
+  document.getElementById('dim-display').textContent = txt;
+  scheduleRegen();
+}
+
+let _regenTimer = null;
+let _lastTile = null;
+
+function scheduleRegen() {
+  clearTimeout(_regenTimer);
+  _regenTimer = setTimeout(doRegen, 120);
+}
+
+function doRegen() {
+  const cfg = getConfig();
+  setStatus('Generating…');
+  requestAnimationFrame(() => {
+    try {
+      _lastTile = generateTile(cfg);
+      drawPreview(_lastTile);
+      setStatus(`Generated ${cfg.W}×${cfg.H}px tile — seed ${cfg.seed}`);
+    } catch(e) {
+      setStatus('Error: ' + e.message);
+      console.error(e);
+    }
+  });
+}
+
+function redraw() {
+  if (_lastTile) drawPreview(_lastTile);
+}
+
+function regenerate() { scheduleRegen(); }
+
+function randomSeed() {
+  document.getElementById('seed').value = Math.floor(Math.random() * 99999);
+  scheduleRegen();
+}
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function getExportCanvas() {
+  if (!_lastTile) return null;
+  // Re-generate with current export mode
+  return generateTile(getConfig());
+}
+
+function downloadWebP() {
+  const tile = getExportCanvas();
+  if (!tile) return alert('Generate a tile first.');
+  tile.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (document.getElementById('export-name').value || 'tile') + '.webp';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/webp', 0.95);
+}
+
+function saveToServer() {
+  const tile = getExportCanvas();
+  if (!tile) return alert('Generate a tile first.');
+  const filename = document.getElementById('export-name').value || 'tile';
+  const dataUrl = tile.toDataURL('image/webp', 0.95);
+  fetch('/api/save-webp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, dataUrl })
+  }).then(r => r.json()).then(d => {
+    if (d.ok) setStatus(`Saved to output/${filename}.webp`);
+    else setStatus('Error saving: ' + d.error);
+  }).catch(e => setStatus('Error: ' + e.message));
+}
+
+// ═══════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════
+async function refreshPresets() {
+  const res = await fetch('/api/presets').then(r => r.json()).catch(() => []);
+  const sel = document.getElementById('preset-list');
+  sel.innerHTML = '<option value="">— select preset —</option>';
+  res.forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+}
+
+async function savePreset() {
+  const name = document.getElementById('preset-name').value.trim();
+  if (!name) return alert('Enter a preset name.');
+  const config = getConfig();
+  const res = await fetch('/api/save-preset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, config })
+  }).then(r => r.json()).catch(e => ({ error: e.message }));
+  if (res.ok) { setStatus(`Preset "${name}" saved.`); refreshPresets(); }
+  else setStatus('Error saving preset: ' + res.error);
+}
+
+async function loadPreset() {
+  const name = document.getElementById('preset-list').value;
+  if (!name) return alert('Select a preset first.');
+  const cfg = await fetch(`/api/presets/${name}`).then(r => r.json()).catch(() => null);
+  if (!cfg) return alert('Could not load preset.');
+  setConfig(cfg);
+  scheduleRegen();
+  setStatus(`Loaded preset "${name}".`);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+window.addEventListener('resize', () => { if (_lastTile) drawPreview(_lastTile); });
+refreshPresets();
+onSizePreset();
+scheduleRegen();
+
+// ═══════════════════════════════════════════
+// TERRAIN COLOR PRESETS
+// ═══════════════════════════════════════════
+const TERRAIN_PRESETS = {
+  grass:       { color1:'#2d5a1b', color2:'#4a8c2a', color3:'#7bc44a', op:'#2d6b1a', os:'#b8d45a', noise:80,  sat:110, bri:100, con:110 },
+  sand:        { color1:'#a07840', color2:'#c4a060', color3:'#e0c080', op:'#d4b870', os:'#f0e0a0', noise:120, sat:80,  bri:105, con:105 },
+  dirt:        { color1:'#3d2510', color2:'#5c3a1e', color3:'#7a5030', op:'#8a6040', os:'#6a4828', noise:70,  sat:90,  bri:95,  con:115 },
+  rocks:       { color1:'#3a3a3a', color2:'#585858', color3:'#787878', op:'#909090', os:'#c0c0c0', noise:60,  sat:60,  bri:95,  con:120 },
+  mesa:        { color1:'#6b2510', color2:'#9a3a1a', color3:'#c05a30', op:'#d07848', os:'#e89060', noise:90,  sat:100, bri:100, con:115 },
+  mountains:   { color1:'#404050', color2:'#606070', color3:'#888898', op:'#a0a0b0', os:'#d8d8e8', noise:100, sat:70,  bri:95,  con:120 },
+  boulders:    { color1:'#383430', color2:'#555050', color3:'#757070', op:'#909090', os:'#b8b0a8', noise:65,  sat:60,  bri:95,  con:120 },
+  broken_road: { color1:'#2a2520', color2:'#3c3830', color3:'#504c44', op:'#706860', os:'#908878', noise:50,  sat:55,  bri:90,  con:120 },
+  wood:        { color1:'#4a2c10', color2:'#6a4020', color3:'#8a5a30', op:'#7a5020', os:'#c09060', noise:40,  sat:95,  bri:95,  con:115 },
+  metal:       { color1:'#303038', color2:'#484850', color3:'#606068', op:'#787880', os:'#b0b0b8', noise:30,  sat:50,  bri:100, con:125 },
+  carpet:      { color1:'#2a1a3a', color2:'#44306a', color3:'#604890', op:'#805aa0', os:'#a07ab8', noise:55,  sat:110, bri:90,  con:110 },
+  tiles:       { color1:'#282c30', color2:'#383c40', color3:'#4a5055', op:'#888c90', os:'#b0b4b8', noise:25,  sat:50,  bri:100, con:120 },
+};
+
+function onTerrainTypeChange() {
+  const type = document.getElementById('terrain-type').value;
+  document.getElementById('grass-params').style.display = (type === 'grass') ? 'flex' : 'none';
+  if (document.getElementById('terrain-auto-colors').checked) {
+    const p = TERRAIN_PRESETS[type];
+    if (p) {
+      document.getElementById('color1').value = p.color1;
+      document.getElementById('color2').value = p.color2;
+      document.getElementById('color3').value = p.color3;
+      document.getElementById('overlay-primary').value = p.op;
+      document.getElementById('overlay-secondary').value = p.os;
+      document.getElementById('noise-scale').value = p.noise;
+      document.getElementById('scale-val').textContent = p.noise;
+      document.getElementById('saturation').value = p.sat;
+      document.getElementById('sat-val').textContent = p.sat;
+      document.getElementById('brightness').value = p.bri;
+      document.getElementById('bri-val').textContent = p.bri;
+      document.getElementById('contrast').value = p.con;
+      document.getElementById('con-val').textContent = p.con;
+    }
+  }
+  scheduleRegen();
+}
+
+// ═══════════════════════════════════════════
+// TERRAIN OVERLAY DISPATCHER
+// ═══════════════════════════════════════════
+function drawTerrainOverlay(ctx, cfg, rng, W, H) {
+  switch (cfg.terrainType) {
+    case 'grass':       if (cfg.grassEnable) drawGrass(ctx, cfg, rng, W, H); break;
+    case 'sand':        drawSandOverlay(ctx, cfg, rng, W, H); break;
+    case 'dirt':        drawDirtOverlay(ctx, cfg, rng, W, H); break;
+    case 'rocks':       drawRocksOverlay(ctx, cfg, rng, W, H); break;
+    case 'mesa':        drawMesaOverlay(ctx, cfg, rng, W, H); break;
+    case 'mountains':   drawMountainsOverlay(ctx, cfg, rng, W, H); break;
+    case 'boulders':    drawBouldersOverlay(ctx, cfg, rng, W, H); break;
+    case 'broken_road': drawBrokenRoadOverlay(ctx, cfg, rng, W, H); break;
+    case 'wood':        drawWoodOverlay(ctx, cfg, rng, W, H); break;
+    case 'metal':       drawMetalOverlay(ctx, cfg, rng, W, H); break;
+    case 'carpet':      drawCarpetOverlay(ctx, cfg, rng, W, H); break;
+    case 'tiles':       drawTilesOverlay(ctx, cfg, rng, W, H); break;
+  }
+}
+
+function drawSandOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const count = Math.floor(6 + density * 22);
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let i = 0; i < count; i++) {
+    const y = H * 0.05 + (H * 0.9) * (i / count) + (rng() - 0.5) * H * 0.04;
+    const amp = W * 0.025 * (0.5 + rng() * 0.8);
+    const phase = rng() * Math.PI * 2;
+    const alpha = 0.05 + rng() * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    for (let x = 0; x <= W; x += 3)
+      ctx.lineTo(x, y + Math.sin((x / W) * Math.PI * 4 + phase) * amp);
+    ctx.strokeStyle = `rgba(${c1[0]},${c1[1]},${c1[2]},${alpha})`;
+    ctx.lineWidth = 0.6 + rng() * 1.2;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDirtOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  if (density < 0.08) return;
+  const count = Math.floor(density * 4) + 1;
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let i = 0; i < count; i++) {
+    const y0 = H * 0.2 + rng() * H * 0.6;
+    const x0 = rng() * W * 0.15, x1 = W * 0.85 + rng() * W * 0.15;
+    const cp1x = x0 + (x1-x0)*0.33 + (rng()-0.5)*W*0.12;
+    const cp1y = y0 + (rng()-0.5)*H*0.18;
+    const cp2x = x0 + (x1-x0)*0.67 + (rng()-0.5)*W*0.12;
+    const cp2y = y0 + (rng()-0.5)*H*0.18;
+    const dy = 3 + rng() * 5;
+    for (let track = 0; track < 2; track++) {
+      ctx.beginPath();
+      ctx.moveTo(x0, y0 + track*dy);
+      ctx.bezierCurveTo(cp1x, cp1y+track*dy, cp2x, cp2y+track*dy, x1, y0+track*dy+(rng()-0.5)*6);
+      ctx.strokeStyle = `rgba(${c1[0]},${c1[1]},${c1[2]},${0.12 + rng()*0.14})`;
+      ctx.lineWidth = 1.5 + rng() * 2.5;
+      ctx.lineCap = 'round'; ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawRocksOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const sizeFactor = cfg.overlaySize / 100;
+  const count = Math.floor(density * 35 + 3);
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let i = 0; i < count; i++) {
+    const bx = rng() * W, by = rng() * H;
+    if (!pointInHex(bx, by, W, H)) continue;
+    const r = (2 + rng() * 8) * (sizeFactor * 1.5 + 0.3) + 1.5;
+    const sides = 5 + Math.floor(rng() * 4);
+    const [cr, cg, cb] = lerpColor(c1, c2, rng());
+    const bright = 0.75 + rng() * 0.5;
+    ctx.beginPath();
+    for (let s = 0; s < sides; s++) {
+      const a = (s / sides) * Math.PI * 2 + rng() * 0.45;
+      const px = bx + Math.cos(a) * r * (0.65 + rng() * 0.7);
+      const py = by + Math.sin(a) * r * (0.65 + rng() * 0.7);
+      s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${Math.round(cr*bright)},${Math.round(cg*bright)},${Math.round(cb*bright)},0.78)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${Math.min(255,cr+50)},${Math.min(255,cg+50)},${Math.min(255,cb+50)},0.35)`;
+    ctx.lineWidth = 0.7; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawMesaOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  const strataCount = Math.floor(3 + density * 10);
+  for (let i = 0; i < strataCount; i++) {
+    const y = H * 0.08 + (H * 0.84) * (i / strataCount) + (rng()-0.5)*H*0.04;
+    ctx.beginPath();
+    ctx.moveTo(0, y); ctx.lineTo(W, y + (rng()-0.5)*H*0.015);
+    ctx.strokeStyle = `rgba(${c1[0]},${c1[1]},${c1[2]},${0.07 + rng()*0.13})`;
+    ctx.lineWidth = 0.8 + rng() * 1.2; ctx.stroke();
+  }
+  const grad = ctx.createRadialGradient(W/2, H/2, W*0.25, W/2, H/2, W*0.56);
+  grad.addColorStop(0, `rgba(${c2[0]},${c2[1]},${c2[2]},0)`);
+  grad.addColorStop(1, `rgba(${c2[0]},${c2[1]},${c2[2]},${density*0.38})`);
+  drawHexPath(ctx, W, H);
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.restore();
+}
+
+function drawMountainsOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const sizeFactor = cfg.overlaySize / 100;
+  const count = Math.floor(2 + density * 5);
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let i = count - 1; i >= 0; i--) {
+    const bx = W * (0.15 + rng() * 0.7);
+    const by = H * (0.55 + rng() * 0.2);
+    const mw = (W * (0.22 + rng()*0.3) * (sizeFactor*1.2+0.2) + 18);
+    const mh = (H * (0.32 + rng()*0.3) * (sizeFactor*1.2+0.2) + 18);
+    const [cr, cg, cb] = lerpColor(c1, c2, (count-i)/count * 0.7 + rng()*0.3);
+    const peakX = bx + (rng()-0.5)*mw*0.18;
+    ctx.beginPath();
+    ctx.moveTo(bx - mw/2 + (rng()-0.5)*8, by);
+    ctx.lineTo(peakX, by - mh);
+    ctx.lineTo(bx + mw/2 + (rng()-0.5)*8, by);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},0.58)`; ctx.fill();
+    const snowH = mh * (0.14 + rng()*0.18);
+    ctx.beginPath();
+    ctx.moveTo(peakX, by - mh);
+    ctx.lineTo(peakX - mw*0.11, by - mh + snowH);
+    ctx.lineTo(peakX + mw*0.11, by - mh + snowH);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(228,234,242,${0.55+rng()*0.3})`; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBouldersOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const sizeFactor = cfg.overlaySize / 100;
+  const count = Math.floor(1 + density * 5);
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let i = 0; i < count; i++) {
+    let bx, by, tries = 0;
+    do { bx = W*0.15 + rng()*W*0.7; by = H*0.15 + rng()*H*0.7; tries++; }
+    while (!pointInHex(bx, by, W, H) && tries < 20);
+    if (tries >= 20) continue;
+    const rx = (W*0.1 + rng()*W*0.14) * (sizeFactor*1.4+0.2) + 7;
+    const ry = rx * (0.6 + rng()*0.5);
+    const angle = rng() * Math.PI;
+    const [cr, cg, cb] = lerpColor(c1, c2, rng());
+    ctx.beginPath();
+    ctx.ellipse(bx+rx*0.14, by+ry*0.18, rx, ry, angle, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(0,0,0,0.18)`; ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(bx, by, rx, ry, angle, 0, Math.PI*2);
+    const bg = ctx.createRadialGradient(bx-rx*0.22, by-ry*0.22, rx*0.1, bx, by, rx);
+    bg.addColorStop(0, `rgb(${Math.min(255,cr+38)},${Math.min(255,cg+38)},${Math.min(255,cb+38)})`);
+    bg.addColorStop(1, `rgb(${Math.max(0,cr-18)},${Math.max(0,cg-18)},${Math.max(0,cb-18)})`);
+    ctx.fillStyle = bg; ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(bx-rx*0.24, by-ry*0.26, rx*0.32, ry*0.26, angle, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,255,255,${0.07+rng()*0.10})`; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBrokenRoadOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const count = Math.floor(3 + density * 18);
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let i = 0; i < count; i++) {
+    let x = rng() * W, y = rng() * H;
+    if (!pointInHex(x, y, W, H)) continue;
+    const steps = 3 + Math.floor(rng() * 5);
+    ctx.beginPath(); ctx.moveTo(x, y);
+    for (let s = 0; s < steps; s++) {
+      x += (rng()-0.28) * W * 0.16;
+      y += (rng()-0.28) * H * 0.16;
+      ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = `rgba(${c1[0]},${c1[1]},${c1[2]},${0.22+rng()*0.38})`;
+    ctx.lineWidth = 0.7 + rng() * 1.6;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawWoodOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const plankCount = Math.floor(3 + density * 10);
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  const plankH = H / plankCount;
+  for (let i = 0; i < plankCount; i++) {
+    const py = i * plankH;
+    const [cr, cg, cb] = lerpColor(c1, c2, rng());
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},0.42)`;
+    ctx.fillRect(0, py, W, plankH - 1);
+    const grainCount = 3 + Math.floor(rng() * 5);
+    for (let g = 0; g < grainCount; g++) {
+      const gx = rng() * W;
+      const bright = rng() > 0.5 ? 32 : -28;
+      ctx.beginPath();
+      ctx.moveTo(gx, py);
+      ctx.quadraticCurveTo(gx+(rng()-0.5)*W*0.1, py+plankH*0.5, gx+(rng()-0.5)*W*0.07, py+plankH-1);
+      ctx.strokeStyle = `rgba(${Math.max(0,Math.min(255,cr+bright))},${Math.max(0,Math.min(255,cg+bright))},${Math.max(0,Math.min(255,cb+bright))},0.28)`;
+      ctx.lineWidth = 0.5 + rng()*0.9; ctx.stroke();
+    }
+    if (i > 0) { ctx.fillStyle = `rgba(0,0,0,0.22)`; ctx.fillRect(0, py, W, 1); }
+  }
+  ctx.restore();
+}
+
+function drawMetalOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const sizeFactor = cfg.overlaySize / 100;
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  const seamCount = Math.floor(2 + density * 5);
+  for (let i = 0; i < seamCount; i++) {
+    const y = H * (i+1) / (seamCount+1) + (rng()-0.5)*H*0.04;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y+(rng()-0.5)*H*0.02);
+    ctx.strokeStyle = `rgba(0,0,0,0.38)`; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, y+1.5); ctx.lineTo(W, y+1.5+(rng()-0.5)*H*0.02);
+    ctx.strokeStyle = `rgba(${c2[0]},${c2[1]},${c2[2]},0.28)`; ctx.lineWidth = 1; ctx.stroke();
+  }
+  const rivetCount = Math.floor(density * 22 + 4);
+  for (let i = 0; i < rivetCount; i++) {
+    const bx = rng()*W, by = rng()*H;
+    if (!pointInHex(bx, by, W, H)) continue;
+    const r = (1.8 + rng()*2.2) * (sizeFactor*0.8+0.5);
+    ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${c1[0]},${c1[1]},${c1[2]},0.82)`; ctx.fill();
+    ctx.strokeStyle = `rgba(0,0,0,0.4)`; ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx-r*0.3, by-r*0.3, r*0.38, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,255,255,0.28)`; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawCarpetOverlay(ctx, cfg, rng, W, H) {
+  const density = cfg.overlayDensity / 100;
+  const count = Math.floor((W*H) / 6 * density * 0.65);
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let i = 0; i < count; i++) {
+    const bx = rng()*W, by = rng()*H;
+    if (!pointInHex(bx, by, W, H)) continue;
+    const len = 2.5 + rng()*5;
+    const angle = rng()*Math.PI*2;
+    const curve = (rng()-0.5)*0.9;
+    const [cr, cg, cb] = lerpColor(c1, c2, rng());
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.quadraticCurveTo(
+      bx+Math.cos(angle+curve)*len*0.5, by+Math.sin(angle+curve)*len*0.5,
+      bx+Math.cos(angle)*len, by+Math.sin(angle)*len
+    );
+    ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.32+rng()*0.3})`;
+    ctx.lineWidth = 0.7+rng()*0.9; ctx.lineCap='round'; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawTilesOverlay(ctx, cfg, rng, W, H) {
+  const sizeFactor = cfg.overlaySize / 100;
+  const density = cfg.overlayDensity / 100;
+  const tileSize = Math.max(5, Math.round((6 + sizeFactor*22)*(W/128)));
+  const c1 = hexToRgb(cfg.overlayPrimary);
+  const c2 = hexToRgb(cfg.overlaySecondary);
+  ctx.save();
+  drawHexPath(ctx, W, H); ctx.clip();
+  for (let ty = 0; ty <= H; ty += tileSize) {
+    for (let tx = 0; tx <= W; tx += tileSize) {
+      if (!pointInHex(tx+tileSize*0.5, ty+tileSize*0.5, W, H)) continue;
+      const [cr, cg, cb] = lerpColor(c1, c2, rng()*0.45);
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},0.38)`;
+      ctx.fillRect(tx, ty, tileSize-1, tileSize-1);
+    }
+  }
+  ctx.strokeStyle = `rgba(0,0,0,${0.18 + density*0.28})`; ctx.lineWidth = 1;
+  for (let ty = 0; ty <= H; ty += tileSize) { ctx.beginPath(); ctx.moveTo(0,ty); ctx.lineTo(W,ty); ctx.stroke(); }
+  for (let tx = 0; tx <= W; tx += tileSize) { ctx.beginPath(); ctx.moveTo(tx,0); ctx.lineTo(tx,H); ctx.stroke(); }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════
+// BATCH MODE
+// ═══════════════════════════════════════════
+let _batchTiles = [];
+
+function openBatch() {
+  document.getElementById('batch-modal').style.display = 'flex';
+  if (_batchTiles.length === 0) generateBatch();
+}
+
+function closeBatch() {
+  document.getElementById('batch-modal').style.display = 'none';
+}
+
+function generateBatch() {
+  const count = parseInt(document.getElementById('batch-count').value) || 12;
+  const cfg = getConfig();
+  _batchTiles = [];
+  const grid = document.getElementById('batch-grid');
+  grid.innerHTML = '';
+  document.getElementById('batch-footer').textContent = `Generating ${count} tiles…`;
+
+  requestAnimationFrame(() => {
+    const thumbW = Math.min(128, cfg.W);
+    const thumbH = Math.min(112, cfg.H);
+    const scale = Math.min(thumbW/cfg.W, thumbH/cfg.H);
+
+    for (let i = 0; i < count; i++) {
+      const seed = Math.floor(Math.random() * 99999);
+      const tile = generateTile({ ...cfg, seed });
+
+      const tw = Math.round(cfg.W * scale);
+      const th = Math.round(cfg.H * scale);
+      const dc = document.createElement('canvas');
+      dc.width = tw;
+      dc.height = th;
+      const dtx = dc.getContext('2d');
+      // Dark fill so corners outside the hex are invisible
+      dtx.fillStyle = '#111116';
+      dtx.fillRect(0, 0, tw, th);
+      // Clip to game's pointy-top hex shape (W/2,0)(W,H/4)(W,3H/4)(W/2,H)(0,3H/4)(0,H/4)
+      dtx.beginPath();
+      dtx.moveTo(tw / 2, 0);
+      dtx.lineTo(tw,     th / 4);
+      dtx.lineTo(tw,     th * 3 / 4);
+      dtx.lineTo(tw / 2, th);
+      dtx.lineTo(0,      th * 3 / 4);
+      dtx.lineTo(0,      th / 4);
+      dtx.closePath();
+      dtx.clip();
+      dtx.drawImage(tile, 0, 0, tw, th);
+
+      const item = { seed, selected: false };
+      _batchTiles.push(item);
+
+      const div = document.createElement('div');
+      div.className = 'batch-item';
+      div.dataset.idx = i;
+      div.appendChild(dc);
+
+      const check = document.createElement('div');
+      check.className = 'batch-check';
+      check.textContent = '✓';
+      div.appendChild(check);
+
+      const seedLabel = document.createElement('div');
+      seedLabel.className = 'batch-seed';
+      seedLabel.textContent = `#${seed}`;
+      div.appendChild(seedLabel);
+
+      div.addEventListener('click', () => toggleBatchItem(i, div));
+      grid.appendChild(div);
+    }
+    updateBatchStatus();
+  });
+}
+
+function toggleBatchItem(idx, div) {
+  _batchTiles[idx].selected = !_batchTiles[idx].selected;
+  div.classList.toggle('selected', _batchTiles[idx].selected);
+  updateBatchStatus();
+}
+
+function selectAllBatch() {
+  _batchTiles.forEach(t => t.selected = true);
+  document.querySelectorAll('.batch-item').forEach(el => el.classList.add('selected'));
+  updateBatchStatus();
+}
+
+function selectNoneBatch() {
+  _batchTiles.forEach(t => t.selected = false);
+  document.querySelectorAll('.batch-item').forEach(el => el.classList.remove('selected'));
+  updateBatchStatus();
+}
+
+function updateBatchStatus() {
+  const sel = _batchTiles.filter(t => t.selected).length;
+  document.getElementById('batch-footer').textContent =
+    `${_batchTiles.length} tiles — ${sel} selected`;
+}
+
+async function saveBatch() {
+  const selected = _batchTiles.filter(t => t.selected);
+  if (!selected.length) { alert('Select at least one tile.'); return; }
+  const prefix = document.getElementById('export-name').value || 'tile';
+  const terrainType = document.getElementById('terrain-type').value;
+  const cfg = getConfig();
+  let saved = 0;
+  document.getElementById('batch-footer').textContent = `Saving ${selected.length} tiles…`;
+  for (const item of selected) {
+    const filename = `${prefix}_${terrainType}_${item.seed}`;
+    const dataUrl = generateTile({ ...cfg, seed: item.seed }).toDataURL('image/webp', 0.95);
+    try {
+      const r = await fetch('/api/save-webp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename, dataUrl })
+      }).then(r => r.json());
+      if (r.ok) saved++;
+    } catch { /* skip */ }
+  }
+  document.getElementById('batch-footer').textContent =
+    `Saved ${saved} / ${selected.length} tiles to output/`;
+}
+
+// ═══════════════════════════════════════════
+// AUTO-GEN ALL TERRAIN
+// ═══════════════════════════════════════════
+async function autoGenAllTerrain() {
+  const TERRAIN_MAP = [
+    // Outdoor terrain (overworld)
+    { game: 'sand',         gen: 'sand',         prefix: 'gen_sand' },
+    { game: 'scrub',        gen: 'grass',        prefix: 'gen_scrub' },
+    { game: 'road',         gen: 'broken_road',  prefix: 'gen_road' },
+    { game: 'rock',         gen: 'rocks',        prefix: 'gen_rock' },
+    { game: 'mesa',         gen: 'mesa',         prefix: 'gen_mesa' },
+    { game: 'ridge',        gen: 'mountains',    prefix: 'gen_ridge' },
+    { game: 'water',        gen: 'tiles',        prefix: 'gen_water',
+      colorOverride: { color1:'#1a3a5c', color2:'#2a5c8a', color3:'#4a90b8',
+                       op:'#3a7aaa', os:'#7abce0' } },
+    { game: 'dry_lake_bed', gen: 'dirt',         prefix: 'gen_dry' },
+    // Indoor terrain (interior maps)
+    { game: 'floor',        gen: 'wood',         prefix: 'int_floor' },
+    { game: 'metal',        gen: 'metal',        prefix: 'int_metal' },
+    { game: 'rug',          gen: 'carpet',       prefix: 'int_rug' },
+  ];
+
+  const VARIANTS = 12;
+  // Seeds are deterministic so re-running always produces identical files
+  const SEEDS = [1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012];
+
+  const btn = document.getElementById('btn-autogen');
+  const origText = btn.textContent;
+  btn.disabled = true;
+
+  // Snapshot current UI state so we can restore it
+  const origType = document.getElementById('terrain-type').value;
+  const origAutoColors = document.getElementById('terrain-auto-colors').checked;
+
+  document.getElementById('terrain-auto-colors').checked = true;
+
+  let totalSaved = 0;
+  let totalErrors = 0;
+
+  for (let ti = 0; ti < TERRAIN_MAP.length; ti++) {
+    const entry = TERRAIN_MAP[ti];
+    btn.textContent = `Generating ${entry.game} (${ti + 1}/${TERRAIN_MAP.length})…`;
+
+    // Switch terrain type
+    document.getElementById('terrain-type').value = entry.gen;
+    onTerrainTypeChange(); // applies auto-colors
+
+    // Apply water color override
+    if (entry.colorOverride) {
+      const ov = entry.colorOverride;
+      if (ov.color1) document.getElementById('color1').value = ov.color1;
+      if (ov.color2) document.getElementById('color2').value = ov.color2;
+      if (ov.color3) document.getElementById('color3').value = ov.color3;
+      if (ov.op) document.getElementById('overlay-primary').value = ov.op;
+      if (ov.os) document.getElementById('overlay-secondary').value = ov.os;
+    }
+
+    // Generate full bbox tiles, then clip to the game's actual pointy-top hex shape.
+    // Game tile = 88×64. Vertices (centred): top(0,-32), TR(44,-16), BR(44,16),
+    // bot(0,32), BL(-44,16), TL(-44,-16). In bounding-box coords:
+    //   (W/2,0), (W,H/4), (W,3H/4), (W/2,H), (0,3H/4), (0,H/4)
+    // We output at 3× = 264×192 for crisp scaling.
+    const cfg = { ...getConfig(), exportMode: 'full' };
+
+    for (let vi = 0; vi < VARIANTS; vi++) {
+      const seed = SEEDS[vi];
+      const num = String(vi + 1).padStart(2, '0');
+      const filename = `${entry.prefix}_${num}`;
+
+      const srcCanvas = generateTile({ ...cfg, seed });
+
+      const OUT_W = 264, OUT_H = 192;
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = OUT_W; outCanvas.height = OUT_H;
+      const octx = outCanvas.getContext('2d');
+
+      // Clip to game's pointy-top hex
+      octx.beginPath();
+      octx.moveTo(OUT_W / 2, 0);
+      octx.lineTo(OUT_W,     OUT_H / 4);
+      octx.lineTo(OUT_W,     OUT_H * 3 / 4);
+      octx.lineTo(OUT_W / 2, OUT_H);
+      octx.lineTo(0,         OUT_H * 3 / 4);
+      octx.lineTo(0,         OUT_H / 4);
+      octx.closePath();
+      octx.clip();
+      octx.drawImage(srcCanvas, 0, 0, OUT_W, OUT_H);
+
+      const dataUrl = outCanvas.toDataURL('image/webp', 0.95);
+      try {
+        const r = await fetch('/api/save-webp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, dataUrl })
+        }).then(r => r.json());
+        if (r.ok) totalSaved++; else totalErrors++;
+      } catch { totalErrors++; }
+    }
+  }
+
+  // Restore original state
+  document.getElementById('terrain-type').value = origType;
+  document.getElementById('terrain-auto-colors').checked = origAutoColors;
+  onTerrainTypeChange();
+
+  btn.disabled = false;
+  btn.textContent = origText;
+
+  const status = document.getElementById('status');
+  status.textContent = `Auto-Gen done — ${totalSaved} tiles saved to output/${totalErrors ? `, ${totalErrors} errors` : ''}`;
+  alert(`Done! ${totalSaved} tiles saved to output/\nRun: node deploy-to-game.js`);
+}
+</script>
+</body>
+</html>

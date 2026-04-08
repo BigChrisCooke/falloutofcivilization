@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+[FEATURE] Interior map tiles now render as generated WebP images — floor, metal, and rug use procedurally generated textures; rock and dry lake bed reuse overworld tile images
+[FEATURE] Hex tile generator tool (`tools/tiles/`) — batch-generate terrain and indoor tile variants in-browser with a review/reject workflow; `deploy-to-game.js` copies images and prints updated TypeScript blocks for scene_visuals.ts
+
 ## [0.12.3] - 2026-04-06
 [IMPROVEMENT] All terrain and location tile images converted to WebP — sand, scrub, road, rock, mesa, ridge, water, dry lake bed, and all location types now serve .webp for faster loading
 [IMPROVEMENT] New sand tile set (26 variants) replaces old sand tiles; new mountain, swamp, dry lake bed, stone billboard, and vault tiles added

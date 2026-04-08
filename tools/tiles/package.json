@@ -1,0 +1,12 @@
+{
+  "name": "tile-generator",
+  "version": "1.0.0",
+  "description": "Procedural hex tile generator for flat-top WebP terrain tiles",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}
