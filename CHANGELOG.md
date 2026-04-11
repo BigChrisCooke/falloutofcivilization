@@ -2,9 +2,9 @@
 
 ## [Unreleased]
 
-## [0.14.0] - 2026-04-11
-[FEATURE] Animated character sprites — courier and NPCs render as sprite-sheet-driven AnimatedSprites with directional facing and state animations (idle, walk, attack, hit, death, talk, bored) instead of colored token circles; falls back to Graphics tokens if sprite sheets fail to load
-[FEATURE] Sprite placeholder generator tool (`tools/sprites/`) — generates courier and NPC sprite sheet PNGs with matching JSON atlas files for all animation/facing combos
+## [0.13.1] - 2026-04-11
+[IMPROVEMENT] Sprite sheet infrastructure — courier and NPC rendering switched from Graphics tokens to AnimatedSprite with placeholder sprite sheets; falls back to Graphics tokens if sheets fail to load; real art to come
+[IMPROVEMENT] Sprite placeholder generator tool (`tools/sprites/`) — generates courier and NPC sprite sheet PNGs with matching JSON atlas files for all animation/facing combos
 [IMPROVEMENT] Interior tile images expanded — wall, interactable types (stash, terminal, bar, desk, crate, etc.) now alias to floor or rock image pools instead of rendering as flat colour; exit tiles intentionally kept flat to stand out as portals
 
 ## [0.13.0] - 2026-04-08
