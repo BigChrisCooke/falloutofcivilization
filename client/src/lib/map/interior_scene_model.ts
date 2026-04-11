@@ -50,7 +50,9 @@ function createMarkerNode(
     interactRange,
     dead,
     weapon,
-    looted
+    looted,
+    animState: dead ? "death" : "idle",
+    facing: "se" as const,
   };
 }
 
@@ -203,7 +205,9 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
         tokenColor: activeCompanion.tokenColor,
         point: companionPoint,
         anchor: getInteriorCourierAnchor(companionPoint),
-        zIndex: getTileZIndex(companionPoint) + 85
+        zIndex: getTileZIndex(companionPoint) + 85,
+        animState: "idle" as const,
+        facing: "se" as const,
       });
     }
   }
@@ -222,7 +226,9 @@ export function buildInteriorSceneModel(state: GameState, collectedLootIds?: Set
       id: "courier",
       point: currentPoint,
       anchor: getInteriorCourierAnchor(currentPoint),
-      zIndex: getTileZIndex(currentPoint) + 90
+      zIndex: getTileZIndex(currentPoint) + 90,
+      animState: "idle" as const,
+      facing: "se" as const,
     },
     companions: companionNodes
   };

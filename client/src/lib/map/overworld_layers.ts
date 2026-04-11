@@ -1,7 +1,7 @@
-import { Container, Graphics, Sprite } from "pixi.js";
+import { AnimatedSprite, Container, Graphics, Sprite } from "pixi.js";
 
 import { OVERWORLD_ISO_METRICS } from "../iso.js";
-import { createCompanionToken, createCourierToken, createLocationMarker, createLocationTileSprite, createTerrainTileSprite, createQuestMarker, drawHexSurface, hasLocationTileImage, hasTerrainTileImage, TERRAIN_VISUALS } from "../scene_visuals.js";
+import { createCompanionToken, createCourierSprite, createCourierToken, createLocationMarker, createLocationTileSprite, createNpcSprite, createTerrainTileSprite, createQuestMarker, drawHexSurface, hasLocationTileImage, hasTerrainTileImage, setActorAnimation, TERRAIN_VISUALS } from "../scene_visuals.js";
 
 import { flattenPolygon } from "./hex_geometry.js";
 import type { OverworldLocationNode, OverworldQuestMarkerNode, OverworldSceneModel, OverworldTileNode } from "./types.js";
@@ -21,8 +21,8 @@ export interface OverworldRetainedNodes {
   markerById: Map<string, Container>;
   questMarkerById: Map<string, Container>;
   mist: Graphics | null;
-  courier: Container | null;
-  companionToken: Container | null;
+  courier: AnimatedSprite | Container | null;
+  companionToken: AnimatedSprite | Container | null;
   companionId: string | null;
 }
 
@@ -365,12 +365,15 @@ function syncActorLayer(
   scene: OverworldSceneModel
 ): void {
   if (!retainedNodes.courier) {
-    retainedNodes.courier = createCourierToken();
+    retainedNodes.courier = createCourierSprite() ?? createCourierToken();
     layers.actors.addChild(retainedNodes.courier);
   }
 
   retainedNodes.courier.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
   retainedNodes.courier.zIndex = scene.courier.zIndex;
+  if (retainedNodes.courier instanceof AnimatedSprite) {
+    setActorAnimation(retainedNodes.courier, scene.courier.animState, scene.courier.facing);
+  }
 
   // Companion token
   if (scene.companion) {
@@ -379,13 +382,16 @@ function syncActorLayer(
         layers.actors.removeChild(retainedNodes.companionToken);
         retainedNodes.companionToken.destroy({ children: true });
       }
-      retainedNodes.companionToken = createCompanionToken(scene.companion.tokenColor);
+      retainedNodes.companionToken = createNpcSprite() ?? createCompanionToken(scene.companion.tokenColor);
       retainedNodes.companionId = scene.companion.companionId;
       layers.actors.addChild(retainedNodes.companionToken);
     }
 
     retainedNodes.companionToken!.position.set(scene.companion.anchor.x, scene.companion.anchor.y);
     retainedNodes.companionToken!.zIndex = scene.companion.zIndex;
+    if (retainedNodes.companionToken instanceof AnimatedSprite) {
+      setActorAnimation(retainedNodes.companionToken, scene.companion.animState, scene.companion.facing);
+    }
   } else if (retainedNodes.companionToken) {
     layers.actors.removeChild(retainedNodes.companionToken);
     retainedNodes.companionToken.destroy({ children: true });

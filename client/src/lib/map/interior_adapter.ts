@@ -240,12 +240,8 @@ export const interiorRuntimeAdapter: RetainedMapRuntimeAdapter<
       handlers.onPlayerClick();
     }
   },
-  animate: (retainedNodes, scene, tick) => {
-    if (!retainedNodes.courier) {
-      return;
-    }
-
-    retainedNodes.courier.y = scene.courier.anchor.y + Math.sin(tick) * 3;
+  animate: (_retainedNodes, _scene, _tick) => {
+    // AnimatedSprite handles idle frame animation internally; no manual position bobbing needed.
   },
   getCameraAnchor: (scene) => scene.courier.anchor
 };

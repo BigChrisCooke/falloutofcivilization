@@ -1,4 +1,6 @@
-import { Assets, Container, Graphics, Sprite, Texture } from "pixi.js";
+import { AnimatedSprite, Assets, Container, Graphics, Sprite, Spritesheet, Texture } from "pixi.js";
+
+import type { ActorAnimState, ActorFacing } from "./map/types.js";
 
 import type { IsoMetrics } from "./iso.js";
 
@@ -382,27 +384,52 @@ export const TERRAIN_TILE_IMAGES: Record<string, string[]> = {
   ]
 };
 
-// Interior tile images — floor, metal, rug populated after generating and deploying indoor tiles.
-// Rock and dry_lake_bed share the overworld terrain images (no separate generation needed).
+// Interior tile images.
+// Interactable tile types alias to floor — their scene marker identifies what they are.
+// Wall aliases to rock (stone/concrete look). Exit stays flat colour (must stand out as a portal).
+const INT_FLOOR_IMAGES = [
+  "/tiles/gen/int_floor_01.webp", "/tiles/gen/int_floor_02.webp", "/tiles/gen/int_floor_03.webp", "/tiles/gen/int_floor_04.webp",
+  "/tiles/gen/int_floor_05.webp", "/tiles/gen/int_floor_06.webp", "/tiles/gen/int_floor_07.webp", "/tiles/gen/int_floor_08.webp",
+  "/tiles/gen/int_floor_09.webp", "/tiles/gen/int_floor_10.webp", "/tiles/gen/int_floor_11.webp", "/tiles/gen/int_floor_12.webp",
+];
+const INT_ROCK_IMAGES = TERRAIN_TILE_IMAGES.rock ?? [];
+
 export const INTERIOR_TILE_IMAGES: Record<string, string[]> = {
-  // These two reuse existing overworld terrain images:
-  rock: TERRAIN_TILE_IMAGES.rock ?? [],
-  dry_lake_bed: TERRAIN_TILE_IMAGES.dry_lake_bed ?? [],
-  // Generated indoor surface tiles:
-  floor: ["/tiles/gen/int_floor_01.webp", "/tiles/gen/int_floor_02.webp", "/tiles/gen/int_floor_03.webp", "/tiles/gen/int_floor_04.webp",
-    "/tiles/gen/int_floor_05.webp", "/tiles/gen/int_floor_06.webp", "/tiles/gen/int_floor_07.webp", "/tiles/gen/int_floor_08.webp",
-    "/tiles/gen/int_floor_09.webp", "/tiles/gen/int_floor_10.webp", "/tiles/gen/int_floor_11.webp", "/tiles/gen/int_floor_12.webp"],
+  // Dedicated surface pools
+  floor:        INT_FLOOR_IMAGES,
   metal: ["/tiles/gen/int_metal_01.webp", "/tiles/gen/int_metal_02.webp", "/tiles/gen/int_metal_03.webp", "/tiles/gen/int_metal_04.webp",
     "/tiles/gen/int_metal_05.webp", "/tiles/gen/int_metal_06.webp", "/tiles/gen/int_metal_07.webp", "/tiles/gen/int_metal_08.webp",
     "/tiles/gen/int_metal_09.webp", "/tiles/gen/int_metal_10.webp", "/tiles/gen/int_metal_11.webp", "/tiles/gen/int_metal_12.webp"],
   rug: ["/tiles/gen/int_rug_01.webp", "/tiles/gen/int_rug_02.webp", "/tiles/gen/int_rug_03.webp", "/tiles/gen/int_rug_04.webp",
     "/tiles/gen/int_rug_05.webp", "/tiles/gen/int_rug_06.webp", "/tiles/gen/int_rug_07.webp", "/tiles/gen/int_rug_08.webp",
     "/tiles/gen/int_rug_09.webp", "/tiles/gen/int_rug_10.webp", "/tiles/gen/int_rug_11.webp", "/tiles/gen/int_rug_12.webp"],
+  rock:         INT_ROCK_IMAGES,
+  dry_lake_bed: TERRAIN_TILE_IMAGES.dry_lake_bed ?? [],
+  // Wall uses rock images
+  wall:         INT_ROCK_IMAGES,
+  // Interactable tiles all alias to floor (scene marker on top identifies the type)
+  stash:    INT_FLOOR_IMAGES,
+  terminal: INT_FLOOR_IMAGES,
+  medbay:   INT_FLOOR_IMAGES,
+  bar:      INT_FLOOR_IMAGES,
+  counter:  INT_FLOOR_IMAGES,
+  table:    INT_FLOOR_IMAGES,
+  stage:    INT_FLOOR_IMAGES,
+  trap:     INT_FLOOR_IMAGES,
+  cache:    INT_FLOOR_IMAGES,
+  console:  INT_FLOOR_IMAGES,
+  relay:    INT_FLOOR_IMAGES,
+  pool:     INT_FLOOR_IMAGES,
+  desk:     INT_FLOOR_IMAGES,
+  crate:    INT_FLOOR_IMAGES,
+  notice:   INT_FLOOR_IMAGES,
+  // exit intentionally omitted — stays flat colour to stand out as a portal
 };
 
 const loadedTileTextures = new Map<string, Texture>();
 const loadedTerrainTextures = new Map<string, Texture[]>();
 const loadedInteriorTileTextures = new Map<string, Texture[]>();
+const loadedCharacterSprites = new Map<"courier" | "npc", Spritesheet>();
 let tileTexturesLoaded = false;
 
 function hashTileKey(key: string): number {
@@ -464,6 +491,20 @@ export async function preloadLocationTileImages(): Promise<void> {
     })
   );
 
+  // Character sprite sheets (placeholder or real art)
+  for (const [key, jsonPath] of [
+    ["courier", "/sprites/courier_placeholder.json"],
+    ["npc",     "/sprites/npc_placeholder.json"],
+  ] as const) {
+    try {
+      const sheet = await Assets.load<Spritesheet>(jsonPath);
+      await sheet.parse();
+      loadedCharacterSprites.set(key, sheet);
+    } catch {
+      console.warn(`[sprites] failed to load ${jsonPath} — using Graphics fallback`);
+    }
+  }
+
   tileTexturesLoaded = true;
 }
 
@@ -512,6 +553,57 @@ export function createInteriorTileSprite(terrain: string, tileKey: string, metri
   sprite.height = metrics.tileHeight;
 
   return sprite;
+}
+
+const LOOPING_STATES: ReadonlySet<ActorAnimState> = new Set(["idle", "walk", "talk", "bored"]);
+
+function makeActorSprite(key: "courier" | "npc"): AnimatedSprite | null {
+  const sheet = loadedCharacterSprites.get(key);
+  if (!sheet) return null;
+  const textures = sheet.animations["idle_se"];
+  if (!textures?.length) return null;
+  const sprite = new AnimatedSprite(textures);
+  sprite.anchor.set(0.5, 0.85);
+  sprite.animationSpeed = 0.08;
+  sprite.loop = true;
+  sprite.play();
+  return sprite;
+}
+
+export function createCourierSprite(): AnimatedSprite | null {
+  return makeActorSprite("courier");
+}
+
+export function createNpcSprite(): AnimatedSprite | null {
+  return makeActorSprite("npc");
+}
+
+export function setActorAnimation(
+  sprite: AnimatedSprite,
+  state: ActorAnimState,
+  facing: ActorFacing
+): void {
+  const key = sprite.label === "npc" ? "npc" : "courier";
+  const sheet = loadedCharacterSprites.get(key as "courier" | "npc");
+  if (!sheet) return;
+
+  const animKey = `${state}_${facing}`;
+  const textures = sheet.animations[animKey] ?? sheet.animations[`idle_${facing}`] ?? sheet.animations["idle_se"];
+  if (!textures?.length) return;
+
+  // No-op if already playing these exact textures
+  if ((sprite as AnimatedSprite).textures === textures) return;
+
+  sprite.textures = textures;
+  sprite.loop = LOOPING_STATES.has(state);
+  if (!sprite.loop) {
+    sprite.onComplete = () => {
+      setActorAnimation(sprite, "idle", facing);
+    };
+  } else {
+    sprite.onComplete = null;
+  }
+  sprite.gotoAndPlay(0);
 }
 
 export function createSceneMarker(fillColor: number, accentColor: number): Container {

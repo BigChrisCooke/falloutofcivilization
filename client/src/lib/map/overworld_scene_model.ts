@@ -150,7 +150,9 @@ export function buildOverworldSceneModel(state: GameState, selectedQuestId?: str
       id: "courier",
       point: currentPoint,
       anchor: getCourierAnchor(currentPoint),
-      zIndex: getTileZIndex(currentPoint) + 90
+      zIndex: getTileZIndex(currentPoint) + 90,
+      animState: "idle" as const,
+      facing: "se" as const,
     },
     companion,
     routes: [],

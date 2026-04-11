@@ -1,0 +1,12 @@
+{
+  "name": "sprite-generator",
+  "version": "1.0.0",
+  "description": "Generates placeholder character sprite sheets for Fallout of Civilizations",
+  "type": "commonjs",
+  "scripts": {
+    "generate": "node generate-placeholders.js"
+  },
+  "dependencies": {
+    "jimp": "0.22.12"
+  }
+}

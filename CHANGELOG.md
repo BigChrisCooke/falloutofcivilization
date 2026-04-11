@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-04-11
+[FEATURE] Animated character sprites — courier and NPCs render as sprite-sheet-driven AnimatedSprites with directional facing and state animations (idle, walk, attack, hit, death, talk, bored) instead of colored token circles; falls back to Graphics tokens if sprite sheets fail to load
+[FEATURE] Sprite placeholder generator tool (`tools/sprites/`) — generates courier and NPC sprite sheet PNGs with matching JSON atlas files for all animation/facing combos
+[IMPROVEMENT] Interior tile images expanded — wall, interactable types (stash, terminal, bar, desk, crate, etc.) now alias to floor or rock image pools instead of rendering as flat colour; exit tiles intentionally kept flat to stand out as portals
+
 ## [0.13.0] - 2026-04-08
 [FEATURE] Interior map tiles now render as generated WebP images — floor, metal, and rug use procedurally generated textures; rock and dry lake bed reuse overworld tile images
 [FEATURE] Hex tile generator tool (`tools/tiles/`) — batch-generate terrain and indoor tile variants in-browser with a review/reject workflow; `deploy-to-game.js` copies images and prints updated TypeScript blocks for scene_visuals.ts

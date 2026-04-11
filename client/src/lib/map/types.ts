@@ -1,6 +1,9 @@
 import type { GameState } from "../api.js";
 import type { GridPoint, ProjectedPoint } from "../iso.js";
 
+export type ActorAnimState = "idle" | "walk" | "attack" | "hit" | "death" | "talk" | "bored";
+export type ActorFacing = "ne" | "e" | "se" | "sw" | "w" | "nw";
+
 export interface WorldPoint {
   x: number;
   y: number;
@@ -46,6 +49,8 @@ export interface OverworldActorNode {
   point: GridPoint;
   anchor: ProjectedPoint;
   zIndex: number;
+  animState: ActorAnimState;
+  facing: ActorFacing;
 }
 
 export interface InteriorTileNode {
@@ -75,6 +80,8 @@ export interface InteriorMarkerNode {
   dead?: boolean;
   weapon?: string | null;
   looted?: boolean;
+  animState?: ActorAnimState;
+  facing?: ActorFacing;
 }
 
 export interface InteriorActorNode {
@@ -82,6 +89,8 @@ export interface InteriorActorNode {
   point: GridPoint;
   anchor: ProjectedPoint;
   zIndex: number;
+  animState: ActorAnimState;
+  facing: ActorFacing;
 }
 
 export interface CompanionActorNode {
@@ -91,6 +100,8 @@ export interface CompanionActorNode {
   point: GridPoint;
   anchor: ProjectedPoint;
   zIndex: number;
+  animState: ActorAnimState;
+  facing: ActorFacing;
 }
 
 export interface OverworldQuestMarkerNode {

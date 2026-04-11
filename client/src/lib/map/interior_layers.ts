@@ -1,7 +1,7 @@
-import { Container, Graphics, Sprite, Text } from "pixi.js";
+import { AnimatedSprite, Container, Graphics, Sprite, Text } from "pixi.js";
 
 import { INTERIOR_ISO_METRICS } from "../iso.js";
-import { createCompanionToken, createCourierToken, createInteriorTileSprite, createSceneMarker, drawHexSurface, hasInteriorTileImage, INTERIOR_SURFACE_VISUALS } from "../scene_visuals.js";
+import { createCompanionToken, createCourierSprite, createCourierToken, createInteriorTileSprite, createNpcSprite, createSceneMarker, drawHexSurface, hasInteriorTileImage, INTERIOR_SURFACE_VISUALS, setActorAnimation } from "../scene_visuals.js";
 
 import { flattenPolygon } from "./hex_geometry.js";
 import type { InteriorMarkerNode, InteriorSceneModel, InteriorTileNode } from "./types.js";
@@ -16,10 +16,10 @@ export interface InteriorLayerContainers {
 export interface InteriorRetainedNodes {
   terrainByKey: Map<string, Graphics | Sprite>;
   feedbackByKey: Map<string, Graphics>;
-  markerById: Map<string, Container>;
+  markerById: Map<string, Container | AnimatedSprite>;
   glow: Graphics | null;
-  courier: Container | null;
-  companionTokens: Map<string, Container>;
+  courier: AnimatedSprite | Container | null;
+  companionTokens: Map<string, AnimatedSprite | Container>;
   lootTooltip: Container | null;
 }
 
@@ -209,6 +209,9 @@ function syncMarkerNode(marker: Container, sceneMarker: InteriorMarkerNode): voi
     } else {
       marker.rotation = 0;
       marker.alpha = 1;
+      if (marker instanceof AnimatedSprite && sceneMarker.animState && sceneMarker.facing) {
+        setActorAnimation(marker, sceneMarker.animState, sceneMarker.facing);
+      }
     }
   }
 }
@@ -243,7 +246,7 @@ function syncPropLayer(
       }
 
       if (sceneMarker.kind === "npc") {
-        marker = createCourierToken();
+        marker = createNpcSprite() ?? createCourierToken();
         marker.scale.set(0.72);
       } else {
         const colors = getMarkerColors(sceneMarker.kind);
@@ -264,12 +267,15 @@ function syncActorLayer(
   scene: InteriorSceneModel
 ): void {
   if (!retainedNodes.courier) {
-    retainedNodes.courier = createCourierToken();
+    retainedNodes.courier = createCourierSprite() ?? createCourierToken();
     layers.actors.addChild(retainedNodes.courier);
   }
 
   retainedNodes.courier.position.set(scene.courier.anchor.x, scene.courier.anchor.y);
   retainedNodes.courier.zIndex = scene.courier.zIndex;
+  if (retainedNodes.courier instanceof AnimatedSprite) {
+    setActorAnimation(retainedNodes.courier, scene.courier.animState, scene.courier.facing);
+  }
 
   // Companion tokens — sync all active companions
   const activeCompanionIds = new Set(scene.companions.map((c) => c.companionId));
@@ -282,13 +288,16 @@ function syncActorLayer(
   }
   for (const companion of scene.companions) {
     if (!retainedNodes.companionTokens.has(companion.companionId)) {
-      const token = createCompanionToken(companion.tokenColor);
+      const token = createNpcSprite() ?? createCompanionToken(companion.tokenColor);
       retainedNodes.companionTokens.set(companion.companionId, token);
       layers.actors.addChild(token);
     }
     const token = retainedNodes.companionTokens.get(companion.companionId)!;
     token.position.set(companion.anchor.x, companion.anchor.y);
     token.zIndex = companion.zIndex;
+    if (token instanceof AnimatedSprite) {
+      setActorAnimation(token, companion.animState, companion.facing);
+    }
   }
 }
 
