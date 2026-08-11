@@ -1,0 +1,14 @@
+id: harland_hideout
+name: Harland's Hideout
+type: hideout
+regionId: frontier_valley
+position:
+  x: 33
+  y: 20
+interiorMapId: harland_hideout_interior
+factionTags: []
+questTags:
+  - dex_arc
+encounterFlags:
+  - dangerous
+description: A repurposed supply depot tucked into a rocky ridge along a disused road. Someone has gone to considerable trouble to make it look abandoned from the outside.

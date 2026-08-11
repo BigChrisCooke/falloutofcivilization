@@ -91,6 +91,7 @@ export interface DialogueSelectResult {
   factionDelta: { factionId: string; delta: number } | null;
   companionRecruited: string | null;
   companionReaction: { companionId: string; loyaltyDelta: number; newLoyalty: number; reaction: string; departed: boolean } | null;
+  locationDiscovered: string | null;
   stateUpdated: boolean;
   alreadySelected: boolean;
 }
@@ -217,6 +218,7 @@ export class DialogueService {
         factionDelta: null,
         companionRecruited: null,
         companionReaction: null,
+        locationDiscovered: null,
         stateUpdated: false,
         alreadySelected: wasAlreadySelected
       };
@@ -325,6 +327,23 @@ export class DialogueService {
               }
               await this.companionRepo.recruit(saveId, option.companionRecruit, spawnPosition);
               result.companionRecruited = option.companionRecruit;
+              result.stateUpdated = true;
+            }
+          }
+        }
+
+        if (option.discoverLocation) {
+          const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
+          if (mapDiscovery) {
+            const discovered = safeJsonParse<string[]>(mapDiscovery.discovered_locations_json, []);
+            if (!discovered.includes(option.discoverLocation)) {
+              discovered.push(option.discoverLocation);
+              await this.gameStateRepo.updateMapDiscovery({
+                ...mapDiscovery,
+                discovered_locations_json: JSON.stringify(discovered),
+                updated_at: Date.now()
+              });
+              result.locationDiscovered = option.discoverLocation;
               result.stateUpdated = true;
             }
           }

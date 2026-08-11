@@ -113,6 +113,7 @@ export interface CompanionInstanceRow {
   goal_progress: string | null;
   conclusion_triggered: number;
   conclusion_accepted: number | null;
+  quest_resolution_shown: number;
 }
 
 export interface MapLootRow {

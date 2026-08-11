@@ -201,15 +201,6 @@ export class GameService {
   ): Promise<{ companionId: string; newStage: number; stageTitle: string; dialogueTreeId: string } | null> {
     const content = getGameContent();
     const companions = await this.companionRepo.getAll(saveId);
-    const companion = companions[0];
-    if (!companion) return null;
-
-    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
-    if (!companionDef) return null;
-
-    const nextStageIndex = companion.story_stage + 1;
-    const nextStage = companionDef.storyStages[nextStageIndex];
-    if (!nextStage) return null;
 
     const mapDiscovery = await this.gameStateRepo.getMapDiscovery(saveId);
     const discoveredLocationIds = mapDiscovery
@@ -218,28 +209,39 @@ export class GameService {
     const playerCharacter = await this.saveRepo.findPlayerCharacter(saveId);
     const karma = playerCharacter?.karma ?? 0;
 
-    const trigger = nextStage.triggerCondition;
-    let triggered = false;
+    for (const companion of companions) {
+      const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+      if (!companionDef) continue;
 
-    if (trigger.type === "immediate") {
-      triggered = true;
-    } else if (trigger.type === "locationsVisited" && trigger.count !== undefined) {
-      triggered = discoveredLocationIds.length >= trigger.count;
-    } else if (trigger.type === "karma") {
-      if (trigger.min !== undefined && karma >= trigger.min) triggered = true;
-      if (trigger.max !== undefined && karma <= trigger.max) triggered = true;
+      const nextStageIndex = companion.story_stage + 1;
+      const nextStage = companionDef.storyStages[nextStageIndex];
+      if (!nextStage) continue;
+
+      const trigger = nextStage.triggerCondition;
+      let triggered = false;
+
+      if (trigger.type === "immediate") {
+        triggered = true;
+      } else if (trigger.type === "locationsVisited" && trigger.count !== undefined) {
+        triggered = discoveredLocationIds.length >= trigger.count;
+      } else if (trigger.type === "karma") {
+        if (trigger.min !== undefined && karma >= trigger.min) triggered = true;
+        if (trigger.max !== undefined && karma <= trigger.max) triggered = true;
+      }
+
+      if (!triggered) continue;
+
+      await this.companionRepo.updateStoryStage(saveId, companion.companion_id, nextStageIndex);
+
+      return {
+        companionId: companion.companion_id,
+        newStage: nextStageIndex,
+        stageTitle: nextStage.title,
+        dialogueTreeId: nextStage.dialogueTreeId
+      };
     }
 
-    if (!triggered) return null;
-
-    await this.companionRepo.updateStoryStage(saveId, companion.companion_id, nextStageIndex);
-
-    return {
-      companionId: companion.companion_id,
-      newStage: nextStageIndex,
-      stageTitle: nextStage.title,
-      dialogueTreeId: nextStage.dialogueTreeId
-    };
+    return null;
   }
 
   public async respondToConclusion(
@@ -260,23 +262,28 @@ export class GameService {
 
     await this.companionRepo.setConclusionAccepted(saveId, companionId, accepted);
 
+    const content = getGameContent();
+    const companionDef = content.companions.find((c) => c.id === companionId);
+
     let loyaltyDelta: number;
     let questStarted: string | null = null;
 
     if (accepted) {
       loyaltyDelta = 15;
-      questStarted = "dex_harland_reckoning";
+      questStarted = companionDef?.conclusionQuestId ?? null;
       // Start the conclusion quest
-      const questState = await this.gameStateRepo.getQuestState(saveId);
-      if (questState) {
-        const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
-        if (!activeQuests.includes(questStarted)) {
-          activeQuests.push(questStarted);
-          await this.gameStateRepo.updateQuestState({
-            ...questState,
-            active_quests_json: JSON.stringify(activeQuests),
-            updated_at: Date.now()
-          });
+      if (questStarted) {
+        const questState = await this.gameStateRepo.getQuestState(saveId);
+        if (questState) {
+          const activeQuests = safeJsonParse<string[]>(questState.active_quests_json, []);
+          if (!activeQuests.includes(questStarted)) {
+            activeQuests.push(questStarted);
+            await this.gameStateRepo.updateQuestState({
+              ...questState,
+              active_quests_json: JSON.stringify(activeQuests),
+              updated_at: Date.now()
+            });
+          }
         }
       }
     } else {
@@ -420,8 +427,6 @@ export class GameService {
     }
   }
 
-  private static readonly EVIDENCE_GOAL_IDS = ["investigate_supply_crate", "check_comm_terminal", "find_survivor_witness"];
-
   public async enterLocation(saveId: string, locationId: string): Promise<ConclusionInitiation | null> {
     let conclusionInitiation: ConclusionInitiation | null = null;
 
@@ -504,20 +509,53 @@ export class GameService {
         await this.activateEligibleGoal(saveId, companion, interiorMap, location.id, playerCharacter?.karma ?? 0, content);
 
         // Check for conclusion initiation: all evidence goals complete, not yet triggered (or previously declined)
-        if (!companion.conclusion_triggered || companion.conclusion_accepted === 0) {
+        const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+        const conclusionGoalIds = companionDef?.conclusionGoals ?? [];
+        if (conclusionGoalIds.length > 0 && (!companion.conclusion_triggered || companion.conclusion_accepted === 0)) {
           const allComplete = await this.areAllEvidenceGoalsComplete(
-            saveId, companion.companion_id, GameService.EVIDENCE_GOAL_IDS
+            saveId, companion.companion_id, conclusionGoalIds
           );
           if (allComplete) {
             await this.companionRepo.setConclusionTriggered(saveId, companion.companion_id);
             await this.companionRepo.resetConclusionAccepted(saveId, companion.companion_id);
-            const companionDef = content.companions.find((c) => c.id === companion.companion_id);
             const dialogueTreeId = "conclusion_initiation";
             const tree = companionDef?.storyDialogues[dialogueTreeId];
             if (tree) {
               conclusionInitiation = {
                 companionId: companion.companion_id,
                 companionName: companionDef?.name ?? companion.companion_id,
+                dialogueTreeId,
+                dialogueTree: {
+                  rootNodeId: tree.rootNodeId,
+                  nodes: tree.nodes.map((n) => ({
+                    id: n.id,
+                    text: n.text,
+                    options: n.options.map((o) => ({
+                      id: o.id,
+                      label: o.label,
+                      response: o.response,
+                      next: o.next
+                    }))
+                  }))
+                }
+              };
+            }
+          }
+        }
+
+        // Check for quest resolution dialogue: conclusion quest completed, not yet shown
+        if (!conclusionInitiation && companion.conclusion_accepted === 1 && !companion.quest_resolution_shown) {
+          const questState = await this.gameStateRepo.getQuestState(saveId);
+          const completedQuests = safeJsonParse<string[]>(questState?.completed_quests_json, []);
+          const conclusionQuestId = companionDef?.conclusionQuestId;
+          if (conclusionQuestId && completedQuests.includes(conclusionQuestId) && companionDef) {
+            const dialogueTreeId = "quest_resolution";
+            const tree = companionDef.storyDialogues[dialogueTreeId];
+            if (tree) {
+              await this.companionRepo.markQuestResolutionShown(saveId, companion.companion_id);
+              conclusionInitiation = {
+                companionId: companion.companion_id,
+                companionName: companionDef.name ?? companion.companion_id,
                 dialogueTreeId,
                 dialogueTree: {
                   rootNodeId: tree.rootNodeId,
@@ -1114,27 +1152,29 @@ export class GameService {
     locationId: string | null
   ): Promise<{ companionId: string; goalId: string } | null> {
     const companions = await this.companionRepo.getAll(saveId);
-    const companion = companions[0];
-    if (!companion?.active_goal_id) return null;
-    if (companion.companion_x === null || companion.companion_y === null) return null;
-
     const content = getGameContent();
-    const companionDef = content.companions.find((c) => c.id === companion.companion_id);
-    const goal = companionDef?.goals?.find((g) => g.id === companion.active_goal_id);
-    if (!goal?.playerCanHelp) return null;
 
-    // Check if companion is on the goal tile
-    const goalTile = this.findGoalTile(goal, interiorMap, locationId ?? "");
-    if (!goalTile) return null;
+    for (const companion of companions) {
+      if (!companion.active_goal_id) continue;
+      if (companion.companion_x === null || companion.companion_y === null) continue;
 
-    const companionPos = { x: companion.companion_x, y: companion.companion_y };
-    if (toTileKey(companionPos) !== toTileKey(goalTile)) return null;
+      const companionDef = content.companions.find((c) => c.id === companion.companion_id);
+      const goal = companionDef?.goals?.find((g) => g.id === companion.active_goal_id);
+      if (!goal?.playerCanHelp) continue;
 
-    // Check if player is adjacent to companion
-    const dist = hexDistance(playerPos, companionPos);
-    if (dist > 1) return null;
+      const goalTile = this.findGoalTile(goal, interiorMap, locationId ?? "");
+      if (!goalTile) continue;
 
-    return { companionId: companion.companion_id, goalId: goal.id };
+      const companionPos = { x: companion.companion_x, y: companion.companion_y };
+      if (toTileKey(companionPos) !== toTileKey(goalTile)) continue;
+
+      const dist = hexDistance(playerPos, companionPos);
+      if (dist > 1) continue;
+
+      return { companionId: companion.companion_id, goalId: goal.id };
+    }
+
+    return null;
   }
 
   public async helpCompanionGoal(saveId: string, companionId: string): Promise<GoalCompletionResult | null> {
@@ -1251,8 +1291,27 @@ export class GameService {
     locationId: string | null
   ): Promise<CompanionTurnResult | null> {
     const companions = await this.companionRepo.getAll(saveId);
-    const companion = companions[0];
-    if (!companion) return null;
+    let firstResult: CompanionTurnResult | null = null;
+
+    for (const companion of companions) {
+      const stepResult = await this.runSingleCompanionFollow(saveId, companion, playerFrom, playerTo, passableSet, interiorMap, locationId);
+      if (stepResult && !firstResult) {
+        firstResult = stepResult;
+      }
+    }
+
+    return firstResult;
+  }
+
+  private async runSingleCompanionFollow(
+    saveId: string,
+    companion: import("../shared/types.js").CompanionInstanceRow,
+    playerFrom: HexPoint,
+    playerTo: HexPoint,
+    passableSet: Set<string>,
+    interiorMap: InteriorMapDefinition,
+    locationId: string | null
+  ): Promise<CompanionTurnResult | null> {
 
     // Initialize companion position if not set
     let companionPos: HexPoint;

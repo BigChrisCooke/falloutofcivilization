@@ -10,3 +10,5 @@ backend/data/
 client/.env
 backend-smoke*.log
 client-smoke*.log
+.telora/
+.mcp.json

@@ -7,14 +7,16 @@ objectives:
     description: "Track down Harland in the valley."
     type: visit
     target: harland_hideout
+    locationId: harland_hideout
   - id: confront_harland
     description: "Confront Harland with the evidence."
     type: talk
     target: harland
+    locationId: harland_hideout
 rewards:
   karma: 15
   caps: 100
   loyaltyDelta: 10
 mapMarker:
-  locationId: caravan_waystation
+  locationId: harland_hideout
   label: "Find Harland"

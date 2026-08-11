@@ -4,6 +4,11 @@ bio: "A former caravan guard stranded at the Dusty Spur after his last outfit wa
 tokenColor: "#D97706"
 recruitLocationId: dusty_tavern
 recruitDialogueId: recruit_greeting
+conclusionGoals:
+  - investigate_supply_crate
+  - check_comm_terminal
+  - find_survivor_witness
+conclusionQuestId: dex_harland_reckoning
 storyStages:
   - id: backstory
     title: "Old Roads"
